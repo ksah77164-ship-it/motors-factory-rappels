@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motors Factory — Rappels</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:#f0f4ff;min-height:100vh;padding:1rem;}
+.app{max-width:680px;margin:0 auto;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.logo-text{font-size:17px;font-weight:900;color:#1e1b4b;}
+.logo-sub{font-size:11px;color:#a5b4fc;margin-top:1px;font-weight:600;}
+.topright{display:flex;align-items:center;gap:8px;}
+.badge-live{display:inline-flex;align-items:center;gap:4px;background:#fff;border-radius:20px;padding:5px 12px;font-size:11px;color:#6366f1;font-weight:800;box-shadow:0 2px 8px rgba(99,102,241,0.2);}
+.dot-live{width:6px;height:6px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.sync-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+.sync-btn.loading{opacity:0.5;pointer-events:none;}
+.counters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:1rem;}
+.counter{border-radius:16px;padding:12px 8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+.counter-nb{font-size:26px;font-weight:900;line-height:1;}
+.counter-label{font-size:10px;font-weight:800;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;}
+.ct{background:#fff;}.ct .counter-nb{color:#1e1b4b;}.ct .counter-label{color:#a5b4fc;}
+.cr{background:linear-gradient(135deg,#fef2f2,#fee2e2);}.cr .counter-nb{color:#dc2626;}.cr .counter-label{color:#f87171;}
+.co{background:linear-gradient(135deg,#fffbeb,#fef3c7);}.co .counter-nb{color:#d97706;}.co .counter-label{color:#fbbf24;}
+.cv{background:linear-gradient(135deg,#f0fdf4,#dcfce7);}.cv .counter-nb{color:#16a34a;}.cv .counter-label{color:#4ade80;}
+.section-filtres{margin-bottom:0.8rem;}
+.section-label{font-size:10px;font-weight:800;color:#a5b4fc;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;}
+.filtres{display:flex;gap:6px;flex-wrap:wrap;}
+.filtre{padding:6px 14px;border-radius:20px;border:2px solid transparent;font-size:12px;font-weight:800;cursor:pointer;background:#fff;color:#a5b4fc;font-family:'Nunito',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.06);transition:all 0.15s;}
+.filtre.actif{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+.filtre-dest{padding:6px 14px;border-radius:20px;border:2px solid #e0e7ff;font-size:12px;font-weight:800;cursor:pointer;background:#fff;color:#6366f1;font-family:'Nunito',sans-serif;transition:all 0.15s;}
+.filtre-dest.actif{background:#6366f1;color:#fff;border-color:#6366f1;}
+.filtre-dest.global{border-color:#c7d2fe;color:#a5b4fc;}
+.filtre-dest.global.actif{background:#a5b4fc;border-color:#a5b4fc;color:#fff;}
+.sync-info{font-size:11px;color:#a5b4fc;margin-bottom:0.6rem;font-weight:600;}
+.dest-badge{display:inline-flex;align-items:center;gap:3px;background:#e0e7ff;border-radius:6px;padding:2px 7px;font-size:10px;color:#6366f1;font-weight:800;margin-left:6px;}
+.item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#fff;border-radius:12px;cursor:pointer;margin-bottom:5px;box-shadow:0 2px 6px rgba(0,0,0,0.05);transition:transform 0.15s,box-shadow 0.15s;}
+.item:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,0.1);}
+.item.active{box-shadow:0 4px 14px rgba(99,102,241,0.2);border:2px solid #e0e7ff;}
+.emoji-statut{font-size:16px;flex-shrink:0;width:20px;text-align:center;}
+.item-nom{font-size:14px;font-weight:800;color:#1e1b4b;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-tel{font-size:12px;color:#6366f1;font-weight:700;white-space:nowrap;}
+.item-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:800;white-space:nowrap;}
+.item-badge.rappeler{background:#fee2e2;color:#dc2626;}
+.item-badge.attente{background:#fef3c7;color:#d97706;}
+.item-badge.traite{background:#dcfce7;color:#16a34a;}
+.item-date{font-size:10px;color:#c7d2fe;font-weight:700;white-space:nowrap;}
+.arrow{font-size:11px;color:#c7d2fe;flex-shrink:0;}
+.detail{display:none;background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:6px;margin-top:-3px;box-shadow:0 4px 14px rgba(99,102,241,0.1);border:2px solid #e0e7ff;}
+.detail.open{display:block;}
+.detail-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.detail-tel{font-size:14px;color:#6366f1;font-weight:800;text-decoration:none;}
+.detail-chip{display:inline-flex;align-items:center;gap:3px;background:#f0f4ff;border:1.5px solid #e0e7ff;padding:3px 8px;border-radius:8px;font-size:12px;color:#6366f1;font-weight:700;}
+.detail-chip.dest{background:#e0e7ff;color:#4f46e5;}
+.detail-motif{font-size:13px;color:#4b5563;line-height:1.6;background:#f8f9ff;border-radius:8px;padding:8px 10px;margin-bottom:8px;border-left:3px solid #c7d2fe;}
+.detail-note{background:#fffbeb;border:1.5px solid #fef3c7;border-radius:8px;padding:6px 10px;font-size:12px;color:#d97706;font-weight:700;margin-bottom:8px;}
+.detail-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.btn{padding:6px 12px;border-radius:20px;border:none;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;}
+.btn.vert{background:#dcfce7;color:#16a34a;}
+.btn.rouge{background:#fee2e2;color:#dc2626;}
+.btn.jaune{background:#fef3c7;color:#d97706;}
+.btn.gris{background:#f0f4ff;color:#6366f1;}
+.note-area{display:none;margin-top:8px;}
+.note-area textarea{width:100%;background:#f8f9ff;border:1.5px solid #e0e7ff;border-radius:8px;padding:8px;font-size:12px;font-family:'Nunito',sans-serif;color:#1e1b4b;resize:vertical;min-height:50px;font-weight:600;}
+.save-note-btn{margin-top:4px;padding:5px 12px;border-radius:20px;border:none;font-size:12px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-family:'Nunito',sans-serif;}
+.ajout-btn{width:100%;padding:10px;border-radius:12px;border:2px dashed #c7d2fe;font-size:13px;font-weight:800;cursor:pointer;background:transparent;color:#c7d2fe;font-family:'Nunito',sans-serif;margin-top:4px;}
+.ajout-btn:hover{border-color:#6366f1;color:#6366f1;background:#f0f4ff;}
+.vide{text-align:center;padding:2rem;color:#c7d2fe;font-size:14px;font-weight:700;}
+.erreur{background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:10px;font-size:13px;color:#dc2626;margin-bottom:10px;font-weight:700;}
+.modal-wrap{display:none;position:fixed;inset:0;background:rgba(30,27,75,0.5);z-index:100;align-items:center;justify-content:center;}
+.modal-wrap.open{display:flex;}
+.modal{background:#fff;border-radius:20px;padding:1.5rem;width:90%;max-width:400px;box-shadow:0 20px 60px rgba(99,102,241,0.3);}
+.modal h3{font-size:16px;font-weight:900;color:#1e1b4b;margin-bottom:1rem;}
+.modal label{font-size:11px;font-weight:800;color:#a5b4fc;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;}
+.modal input,.modal textarea,.modal select{width:100%;background:#f0f4ff;border:1.5px solid #e0e7ff;border-radius:10px;padding:8px 10px;font-size:13px;font-family:'Nunito',sans-serif;color:#1e1b4b;margin-bottom:8px;font-weight:600;}
+.modal textarea{min-height:60px;resize:vertical;}
+.modal-actions{display:flex;gap:6px;justify-content:flex-end;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-icon">📞</div>
+      <div><div class="logo-text">Motors Factory</div><div class="logo-sub">Rappels clients</div></div>
+    </div>
+    <div class="topright">
+      <span class="badge-live"><span class="dot-live"></span>Live</span>
+      <button class="sync-btn" id="sync-btn" onclick="charger()">↻ Sync</button>
+    </div>
+  </div>
+
+  <div class="counters">
+    <div class="counter ct"><div class="counter-nb" id="c-total">—</div><div class="counter-label">Total</div></div>
+    <div class="counter cr"><div class="counter-nb" id="c-rappeler">—</div><div class="counter-label">Urgent</div></div>
+    <div class="counter co"><div class="counter-nb" id="c-attente">—</div><div class="counter-label">Attente</div></div>
+    <div class="counter cv"><div class="counter-nb" id="c-traite">—</div><div class="counter-label">Traités</div></div>
+  </div>
+
+  <div class="section-filtres">
+    <div class="section-label">Statut</div>
+    <div class="filtres" id="filtres-statut">
+      <button class="filtre" onclick="filtrerStatut('tous',this)">Tous</button>
+      <button class="filtre actif" onclick="filtrerStatut('rappeler',this)">🔴 Urgent</button>
+      <button class="filtre" onclick="filtrerStatut('attente',this)">🟡 Attente</button>
+      <button class="filtre" onclick="filtrerStatut('traite',this)">🟢 Traités</button>
+    </div>
+  </div>
+
+  <div class="section-filtres" style="margin-top:8px;">
+    <div class="section-label">Destinataire</div>
+    <div class="filtres" id="filtres-dest">
+      <button class="filtre-dest global actif" onclick="filtrerDest('tous',this)">🌐 Tous</button>
+    </div>
+  </div>
+
+  <div class="sync-info" id="sync-info" style="margin-top:8px;">Chargement...</div>
+  <div id="erreur-zone"></div>
+  <div id="liste"></div>
+  <button class="ajout-btn" onclick="ouvrirModal()">+ Ajouter manuellement</button>
+</div>
+
+<div class="modal-wrap" id="modal">
+  <div class="modal">
+    <h3>Ajouter un rappel</h3>
+    <label>Nom</label><input type="text" id="m-nom" placeholder="Ex : Mme Dupont"/>
+    <label>Téléphone</label><input type="text" id="m-tel" placeholder="06 XX XX XX XX"/>
+    <label>Véhicule / Immat</label><input type="text" id="m-veh" placeholder="Ex : EG 206 KH"/>
+    <label>Motif</label><textarea id="m-motif" placeholder="Détail..."></textarea>
+    <label>Destinataire</label><input type="text" id="m-dest" placeholder="Ex : Linda, Yaya, Global..."/>
+    <div class="modal-actions">
+      <button class="btn gris" onclick="fermerModal()">Annuler</button>
+      <button class="btn vert" onclick="ajouterManuel()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API="https://script.google.com/macros/s/AKfycbxfN0ibDIdhY5Gv018FM_RHeTQVEZkWv-qo5fky4Df5b9qyUxUsBlNzbITcV5G7d4pq/exec";
+let rappels=[],filtreStatut="rappeler",filtreDest="tous",nextId=1000,ouvert=null;
+
+function norm(s){if(!s)return"rappeler";const v=String(s).toLowerCase();if(v.includes("attente"))return"attente";if(v.includes("trait"))return"traite";return"rappeler";}
+function lab(s){if(s==="rappeler")return"À rappeler";if(s==="attente")return"En attente";return"Traité";}
+function emoji(s){if(s==="rappeler")return"🔴";if(s==="attente")return"🟡";return"🟢";}
+function fmtD(d){if(!d)return"";try{return new Date(d).toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"});}catch(e){return String(d).substring(0,10);}}
+function fmtH(h){if(!h)return"";try{return new Date(h).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});}catch(e){return"";}}
+function nettoyer(t){if(!t)return"";return t.replace(/\\r\\n|[\r\n]+/g," ").replace(/\s{2,}/g," ").trim();}
+function capitaliser(s){if(!s)return"";return s.charAt(0).toUpperCase()+s.slice(1).toLowerCase();}
+
+async function charger(){
+  const btn=document.getElementById("sync-btn");
+  btn.classList.add("loading");btn.textContent="...";
+  document.getElementById("erreur-zone").innerHTML="";
+  try{
+    const res=await fetch(API+"?t="+Date.now());
+    const data=await res.json();
+    const manuels=rappels.filter(r=>r._manuel);
+    const fromAPI=data.reverse().map((row,i)=>({
+      id:i,_index:row["_index"],_manuel:false,
+      date:fmtD(row["Date"]),heure:fmtH(row["Heure"]),
+      nom:row["Nom client"]||"",
+      tel:String(row["Téléphone"]||""),
+      vehicule:row["Véhicule"]||"",
+      motif:nettoyer(row["Motif"]||""),
+      statut:norm(row["Statut"]),
+      note:row["Note"]||"",
+      modifie:row["Modifié le"]||"",
+      destinataire:capitaliser(String(row["Destinataire"]||"Global"))
+    })).filter(r=>r.nom||r.tel);
+    rappels=[...fromAPI,...manuels];
+    document.getElementById("sync-info").textContent="Synchro à "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})+" · "+fromAPI.length+" rappel(s)";
+    majFiltresDest();
+    afficher();
+  }catch(e){
+    document.getElementById("sync-info").textContent="Erreur";
+    document.getElementById("erreur-zone").innerHTML='<div class="erreur">Impossible de charger. Clique sur Sync.</div>';
+  }
+  btn.classList.remove("loading");btn.textContent="↻ Sync";
+}
+
+function majFiltresDest(){
+  const dests=["tous",...new Set(rappels.map(r=>r.destinataire).filter(Boolean).sort())];
+  const zone=document.getElementById("filtres-dest");
+  zone.innerHTML=dests.map(d=>`
+    <button class="filtre-dest ${d==="tous"||d==="Global"?"global":""} ${filtreDest===d?"actif":""}"
+      onclick="filtrerDest('${d}',this)">
+      ${d==="tous"?"🌐 Tous":d==="Global"?"🌐 Global":"👤 "+d}
+    </button>`).join("");
+}
+
+async function sauvegarderSheet(r){
+  if(r._manuel)return;
+  try{await fetch(API,{method:"POST",body:JSON.stringify({index:r._index,statut:r.statut,note:r.note})});}catch(e){}
+}
+
+function afficher(){
+  document.getElementById("c-total").textContent=rappels.length;
+  document.getElementById("c-rappeler").textContent=rappels.filter(r=>r.statut==="rappeler").length;
+  document.getElementById("c-attente").textContent=rappels.filter(r=>r.statut==="attente").length;
+  document.getElementById("c-traite").textContent=rappels.filter(r=>r.statut==="traite").length;
+
+  let filtered=rappels;
+  if(filtreStatut!=="tous") filtered=filtered.filter(r=>r.statut===filtreStatut);
+  if(filtreDest!=="tous") filtered=filtered.filter(r=>r.destinataire===filtreDest);
+
+  const liste=document.getElementById("liste");
+  if(!filtered.length){liste.innerHTML='<div class="vide">Aucun rappel 🎉</div>';return;}
+  liste.innerHTML=filtered.map(r=>`
+    <div>
+      <div class="item ${ouvert===r.id?"active":""}" onclick="toggle(${r.id})">
+        <div class="emoji-statut">${emoji(r.statut)}</div>
+        <div class="item-nom">${r.nom||"Inconnu"}${r.destinataire&&r.destinataire!=="Global"?`<span class="dest-badge">👤${r.destinataire}</span>`:""}</div>
+        <div class="item-tel">${r.tel||"—"}</div>
+        <span class="item-badge ${r.statut}">${lab(r.statut)}</span>
+        <div class="item-date">${r.date}${r.heure?" · "+r.heure:""}</div>
+        <div class="arrow">${ouvert===r.id?"▲":"▼"}</div>
+      </div>
+      <div class="detail ${ouvert===r.id?"open":""}" id="detail-${r.id}">
+        <div class="detail-row">
+          <a class="detail-tel" href="tel:${r.tel.replace(/\s/g,'')}">📞 ${r.tel||"—"}</a>
+          ${r.vehicule?`<span class="detail-chip">🚗 ${r.vehicule}</span>`:""}
+          ${r.destinataire?`<span class="detail-chip dest">👤 ${r.destinataire}</span>`:""}
+          ${r.modifie?`<span style="font-size:10px;color:#c7d2fe;margin-left:auto;">↻ ${r.modifie}</span>`:""}
+        </div>
+        ${r.motif?`<div class="detail-motif">${r.motif}</div>`:""}
+        ${r.note?`<div class="detail-note">📝 ${r.note}</div>`:""}
+        <div class="note-area" id="note-${r.id}">
+          <textarea id="note-txt-${r.id}" placeholder="Ajouter une note...">${r.note}</textarea>
+          <button class="save-note-btn" onclick="sauveNote(${r.id})">💾 Enregistrer</button>
+        </div>
+        <div class="detail-actions">
+          ${r.statut!=="traite"?`<button class="btn vert" onclick="setStatut(${r.id},'traite')">✓ Traité</button>`:""}
+          ${r.statut==="rappeler"?`<button class="btn jaune" onclick="setStatut(${r.id},'attente')">⏱ Attente</button>`:""}
+          ${r.statut==="attente"?`<button class="btn rouge" onclick="setStatut(${r.id},'rappeler')">↩ Urgent</button>`:""}
+          ${r.statut==="traite"?`<button class="btn rouge" onclick="setStatut(${r.id},'rappeler')">↩ Réouvrir</button>`:""}
+          <button class="btn gris" onclick="toggleNote(${r.id})">📝 Note</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+function filtrerStatut(v,b){
+  filtreStatut=v;
+  document.querySelectorAll("#filtres-statut .filtre").forEach(x=>x.classList.remove("actif"));
+  b.classList.add("actif");ouvert=null;afficher();
+}
+
+function filtrerDest(v,b){
+  filtreDest=v;
+  document.querySelectorAll("#filtres-dest .filtre-dest").forEach(x=>x.classList.remove("actif"));
+  b.classList.add("actif");ouvert=null;afficher();
+}
+
+function toggle(id){ouvert=ouvert===id?null:id;afficher();}
+async function setStatut(id,s){const r=rappels.find(r=>r.id===id);if(!r)return;r.statut=s;await sauvegarderSheet(r);afficher();}
+function toggleNote(id){const el=document.getElementById("note-"+id);if(el)el.style.display=el.style.display==="block"?"none":"block";}
+async function sauveNote(id){const r=rappels.find(r=>r.id===id);const txt=document.getElementById("note-txt-"+id);if(!r||!txt)return;r.note=txt.value;await sauvegarderSheet(r);afficher();}
+function ouvrirModal(){document.getElementById("modal").classList.add("open");}
+function fermerModal(){document.getElementById("modal").classList.remove("open");["m-nom","m-tel","m-veh","m-motif","m-dest"].forEach(id=>document.getElementById(id).value="");}
+function ajouterManuel(){
+  const nom=document.getElementById("m-nom").value.trim();
+  const tel=document.getElementById("m-tel").value.trim();
+  if(!nom&&!tel)return;
+  const dest=document.getElementById("m-dest").value.trim()||"Global";
+  const now=new Date();
+  rappels.unshift({id:nextId++,_index:null,_manuel:true,
+    date:now.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"}),
+    heure:now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),
+    nom,tel,
+    vehicule:document.getElementById("m-veh").value.trim(),
+    motif:document.getElementById("m-motif").value.trim(),
+    statut:"rappeler",note:"",modifie:"",
+    destinataire:capitaliser(dest)
+  });
+  fermerModal();majFiltresDest();afficher();
+}
+
+charger();
+setInterval(charger,5*60*1000);
+</script>
+</body>
+</html>
