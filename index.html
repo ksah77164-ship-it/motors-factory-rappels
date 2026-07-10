@@ -203,13 +203,56 @@ function attribAuto(dest,motif){
   return {dest:"Global",auto:false};
 }
 
+function afficherErreur(msg){
+  document.getElementById("sync-info").textContent="Erreur de synchro";
+  document.getElementById("erreur-zone").innerHTML='<div class="erreur">'+msg+'</div>';
+}
+
 async function charger(){
   const btn=document.getElementById("sync-btn");
   btn.classList.add("loading");btn.textContent="...";
   document.getElementById("erreur-zone").innerHTML="";
   try{
-    const res=await fetch(API+"?t="+Date.now());
-    const data=await res.json();
+    // 1) Requête réseau
+    let res;
+    try{
+      res=await fetch(API+"?t="+Date.now(),{redirect:"follow",cache:"no-store"});
+    }catch(netErr){
+      afficherErreur("Pas de réponse du serveur (réseau ou blocage). Vérifie ta connexion internet puis reclique sur Sync.");
+      btn.classList.remove("loading");btn.textContent="↻ Sync";return;
+    }
+    // 2) Statut HTTP
+    if(!res.ok){
+      afficherErreur("Le serveur a répondu avec une erreur "+res.status+". Le script Google est peut-être hors service. Vérifie le déploiement Apps Script.");
+      btn.classList.remove("loading");btn.textContent="↻ Sync";return;
+    }
+    // 3) Lecture + parsing JSON tolérant (une page de connexion Google renvoie du HTML, pas du JSON)
+    const brut=await res.text();
+    let data;
+    try{
+      data=JSON.parse(brut);
+    }catch(parseErr){
+      const ressembleHtml=/^\s*<|<!doctype|<html/i.test(brut);
+      if(ressembleHtml){
+        afficherErreur("Google demande une connexion au lieu de renvoyer les données. Le déploiement Apps Script doit être en accès « Tout le monde » (« Anyone »). Ouvre Apps Script → Déployer → Gérer les déploiements → modifie « Qui a accès ».");
+      }else{
+        afficherErreur("Réponse du serveur illisible (JSON invalide). Ouvre l'URL du script dans un navigateur pour vérifier.");
+      }
+      btn.classList.remove("loading");btn.textContent="↻ Sync";return;
+    }
+    // 4) Formes acceptées : tableau direct, ou {data:[...]} / {rappels:[...]}
+    if(data&&!Array.isArray(data)){
+      if(Array.isArray(data.data)) data=data.data;
+      else if(Array.isArray(data.rappels)) data=data.rappels;
+      else if(data.error){
+        afficherErreur("Le script Google a renvoyé une erreur : "+data.error);
+        btn.classList.remove("loading");btn.textContent="↻ Sync";return;
+      }
+    }
+    if(!Array.isArray(data)){
+      afficherErreur("Format de données inattendu (ce n'est pas une liste de rappels). Le script Google a peut-être changé.");
+      btn.classList.remove("loading");btn.textContent="↻ Sync";return;
+    }
     const manuels=rappels.filter(r=>r._manuel);
     const fromAPI=data.reverse().map((row,i)=>{
       const motif=nettoyer(row["Motif"]||"");
@@ -238,8 +281,7 @@ async function charger(){
     majOnglets();
     afficher();
   }catch(e){
-    document.getElementById("sync-info").textContent="Erreur";
-    document.getElementById("erreur-zone").innerHTML='<div class="erreur">Impossible de charger. Clique sur Sync.</div>';
+    afficherErreur("Erreur inattendue pendant le traitement des données : "+(e&&e.message?e.message:e)+". Reclique sur Sync.");
   }
   btn.classList.remove("loading");btn.textContent="↻ Sync";
 }
