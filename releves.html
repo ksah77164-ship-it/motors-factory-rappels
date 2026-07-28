@@ -8,7 +8,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Nunito',sans-serif;background:#f0f4ff;min-height:100vh;padding:1rem;color:#1e1b4b;}
-.app{max-width:960px;margin:0 auto;}
+.app{max-width:1040px;margin:0 auto;}
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;}
 .logo{display:flex;align-items:center;gap:10px;}
 .logo-icon{width:42px;height:42px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;}
@@ -17,60 +17,81 @@ body{font-family:'Nunito',sans-serif;background:#f0f4ff;min-height:100vh;padding
 .link-back{background:#fff;border:none;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:800;color:#6366f1;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 2px 8px rgba(99,102,241,0.2);text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
 
 /* Zone de dépôt */
-.dropzone{background:#fff;border:2px dashed #c7d2fe;border-radius:18px;padding:26px 18px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:1rem;}
+.dropzone{background:#fff;border:2px dashed #c7d2fe;border-radius:18px;padding:24px 18px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:1rem;}
 .dropzone:hover,.dropzone.drag{border-color:#6366f1;background:#f8f9ff;}
-.dz-icon{font-size:38px;margin-bottom:8px;}
+.dz-icon{font-size:36px;margin-bottom:8px;}
 .dz-title{font-size:15px;font-weight:900;color:#1e1b4b;}
 .dz-sub{font-size:12px;color:#a5b4fc;font-weight:600;margin-top:4px;}
 .dz-formats{font-size:10px;color:#c7d2fe;font-weight:700;margin-top:8px;text-transform:uppercase;letter-spacing:0.5px;}
 
 /* Compteurs */
-.counters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:1rem;}
+.counters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:1rem;}
 .counter{border-radius:16px;padding:12px 8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
-.counter-nb{font-size:22px;font-weight:900;line-height:1.1;}
-.counter-label{font-size:10px;font-weight:800;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;}
+.counter-nb{font-size:20px;font-weight:900;line-height:1.1;}
+.counter-label{font-size:9px;font-weight:800;margin-top:3px;text-transform:uppercase;letter-spacing:0.4px;}
 .ct{background:#fff;}.ct .counter-nb{color:#1e1b4b;}.ct .counter-label{color:#a5b4fc;}
 .cr{background:linear-gradient(135deg,#fef2f2,#fee2e2);}.cr .counter-nb{color:#dc2626;}.cr .counter-label{color:#f87171;}
 .cc{background:linear-gradient(135deg,#f0fdf4,#dcfce7);}.cc .counter-nb{color:#16a34a;}.cc .counter-label{color:#4ade80;}
 .cs{background:linear-gradient(135deg,#eef2ff,#e0e7ff);}.cs .counter-nb{color:#4f46e5;}.cs .counter-label{color:#a5b4fc;}
+.ce{background:linear-gradient(135deg,#fffbeb,#fef3c7);}.ce .counter-nb{color:#d97706;}.ce .counter-label{color:#fbbf24;}
+@media(max-width:640px){.counters{grid-template-columns:repeat(2,1fr);}}
 
 /* Barre outils */
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:0.8rem;}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:0.7rem;}
 .search{flex:1;min-width:200px;position:relative;}
 .search input{width:100%;background:#fff;border:2px solid #e0e7ff;border-radius:20px;padding:10px 14px 10px 38px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;color:#1e1b4b;}
 .search input:focus{outline:none;border-color:#6366f1;}
 .search-ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#a5b4fc;}
 .filtres{display:flex;gap:6px;flex-wrap:wrap;}
-.filtre{padding:8px 14px;border-radius:20px;border:2px solid transparent;font-size:12px;font-weight:800;cursor:pointer;background:#fff;color:#a5b4fc;font-family:'Nunito',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+.grp-label{font-size:9px;font-weight:800;color:#a5b4fc;text-transform:uppercase;letter-spacing:0.5px;align-self:center;margin-right:2px;}
+.filtre{padding:7px 13px;border-radius:20px;border:2px solid transparent;font-size:12px;font-weight:800;cursor:pointer;background:#fff;color:#a5b4fc;font-family:'Nunito',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
 .filtre.actif{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
-.btn{padding:8px 14px;border-radius:20px;border:none;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+.filtre.orange.actif{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 4px 12px rgba(217,119,6,0.3);}
+.btn{padding:7px 13px;border-radius:20px;border:none;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
 .btn.vert{background:#dcfce7;color:#16a34a;}
 .btn.gris{background:#fff;color:#6366f1;}
 .btn.rouge{background:#fee2e2;color:#dc2626;}
+.btn.jaune{background:#fef3c7;color:#d97706;}
 
+.actions-lot{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.7rem;}
 .hint{font-size:12px;color:#a5b4fc;font-weight:700;margin-bottom:0.6rem;}
+.hint b{color:#6366f1;}
 .erreur{background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:10px 12px;font-size:13px;color:#dc2626;margin-bottom:10px;font-weight:700;}
 .info{background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:10px;padding:8px 12px;font-size:12px;color:#4f46e5;margin-bottom:10px;font-weight:700;}
 
 /* Tableau */
 .table-wrap{background:#fff;border-radius:16px;box-shadow:0 4px 14px rgba(0,0,0,0.06);overflow:hidden;overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
-thead th{background:#f8f9ff;color:#a5b4fc;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;font-size:10px;padding:10px 12px;text-align:left;position:sticky;top:0;cursor:pointer;user-select:none;white-space:nowrap;}
+thead th{background:#f8f9ff;color:#a5b4fc;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;font-size:10px;padding:10px 12px;text-align:left;cursor:pointer;user-select:none;white-space:nowrap;}
 thead th:hover{color:#6366f1;}
 thead th.num{text-align:right;}
-tbody td{padding:9px 12px;border-top:1px solid #f0f4ff;vertical-align:top;}
+thead th.mid{text-align:center;cursor:default;}
+tbody td{padding:8px 12px;border-top:1px solid #f0f4ff;vertical-align:middle;}
 tbody tr:hover{background:#f8f9ff;}
+tbody tr.ecarte{opacity:0.55;background:#fffdf5;}
+tbody tr.ecarte:hover{opacity:0.85;}
 .c-date{white-space:nowrap;color:#6366f1;font-weight:800;font-size:12px;}
-.c-lib{color:#1e1b4b;font-weight:700;min-width:180px;}
-.c-mont{text-align:right;white-space:nowrap;font-weight:900;font-variant-numeric:tabular-nums;}
+.c-lib{color:#1e1b4b;font-weight:700;min-width:170px;}
+.c-type{white-space:nowrap;}
+.tag{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.tag.virement{background:#fef3c7;color:#d97706;}
+.tag.carte{background:#e0e7ff;color:#4f46e5;}
+.tag.prelevement{background:#ede9fe;color:#7c3aed;}
+.tag.cheque{background:#e0f2fe;color:#0284c7;}
+.tag.especes{background:#dcfce7;color:#16a34a;}
+.tag.autre{background:#f1f5f9;color:#64748b;}
+.c-mont{text-align:right;white-space:nowrap;font-weight:900;font-variant-numeric:tabular-nums;width:120px;}
 .montant{cursor:pointer;border-radius:6px;padding:2px 6px;display:inline-block;transition:background 0.1s;}
 .montant:hover{background:#e0e7ff;}
 .montant.debit{color:#dc2626;}
 .montant.credit{color:#16a34a;}
-.montant.copie{background:#fef3c7 !important;}
+.montant.copie{background:#fde68a !important;}
+.c-act{text-align:center;width:44px;}
+.toggle-ec{background:none;border:1.5px solid #e0e7ff;border-radius:8px;width:30px;height:26px;cursor:pointer;font-size:14px;line-height:1;padding:0;color:#a5b4fc;}
+.toggle-ec:hover{border-color:#d97706;background:#fffbeb;}
+.toggle-ec.on{border-color:#d97706;background:#fef3c7;color:#d97706;}
 mark{background:#fde68a;color:#1e1b4b;border-radius:3px;padding:0 2px;}
 .vide{text-align:center;padding:2.5rem 1rem;color:#c7d2fe;font-size:14px;font-weight:800;}
-.row-actif{background:#eef2ff !important;}
 
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e1b4b;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:opacity 0.2s,transform 0.2s;z-index:200;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
@@ -93,7 +114,7 @@ mark{background:#fde68a;color:#1e1b4b;border-radius:3px;padding:0 2px;}
     <input type="file" id="file-input" accept=".pdf,.csv,.txt,.tsv" style="display:none" multiple>
     <div class="dz-icon">📥</div>
     <div class="dz-title" id="dz-title">Glissez votre relevé ici ou cliquez pour le télécharger</div>
-    <div class="dz-sub">Le fichier reste sur votre appareil — rien n'est envoyé sur internet</div>
+    <div class="dz-sub">Les virements sont automatiquement mis de côté · rien n'est envoyé sur internet</div>
     <div class="dz-formats">PDF · CSV · TXT</div>
   </div>
 
@@ -104,6 +125,7 @@ mark{background:#fde68a;color:#1e1b4b;border-radius:3px;padding:0 2px;}
     <div class="counter cr"><div class="counter-nb" id="c-debit">—</div><div class="counter-label">Débits</div></div>
     <div class="counter cc"><div class="counter-nb" id="c-credit">—</div><div class="counter-label">Crédits</div></div>
     <div class="counter cs"><div class="counter-nb" id="c-solde">—</div><div class="counter-label">Solde</div></div>
+    <div class="counter ce"><div class="counter-nb" id="c-ecarte">—</div><div class="counter-label">Écartés</div></div>
   </div>
 
   <div class="toolbar">
@@ -112,16 +134,27 @@ mark{background:#fde68a;color:#1e1b4b;border-radius:3px;padding:0 2px;}
       <input type="text" id="recherche" placeholder="Chercher un montant (ex : 150 ou 150,00) ou un libellé...">
     </div>
     <div class="filtres">
-      <button class="filtre actif" data-f="tous" onclick="setFiltre('tous',this)">Tous</button>
-      <button class="filtre" data-f="debit" onclick="setFiltre('debit',this)">🔴 Débits</button>
-      <button class="filtre" data-f="credit" onclick="setFiltre('credit',this)">🟢 Crédits</button>
+      <span class="grp-label">Vue</span>
+      <button class="filtre actif" data-v="actives" onclick="setVue('actives',this)">✔ Actives</button>
+      <button class="filtre orange" data-v="ecartes" onclick="setVue('ecartes',this)">⏸ Écartés</button>
+      <button class="filtre" data-v="toutes" onclick="setVue('toutes',this)">Toutes</button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="filtres">
+      <span class="grp-label">Sens</span>
+      <button class="filtre actif" data-f="tous" onclick="setSens('tous',this)">Tous</button>
+      <button class="filtre" data-f="debit" onclick="setSens('debit',this)">🔴 Débits</button>
+      <button class="filtre" data-f="credit" onclick="setSens('credit',this)">🟢 Crédits</button>
     </div>
     <button class="btn vert" onclick="exportCSV()">⬇ Export CSV</button>
     <button class="btn gris" onclick="exportExcel()">⬇ Excel</button>
     <button class="btn rouge" onclick="toutEffacer()">✕ Vider</button>
   </div>
 
-  <div class="hint">💡 Astuce : cliquez sur un <b>montant</b> pour le copier et n'afficher que les lignes de ce montant.</div>
+  <div class="actions-lot" id="actions-lot"></div>
+
+  <div class="hint">💡 Cliquez sur un <b>montant</b> pour le copier et filtrer · cliquez sur <b>⏸</b> à droite d'une ligne pour l'écarter (elle sortira de la recherche des factures).</div>
   <div id="pill-zone"></div>
 
   <div class="table-wrap">
@@ -130,11 +163,14 @@ mark{background:#fde68a;color:#1e1b4b;border-radius:3px;padding:0 2px;}
         <tr>
           <th data-sort="date" onclick="trier('date')">Date</th>
           <th data-sort="lib" onclick="trier('lib')">Libellé</th>
-          <th class="num" data-sort="montant" onclick="trier('montant')">Montant</th>
+          <th data-sort="type" onclick="trier('type')">Type</th>
+          <th class="num" data-sort="debit" onclick="trier('debit')">Débit</th>
+          <th class="num" data-sort="credit" onclick="trier('credit')">Crédit</th>
+          <th class="mid">Écarter</th>
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="3"><div class="vide">Aucune opération pour l'instant.<br>Chargez un relevé pour commencer 📄</div></td></tr>
+        <tr><td colspan="6"><div class="vide">Aucune opération pour l'instant.<br>Chargez un relevé pour commencer 📄</div></td></tr>
       </tbody>
     </table>
   </div>
@@ -146,47 +182,63 @@ mark{background:#fde68a;color:#1e1b4b;border-radius:3px;padding:0 2px;}
 <script>
 if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}
 
-let operations=[];      // {date, dateISO, libelle, montant, sens}
-let filtre="tous";
+let operations=[];      // {id,date,dateISO,libelle,montant,sens,type,ecarte,ecarteAuto}
+let sens="tous";
+let vue="actives";      // actives | ecartes | toutes
 let recherche="";
-let montantClique=null;  // valeur numérique filtrée par clic
+let montantClique=null;
 let tri={col:null,asc:true};
+let nextId=1;
+
+// Mots-clés qui déclenchent la mise de côté automatique (virements internet, etc.)
+const MOTS_VIREMENT=["virement","vir sepa","vir inst","vir recu","vir reçu","vir emis","vir émis","vir.","vir ","internet","vir web","virt"];
 
 // ── Utilitaires format FR ──
 function toNombre(txt){
   if(txt==null) return NaN;
-  let s=String(txt).trim().replace(/\s| |\./g,"").replace(",",".").replace(/[^0-9.\-]/g,"");
+  let s=String(txt).trim().replace(/\s| |\./g,"").replace(",",".").replace(/[^0-9.\-]/g,"");
   const n=parseFloat(s);
   return isNaN(n)?NaN:n;
 }
-function fmtMontant(n){
-  return n.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
-}
+function fmtMontant(n){return n.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";}
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
-function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1600);}
-
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1700);}
 function dateISO(d){
-  // d au format jj/mm/aaaa ou jj/mm/aa
   const m=String(d).match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
   if(!m) return "";
-  let[_,j,mo,a]=m;
-  if(a.length===2) a="20"+a;
+  let[_,j,mo,a]=m;if(a.length===2)a="20"+a;
   return a+"-"+mo.padStart(2,"0")+"-"+j.padStart(2,"0");
 }
 
+// ── Détection du type d'opération ──
+function detecterType(lib){
+  const l=" "+lib.toLowerCase()+" ";
+  if(MOTS_VIREMENT.some(m=>l.includes(m))) return "virement";
+  if(/\b(cb|carte|paiement carte|achat cb|cb\*)\b/.test(l)) return "carte";
+  if(/prlv|prélèvement|prelevement|prlt/.test(l)) return "prelevement";
+  if(/chèque|cheque|chq|remise chq/.test(l)) return "cheque";
+  if(/espèce|espece|retrait|dab|distributeur|dépôt|depot/.test(l)) return "especes";
+  return "autre";
+}
+const LABEL_TYPE={virement:"Virement",carte:"Carte",prelevement:"Prélèvement",cheque:"Chèque",especes:"Espèces",autre:"Autre"};
+
+function finaliser(op){
+  op.id=nextId++;
+  op.type=detecterType(op.libelle);
+  op.sens=op.montant<0?"debit":"credit";
+  // Mise de côté automatique des virements
+  op.ecarte=(op.type==="virement");
+  op.ecarteAuto=op.ecarte;
+  return op;
+}
+
 // ── Lecture des fichiers ──
-document.getElementById("file-input").addEventListener("change",e=>{
-  [...e.target.files].forEach(traiterFichier);
-  e.target.value="";
-});
+document.getElementById("file-input").addEventListener("change",e=>{[...e.target.files].forEach(traiterFichier);e.target.value="";});
 const dz=document.getElementById("dropzone");
 dz.addEventListener("click",()=>document.getElementById("file-input").click());
 dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag");});
 dz.addEventListener("dragleave",()=>dz.classList.remove("drag"));
-dz.addEventListener("drop",e=>{
-  e.preventDefault();dz.classList.remove("drag");
-  [...e.dataTransfer.files].forEach(traiterFichier);
-});
+dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("drag");[...e.dataTransfer.files].forEach(traiterFichier);});
 
 function erreur(msg){document.getElementById("erreur-zone").innerHTML='<div class="erreur">'+escapeHtml(msg)+'</div>';}
 function infoMsg(msg){document.getElementById("erreur-zone").innerHTML='<div class="info">'+msg+'</div>';}
@@ -197,21 +249,17 @@ async function traiterFichier(file){
   try{
     const nom=file.name.toLowerCase();
     let ajout=[];
-    if(nom.endsWith(".pdf")){
-      ajout=await lirePDF(file);
-    }else{
-      const txt=await file.text();
-      ajout=lireCSV(txt);
-    }
+    if(nom.endsWith(".pdf")) ajout=await lirePDF(file);
+    else ajout=lireCSV(await file.text());
     if(!ajout.length){
       erreur("Aucune opération détectée dans « "+file.name+" ». Si c'est un PDF scanné (image), exportez plutôt le relevé en CSV depuis votre banque.");
     }else{
+      ajout.forEach(finaliser);
       operations=operations.concat(ajout);
-      infoMsg("✅ "+ajout.length+" opération(s) importée(s) depuis <b>"+escapeHtml(file.name)+"</b>.");
+      const nbVir=ajout.filter(o=>o.ecarte).length;
+      infoMsg("✅ "+ajout.length+" opération(s) importée(s) depuis <b>"+escapeHtml(file.name)+"</b>"+(nbVir?" · <b>"+nbVir+" virement(s) mis de côté</b> automatiquement.":"."));
     }
-  }catch(e){
-    erreur("Impossible de lire « "+file.name+" » : "+(e.message||e));
-  }
+  }catch(e){erreur("Impossible de lire « "+file.name+" » : "+(e.message||e));}
   document.getElementById("dz-title").textContent="Glissez un autre relevé ou cliquez pour ajouter";
   render();
 }
@@ -225,10 +273,9 @@ async function lirePDF(file){
   for(let p=1;p<=pdf.numPages;p++){
     const page=await pdf.getPage(p);
     const content=await page.getTextContent();
-    // Regrouper les fragments par ligne selon leur position verticale (y)
     const parGroupe={};
     content.items.forEach(it=>{
-      if(!it.str||!it.str.trim()) return;
+      if(!it.str||!it.str.trim())return;
       const y=Math.round(it.transform[5]);
       (parGroupe[y]=parGroupe[y]||[]).push({x:it.transform[4],s:it.str});
     });
@@ -240,60 +287,43 @@ async function lirePDF(file){
   return lignesVersOperations(lignes);
 }
 
-// Transforme des lignes de texte brut en opérations
 function lignesVersOperations(lignes){
-  const reMontant=/-?\d{1,3}(?:[ . ]\d{3})*,\d{2}/g;
+  const reMontant=/-?\d{1,3}(?:[ . ]\d{3})*,\d{2}/g;
   const reDate=/\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\b/;
   const ops=[];
   lignes.forEach(ligne=>{
     const montants=ligne.match(reMontant);
-    if(!montants) return;
+    if(!montants)return;
     const md=ligne.match(reDate);
-    // on ignore les lignes de solde / total récapitulatif éventuel ? on garde tout, l'utilisateur filtre.
-    // Le dernier montant de la ligne = montant de l'opération (colonne débit/crédit ou solde)
     const brut=montants[montants.length-1];
     const val=toNombre(brut);
-    if(isNaN(val)) return;
-    // libellé = ligne sans la date ni les montants
-    let lib=ligne.replace(reDate,"").replace(reMontant,"").replace(/\s{2,}/g," ").trim();
-    lib=lib.replace(/^[\-–•\s]+/,"").trim();
-    if(!lib && !md) return; // ligne sans contexte utile
-    const sens=val<0?"debit":"credit";
-    ops.push({
-      date: md?md[1]:"",
-      dateISO: md?dateISO(md[1]):"",
-      libelle: lib||"(sans libellé)",
-      montant: val,
-      sens
-    });
+    if(isNaN(val))return;
+    let lib=ligne.replace(reDate,"").replace(reMontant,"").replace(/\s{2,}/g," ").trim().replace(/^[\-–•\s]+/,"").trim();
+    if(!lib && !md)return;
+    ops.push({date:md?md[1]:"",dateISO:md?dateISO(md[1]):"",libelle:lib||"(sans libellé)",montant:val});
   });
   return ops;
 }
 
 // ── CSV / TXT ──
 function detecterSep(txt){
-  const l=txt.split(/\r?\n/).find(x=>x.trim());
-  if(!l) return ";";
+  const l=txt.split(/\r?\n/).find(x=>x.trim());if(!l)return";";
   const c={";":0,",":0,"\t":0,"|":0};
   for(const ch of l) if(ch in c) c[ch]++;
   return Object.keys(c).sort((a,b)=>c[b]-c[a])[0];
 }
 function parseCSVLigne(l,sep){
   const out=[];let cur="",q=false;
-  for(let i=0;i<l.length;i++){
-    const ch=l[i];
-    if(q){ if(ch==='"'){ if(l[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
-    else{ if(ch==='"') q=true; else if(ch===sep){out.push(cur);cur="";} else cur+=ch; }
-  }
-  out.push(cur);
-  return out.map(s=>s.trim());
+  for(let i=0;i<l.length;i++){const ch=l[i];
+    if(q){if(ch==='"'){if(l[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}
+    else{if(ch==='"')q=true;else if(ch===sep){out.push(cur);cur="";}else cur+=ch;}}
+  out.push(cur);return out.map(s=>s.trim());
 }
 function lireCSV(txt){
   const sep=detecterSep(txt);
   const lignes=txt.split(/\r?\n/).filter(l=>l.trim());
-  if(!lignes.length) return [];
+  if(!lignes.length)return[];
   const rows=lignes.map(l=>parseCSVLigne(l,sep));
-  // Chercher une ligne d'en-tête
   const norm=s=>s.toLowerCase().replace(/[^a-z]/g,"");
   let entete=-1,cols={};
   for(let i=0;i<Math.min(rows.length,15);i++){
@@ -303,28 +333,23 @@ function lireCSV(txt){
     const idxMont=h.findIndex(x=>x==="montant"||x.includes("montant")||x.includes("valeur"));
     const idxDeb=h.findIndex(x=>x.includes("debit"));
     const idxCred=h.findIndex(x=>x.includes("credit"));
-    if(idxDate>=0 && (idxMont>=0||idxDeb>=0||idxCred>=0||idxLib>=0)){
-      entete=i;cols={idxDate,idxLib,idxMont,idxDeb,idxCred};break;
-    }
+    if(idxDate>=0 && (idxMont>=0||idxDeb>=0||idxCred>=0||idxLib>=0)){entete=i;cols={idxDate,idxLib,idxMont,idxDeb,idxCred};break;}
   }
   const ops=[];
   if(entete>=0){
     for(let i=entete+1;i<rows.length;i++){
-      const r=rows[i];if(!r.length) continue;
+      const r=rows[i];if(!r.length)continue;
       const dateTxt=cols.idxDate>=0?r[cols.idxDate]:"";
       const lib=cols.idxLib>=0?r[cols.idxLib]:"";
-      let val=NaN,sens="";
-      if(cols.idxMont>=0 && r[cols.idxMont]!=null && r[cols.idxMont]!==""){
-        val=toNombre(r[cols.idxMont]);
-      }
-      if(isNaN(val) && cols.idxDeb>=0 && r[cols.idxDeb]){ const d=toNombre(r[cols.idxDeb]); if(!isNaN(d)) val=-Math.abs(d); }
-      if(isNaN(val) && cols.idxCred>=0 && r[cols.idxCred]){ const c=toNombre(r[cols.idxCred]); if(!isNaN(c)) val=Math.abs(c); }
-      if(isNaN(val)) continue;
-      if(!dateTxt && !lib && val===0) continue;
-      ops.push({date:dateTxt,dateISO:dateISO(dateTxt),libelle:lib||"(sans libellé)",montant:val,sens:val<0?"debit":"credit"});
+      let val=NaN;
+      if(cols.idxMont>=0 && r[cols.idxMont]!=null && r[cols.idxMont]!=="") val=toNombre(r[cols.idxMont]);
+      if(isNaN(val)&&cols.idxDeb>=0&&r[cols.idxDeb]){const d=toNombre(r[cols.idxDeb]);if(!isNaN(d))val=-Math.abs(d);}
+      if(isNaN(val)&&cols.idxCred>=0&&r[cols.idxCred]){const c=toNombre(r[cols.idxCred]);if(!isNaN(c))val=Math.abs(c);}
+      if(isNaN(val))continue;
+      if(!dateTxt && !lib && val===0)continue;
+      ops.push({date:dateTxt,dateISO:dateISO(dateTxt),libelle:lib||"(sans libellé)",montant:val});
     }
   }else{
-    // Pas d'en-tête reconnu → on retombe sur l'extraction générique ligne par ligne
     return lignesVersOperations(lignes.map(r=>r.join(" ")));
   }
   return ops;
@@ -332,34 +357,26 @@ function lireCSV(txt){
 
 // ── Recherche / filtre / affichage ──
 document.getElementById("recherche").addEventListener("input",e=>{recherche=e.target.value.trim();render();});
-
-function setFiltre(f,btn){
-  filtre=f;
-  document.querySelectorAll(".filtre").forEach(b=>b.classList.remove("actif"));
-  btn.classList.add("actif");
-  render();
-}
-function trier(col){
-  if(tri.col===col) tri.asc=!tri.asc; else {tri.col=col;tri.asc=true;}
-  render();
-}
+function setSens(f,btn){sens=f;document.querySelectorAll('[data-f]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
+function setVue(v,btn){vue=v;document.querySelectorAll('[data-v]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
+function trier(col){if(tri.col===col)tri.asc=!tri.asc;else{tri.col=col;tri.asc=true;}render();}
 
 function operationsFiltrees(){
   let list=operations.slice();
-  if(filtre!=="tous") list=list.filter(o=>o.sens===filtre);
+  if(vue==="actives") list=list.filter(o=>!o.ecarte);
+  else if(vue==="ecartes") list=list.filter(o=>o.ecarte);
+  if(sens!=="tous") list=list.filter(o=>o.sens===sens);
   if(montantClique!=null) list=list.filter(o=>Math.abs(Math.abs(o.montant)-Math.abs(montantClique))<0.005);
   if(recherche){
-    const rNum=toNombre(recherche);
-    const rTxt=recherche.toLowerCase();
+    const rNum=toNombre(recherche);const rTxt=recherche.toLowerCase();
     list=list.filter(o=>{
-      const parLib=o.libelle.toLowerCase().includes(rTxt) || o.date.includes(recherche);
+      const parLib=o.libelle.toLowerCase().includes(rTxt)||o.date.includes(recherche)||LABEL_TYPE[o.type].toLowerCase().includes(rTxt);
       let parMont=false;
-      if(!isNaN(rNum) && /[0-9]/.test(recherche)){
+      if(!isNaN(rNum)&&/[0-9]/.test(recherche)){
         const am=Math.abs(o.montant);
-        // correspond si le montant contient le nombre tapé (ex "15" trouve 15,00 / 150,00 / 1 150,00)
-        const montStr=am.toLocaleString("fr-FR",{minimumFractionDigits:2}).replace(/\s| /g,"");
-        const recStr=recherche.replace(/\s| /g,"").replace(".",",");
-        parMont = Math.abs(am-Math.abs(rNum))<0.005 || montStr.includes(recStr);
+        const montStr=am.toLocaleString("fr-FR",{minimumFractionDigits:2}).replace(/\s| /g,"");
+        const recStr=recherche.replace(/\s| /g,"").replace(".",",");
+        parMont=Math.abs(am-Math.abs(rNum))<0.005||montStr.includes(recStr);
       }
       return parLib||parMont;
     });
@@ -368,114 +385,132 @@ function operationsFiltrees(){
     list.sort((a,b)=>{
       let va,vb;
       if(tri.col==="date"){va=a.dateISO||"";vb=b.dateISO||"";}
-      else if(tri.col==="montant"){va=a.montant;vb=b.montant;}
+      else if(tri.col==="debit"){va=a.montant<0?a.montant:1;vb=b.montant<0?b.montant:1;}
+      else if(tri.col==="credit"){va=a.montant>0?a.montant:-1;vb=b.montant>0?b.montant:-1;}
+      else if(tri.col==="type"){va=a.type;vb=b.type;}
       else{va=a.libelle.toLowerCase();vb=b.libelle.toLowerCase();}
-      if(va<vb) return tri.asc?-1:1;
-      if(va>vb) return tri.asc?1:-1;
-      return 0;
+      if(va<vb)return tri.asc?-1:1;if(va>vb)return tri.asc?1:-1;return 0;
     });
   }
   return list;
 }
 
 function surligner(txt){
-  if(!recherche) return escapeHtml(txt);
-  try{
-    const r=recherche.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-    return escapeHtml(txt).replace(new RegExp("("+r+")","ig"),"<mark>$1</mark>");
-  }catch(e){return escapeHtml(txt);}
+  if(!recherche)return escapeHtml(txt);
+  try{const r=recherche.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");return escapeHtml(txt).replace(new RegExp("("+r+")","ig"),"<mark>$1</mark>");}
+  catch(e){return escapeHtml(txt);}
 }
 
 function render(){
-  const list=operationsFiltrees();
-  // compteurs (sur tout, hors filtre d'affichage)
-  const deb=operations.filter(o=>o.montant<0).reduce((s,o)=>s+o.montant,0);
-  const cred=operations.filter(o=>o.montant>0).reduce((s,o)=>s+o.montant,0);
+  // compteurs sur opérations ACTIVES (hors écartés) → c'est ce qui compte pour les factures
+  const actives=operations.filter(o=>!o.ecarte);
+  const deb=actives.filter(o=>o.montant<0).reduce((s,o)=>s+o.montant,0);
+  const cred=actives.filter(o=>o.montant>0).reduce((s,o)=>s+o.montant,0);
+  const nbEc=operations.filter(o=>o.ecarte).length;
   document.getElementById("c-nb").textContent=operations.length;
   document.getElementById("c-debit").textContent=operations.length?fmtMontant(deb):"—";
   document.getElementById("c-credit").textContent=operations.length?fmtMontant(cred):"—";
   document.getElementById("c-solde").textContent=operations.length?fmtMontant(deb+cred):"—";
+  document.getElementById("c-ecarte").textContent=nbEc;
 
-  // pill montant cliqué
+  // actions de lot
+  const al=document.getElementById("actions-lot");
+  if(operations.length){
+    al.innerHTML=
+      '<button class="btn jaune" onclick="ecarterVirements()">⏸ Écarter tous les virements</button>'+
+      '<button class="btn gris" onclick="reintegrerTout()">↩ Tout réintégrer</button>';
+  }else al.innerHTML="";
+
   const pz=document.getElementById("pill-zone");
-  if(montantClique!=null){
-    pz.innerHTML='<span class="pill-actif">Filtre montant : '+fmtMontant(Math.abs(montantClique))+' <button onclick="clearMontant()">✕</button></span>';
-  }else pz.innerHTML="";
+  pz.innerHTML=montantClique!=null?'<span class="pill-actif">Filtre montant : '+fmtMontant(Math.abs(montantClique))+' <button onclick="clearMontant()">✕</button></span>':"";
 
+  const list=operationsFiltrees();
   const tb=document.getElementById("tbody");
-  if(!operations.length){
-    tb.innerHTML='<tr><td colspan="3"><div class="vide">Aucune opération pour l\'instant.<br>Chargez un relevé pour commencer 📄</div></td></tr>';
-    return;
-  }
-  if(!list.length){
-    tb.innerHTML='<tr><td colspan="3"><div class="vide">Aucun résultat pour cette recherche 🔍</div></td></tr>';
-    return;
-  }
+  if(!operations.length){tb.innerHTML='<tr><td colspan="6"><div class="vide">Aucune opération pour l\'instant.<br>Chargez un relevé pour commencer 📄</div></td></tr>';return;}
+  if(!list.length){tb.innerHTML='<tr><td colspan="6"><div class="vide">Aucun résultat pour cette recherche 🔍</div></td></tr>';return;}
   tb.innerHTML=list.map(o=>{
     const am=Math.abs(o.montant);
-    return '<tr>'+
+    const cellDeb=o.montant<0?'<span class="montant debit" onclick="clicMontant('+o.montant+',this)" title="Cliquer pour copier / filtrer">'+fmtMontant(am)+'</span>':'';
+    const cellCred=o.montant>0?'<span class="montant credit" onclick="clicMontant('+o.montant+',this)" title="Cliquer pour copier / filtrer">'+fmtMontant(am)+'</span>':'';
+    const tag='<span class="tag '+o.type+'">'+LABEL_TYPE[o.type]+(o.ecarteAuto&&o.type==="virement"?" ✨":"")+'</span>';
+    return '<tr class="'+(o.ecarte?"ecarte":"")+'">'+
       '<td class="c-date">'+surligner(o.date||"—")+'</td>'+
       '<td class="c-lib">'+surligner(o.libelle)+'</td>'+
-      '<td class="c-mont"><span class="montant '+o.sens+'" onclick="clicMontant('+o.montant+',this)" title="Cliquer pour copier / filtrer">'+
-        (o.montant<0?"-":"+")+fmtMontant(am)+'</span></td>'+
+      '<td class="c-type">'+tag+'</td>'+
+      '<td class="c-mont">'+cellDeb+'</td>'+
+      '<td class="c-mont">'+cellCred+'</td>'+
+      '<td class="c-act"><button class="toggle-ec '+(o.ecarte?"on":"")+'" onclick="toggleEcarte('+o.id+')" title="'+(o.ecarte?"Réintégrer dans la recherche":"Mettre de côté (sortir de la recherche)")+'">'+(o.ecarte?"⏸":"○")+'</button></td>'+
     '</tr>';
   }).join("");
 }
 
+function toggleEcarte(id){
+  const o=operations.find(x=>x.id===id);if(!o)return;
+  o.ecarte=!o.ecarte;o.ecarteAuto=false;
+  toast(o.ecarte?"Ligne mise de côté":"Ligne réintégrée");
+  render();
+}
+function ecarterVirements(){
+  let n=0;operations.forEach(o=>{if(o.type==="virement"&&!o.ecarte){o.ecarte=true;n++;}});
+  toast(n?n+" virement(s) mis de côté":"Aucun virement à écarter");render();
+}
+function reintegrerTout(){
+  operations.forEach(o=>o.ecarte=false);toast("Toutes les lignes réintégrées");render();
+}
+
 function clicMontant(val,el){
   const am=Math.abs(val);
-  // copier
   const txt=am.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
   navigator.clipboard&&navigator.clipboard.writeText(txt).catch(()=>{});
   el.classList.add("copie");setTimeout(()=>el.classList.remove("copie"),600);
-  // filtrer : re-clic sur le même montant annule
-  if(montantClique!=null && Math.abs(Math.abs(montantClique)-am)<0.005){
-    montantClique=null;toast("Filtre montant retiré");
-  }else{
-    montantClique=am;toast("Copié "+txt+" € · "+operations.filter(o=>Math.abs(Math.abs(o.montant)-am)<0.005).length+" ligne(s)");
+  if(montantClique!=null&&Math.abs(Math.abs(montantClique)-am)<0.005){montantClique=null;toast("Filtre montant retiré");}
+  else{
+    const nb=operationsBase().filter(o=>Math.abs(Math.abs(o.montant)-am)<0.005).length;
+    montantClique=am;toast("Copié "+txt+" € · "+nb+" ligne(s) trouvée(s)");
   }
   render();
+}
+function operationsBase(){
+  // pour le compteur du clic : compte dans la vue courante (actives par défaut)
+  if(vue==="actives")return operations.filter(o=>!o.ecarte);
+  if(vue==="ecartes")return operations.filter(o=>o.ecarte);
+  return operations;
 }
 function clearMontant(){montantClique=null;render();}
 
 // ── Export ──
-function operationsPourExport(){return operationsFiltrees();}
 function exportCSV(){
-  const list=operationsPourExport();
+  const list=operationsFiltrees();
   if(!list.length){toast("Rien à exporter");return;}
-  let csv="Date;Libellé;Montant;Sens\n";
+  let csv="Date;Libellé;Type;Débit;Crédit;Écarté\n";
   list.forEach(o=>{
     const lib='"'+o.libelle.replace(/"/g,'""')+'"';
-    const mont=o.montant.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2}).replace(/\s| /g,"");
-    csv+=[o.date,lib,mont,o.sens==="debit"?"Débit":"Crédit"].join(";")+"\n";
+    const am=Math.abs(o.montant).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2}).replace(/\s| /g,"");
+    csv+=[o.date,lib,LABEL_TYPE[o.type],o.montant<0?am:"",o.montant>0?am:"",o.ecarte?"Oui":"Non"].join(";")+"\n";
   });
   telecharger(csv,"releve-motors-factory.csv","text/csv;charset=utf-8;");
 }
 function exportExcel(){
-  const list=operationsPourExport();
+  const list=operationsFiltrees();
   if(!list.length){toast("Rien à exporter");return;}
-  let html='<table><tr><th>Date</th><th>Libellé</th><th>Montant</th><th>Sens</th></tr>';
+  let html='<table><tr><th>Date</th><th>Libellé</th><th>Type</th><th>Débit</th><th>Crédit</th><th>Écarté</th></tr>';
   list.forEach(o=>{
-    html+='<tr><td>'+escapeHtml(o.date)+'</td><td>'+escapeHtml(o.libelle)+'</td><td>'+
-      o.montant.toLocaleString("fr-FR",{minimumFractionDigits:2}).replace(/\s| /g,"")+
-      '</td><td>'+(o.sens==="debit"?"Débit":"Crédit")+'</td></tr>';
+    const am=Math.abs(o.montant).toLocaleString("fr-FR",{minimumFractionDigits:2}).replace(/\s| /g,"");
+    html+='<tr><td>'+escapeHtml(o.date)+'</td><td>'+escapeHtml(o.libelle)+'</td><td>'+LABEL_TYPE[o.type]+'</td><td>'+(o.montant<0?am:"")+'</td><td>'+(o.montant>0?am:"")+'</td><td>'+(o.ecarte?"Oui":"Non")+'</td></tr>';
   });
   html+='</table>';
   const doc='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>'+html+'</body></html>';
   telecharger("﻿"+doc,"releve-motors-factory.xls","application/vnd.ms-excel");
 }
 function telecharger(contenu,nom,type){
-  const blob=new Blob([contenu],{type});
-  const url=URL.createObjectURL(blob);
+  const blob=new Blob([contenu],{type});const url=URL.createObjectURL(blob);
   const a=document.createElement("a");a.href=url;a.download=nom;a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-  toast("Export « "+nom+" »");
+  setTimeout(()=>URL.revokeObjectURL(url),1000);toast("Export « "+nom+" »");
 }
 function toutEffacer(){
-  if(operations.length && !confirm("Vider toutes les opérations ?")) return;
+  if(operations.length&&!confirm("Vider toutes les opérations ?"))return;
   operations=[];montantClique=null;recherche="";document.getElementById("recherche").value="";
-  document.getElementById("erreur-zone").innerHTML="";
-  render();
+  document.getElementById("erreur-zone").innerHTML="";render();
 }
 
 render();
