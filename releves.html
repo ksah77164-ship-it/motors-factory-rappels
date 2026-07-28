@@ -272,11 +272,50 @@ async function lirePDF(file){
     pages.push(lignes);
     lignes.forEach(l=>{const t=l.items.map(o=>o.s).join(" ").replace(/\s{2,}/g," ").trim();if(t)toutesLignes.push(t);});
   }
-  // 1) Tentative de lecture par colonnes (relevés type BRED : Débit / Crédit positionnés)
+  // 1) Relevé BNP (en-têtes « D EBIT / C REDIT », montants séparés par espace)
+  const bnp=parseReleveBNP(pages);
+  if(bnp.length>=3) return bnp;
+  // 2) Relevé type BRED (colonnes Débit / Crédit / Valeur positionnées)
   const struct=parseReleveColonnes(pages);
   if(struct.length>=3) return struct;
-  // 2) Sinon, lecture générique ligne par ligne
+  // 3) Sinon, lecture générique ligne par ligne
   return lignesVersOperations(toutesLignes);
+}
+
+// ── Lecture structurée BNP Paribas ──
+const RE_AMT_PIECE=/^\d{1,3}(,\d{2})?$/;
+const RE_DATE_BNP=/^\d{2}\.\d{2}\.\d{2}$/;
+function labelBNP(nature){
+  let s=nature.trim(),desc=s,payer="",m=s.match(/^(.*?)\/FRM\s+(.*)$/i);
+  if(m){desc=m[1];payer=m[2];}else{m=s.match(/^(.*?)\/MOTIF\s+(.*)$/i);if(m){desc=m[1];payer=m[2];}}
+  payer=payer.replace(/\/.*$/,"").replace(/\s+[A-Z0-9]{6,}\S*.*$/,"").replace(/\s{2,}/g," ").trim();
+  desc=desc.replace(/[\/\s]+$/,"").replace(/\s{2,}/g," ").trim();
+  let lib=(payer?desc+" · "+payer:desc);
+  lib=lib.replace(/\s+(ech\/|mdt\/|rum\/|ref\/|rcur\b|id)\b.*$/i,"").replace(/\s*\/(motif|eid|frm|rum|ref)\s*$/i,"");
+  return lib.toLowerCase().replace(/\s{2,}/g," ").trim()||"(opération)";
+}
+function parseReleveBNP(pages){
+  let cols=null,ops=[];
+  for(const lignes of pages){
+    for(const {items} of lignes){
+      const ebit=items.find(o=>o.s==="EBIT"),redit=items.find(o=>o.s==="REDIT");
+      if(ebit&&redit){cols={bound:(ebit.x+redit.x)/2};continue;}
+      if(!cols)continue;
+      const d0=items[0], estDate=d0&&RE_DATE_BNP.test(d0.s)&&d0.x<110;
+      const pieces=items.filter(o=>o.x>=395&&RE_AMT_PIECE.test(o.s));
+      const dec=pieces.find(o=>/,/.test(o.s));
+      if(!(estDate&&dec)) continue;
+      const val=toNombre(pieces.sort((a,b)=>a.x-b.x).map(o=>o.s).join(""));
+      if(isNaN(val)) continue;
+      const sens=dec.x<cols.bound?"debit":"credit";
+      const date=d0.s.replace(/^(\d{2})\.(\d{2})\.(\d{2})$/,"$1.$2/20$3");
+      const nat=items.filter(o=>o.x>=115&&o.x<355&&!RE_DATE_BNP.test(o.s)).map(o=>o.s).join(" ");
+      const lib=labelBNP(nat);
+      if(/^solde|^total|^report|^ancien solde|^nouveau solde/i.test(lib)) continue;
+      ops.push({date, dateISO:dateISO(date), libelle:lib, montant:sens==="debit"?-val:val});
+    }
+  }
+  return ops;
 }
 
 // ── Lecture structurée par colonnes (BRED & similaires) ──
