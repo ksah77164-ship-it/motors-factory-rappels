@@ -98,9 +98,11 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .op-date{font-size:12px;font-weight:800;color:var(--gold2);background:rgba(201,161,90,0.1);border:1px solid var(--line);padding:3px 10px;border-radius:20px;white-space:nowrap;}
 .tag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;letter-spacing:.4px;white-space:nowrap;border:1px solid var(--line);}
 .tag.virement{color:var(--gold2);background:rgba(201,161,90,0.12);}
+.tag.remise{color:var(--credit);background:rgba(140,180,110,0.12);}
 .tag.carte{color:#cbb6e6;background:rgba(150,120,200,0.12);}
 .tag.prelevement{color:#c3a6e0;background:rgba(150,110,200,0.1);}
 .tag.cheque{color:#9dc7e0;background:rgba(90,150,200,0.1);}
+.tag.frais{color:var(--debit);background:rgba(229,143,143,0.1);}
 .tag.especes{color:var(--credit);background:rgba(140,180,110,0.1);}
 .tag.autre{color:var(--muted);background:rgba(140,130,110,0.1);}
 .ecbtn{margin-left:auto;background:var(--bg2);border:1px solid var(--line);border-radius:10px;width:34px;height:30px;cursor:pointer;
@@ -204,7 +206,7 @@ let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dat
 let tri={col:null,asc:true}, nextId=1;
 
 const MOTS_VIREMENT=["virement","vir sepa","vir inst","vir recu","vir reçu","vir emis","vir émis","vir.","vir ","internet","vir web","virt"];
-const LABEL_TYPE={virement:"Virement",carte:"Carte",prelevement:"Prélèvement",cheque:"Chèque",especes:"Espèces",autre:"Autre"};
+const LABEL_TYPE={virement:"Virement",remise:"Remise CB",carte:"Carte",prelevement:"Prélèvement",cheque:"Chèque",frais:"Frais",especes:"Espèces",autre:"Autre"};
 
 function toNombre(txt){if(txt==null)return NaN;let s=String(txt).trim().replace(/\s| |\./g,"").replace(",",".").replace(/[^0-9.\-]/g,"");const n=parseFloat(s);return isNaN(n)?NaN:n;}
 function fmtMontant(n){return n.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";}
@@ -214,14 +216,23 @@ function dateISO(d){const m=String(d).match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d
 
 function detecterType(lib){
   const l=" "+lib.toLowerCase()+" ";
-  if(MOTS_VIREMENT.some(m=>l.includes(m)))return"virement";
-  if(/\b(cb|carte|paiement carte|achat cb|cb\*)\b/.test(l))return"carte";
+  if(/virement|vir sepa|vir inst|\bvir\b/.test(l))return"virement";
+  if(/remise/.test(l))return"remise";
   if(/prlv|prélèvement|prelevement|prlt/.test(l))return"prelevement";
-  if(/chèque|cheque|chq|remise chq/.test(l))return"cheque";
+  if(/chèque|cheque|chq/.test(l))return"cheque";
+  if(/frais|commission|cotisation|impayé|impaye|agios/.test(l))return"frais";
+  if(/\b(cb|carte|paiement carte|achat cb|cb\*)\b/.test(l))return"carte";
   if(/espèce|espece|retrait|dab|distributeur|dépôt|depot/.test(l))return"especes";
   return"autre";
 }
-function finaliser(op){op.id=nextId++;op.type=detecterType(op.libelle);op.sens=op.montant<0?"debit":"credit";op.ecarte=(op.type==="virement");op.ecarteAuto=op.ecarte;return op;}
+// Un virement SORTANT (émis par vous) est mis de côté automatiquement.
+// Un virement REÇU / compensé (paiement d'un client) reste visible : c'est ce que vous cherchez pour vos factures.
+function estVirementSortant(op){
+  if(op.type!=="virement")return false;
+  const l=op.libelle.toLowerCase();
+  return !/reçu|recu|compens|instantané|instantane/.test(l);
+}
+function finaliser(op){op.id=nextId++;op.type=detecterType(op.libelle);op.sens=op.montant<0?"debit":"credit";op.ecarte=estVirementSortant(op);op.ecarteAuto=op.ecarte;return op;}
 
 document.getElementById("file-input").addEventListener("change",e=>{[...e.target.files].forEach(traiterFichier);e.target.value="";});
 const dz=document.getElementById("dropzone");
@@ -252,13 +263,70 @@ async function traiterFichier(file){
 
 async function lirePDF(file){
   if(!window.pdfjsLib)throw new Error("Lecteur PDF non chargé (vérifiez votre connexion).");
-  const buf=await file.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:buf}).promise;let lignes=[];
+  const buf=await file.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  const pages=[];let toutesLignes=[];
   for(let p=1;p<=pdf.numPages;p++){
-    const page=await pdf.getPage(p);const content=await page.getTextContent();const parGroupe={};
-    content.items.forEach(it=>{if(!it.str||!it.str.trim())return;const y=Math.round(it.transform[5]);(parGroupe[y]=parGroupe[y]||[]).push({x:it.transform[4],s:it.str});});
-    Object.keys(parGroupe).map(Number).sort((a,b)=>b-a).forEach(y=>{const ligne=parGroupe[y].sort((a,b)=>a.x-b.x).map(o=>o.s).join(" ").replace(/\s{2,}/g," ").trim();if(ligne)lignes.push(ligne);});
+    const page=await pdf.getPage(p);const content=await page.getTextContent();const g={};
+    content.items.forEach(it=>{if(!it.str||!it.str.trim())return;const y=Math.round(it.transform[5]);(g[y]=g[y]||[]).push({x:it.transform[4],s:it.str});});
+    const lignes=Object.keys(g).map(Number).sort((a,b)=>b-a).map(y=>({items:g[y].sort((a,b)=>a.x-b.x)}));
+    pages.push(lignes);
+    lignes.forEach(l=>{const t=l.items.map(o=>o.s).join(" ").replace(/\s{2,}/g," ").trim();if(t)toutesLignes.push(t);});
   }
-  return lignesVersOperations(lignes);
+  // 1) Tentative de lecture par colonnes (relevés type BRED : Débit / Crédit positionnés)
+  const struct=parseReleveColonnes(pages);
+  if(struct.length>=3) return struct;
+  // 2) Sinon, lecture générique ligne par ligne
+  return lignesVersOperations(toutesLignes);
+}
+
+// ── Lecture structurée par colonnes (BRED & similaires) ──
+const RE_MONTANT_STRICT=/^\d{1,3}(?:\.\d{3})*,\d{2}$/;
+function reconstruireLigne(items){
+  if(!items.length)return"";
+  const parts=items.map(o=>o.s);let txt;
+  if(parts[0].length===1&&/[A-Za-zÀ-ÿ]/.test(parts[0])){txt=parts[0]+(parts[1]||"");for(let i=2;i<parts.length;i++)txt+=" "+parts[i];}
+  else txt=parts.join(" ");
+  return txt.replace(/\s{2,}/g," ").trim();
+}
+const RE_SKIP=/n° de compte|n° de relevé|situation de vos comptes|poste principal|relevé d'opérations|pour information|banque populaire|bred banque|textes relatifs|emballages|vos numéros|envoi précédent|seule la facture|votre |^date$|référence.*débit|solde précédent|solde suivant|nouveau solde|total des mouvements|total des opérations|report à nouveau/i;
+const RE_STOP=/pour information|banque populaire|bred banque|solde suivant|nouveau solde|total des mouvements/i;
+function estBruitLib(t){
+  if(/ecritures|periode du|hors taxe|tva taux/i.test(t))return true;
+  return /^(ref\.|rcur|sepa|ssi|rum|felix|origine|montant\s*:|\(dont|tva taux|periode|ecritures|le \d|vir\s|z0)/i.test(t)
+    ||/frpp|zzz|^fr\d|^ru[0-9]|^\d[\d +.\/-]*$/i.test(t);
+}
+function nettoieMarchand(t){return t.replace(/\s+(le\s+\d.*|cb\.\S+.*|ref\b.*|montant\b.*|origine\b.*|du\s+\d.*|\d{2}\/\d{2}\/\d{4}.*)$/i,"").replace(/\s{2,}/g," ").trim();}
+function construireLibelle(cur){
+  let suite=cur.suite.slice();let primary=cur.primary?cur.primary.toLowerCase():"";
+  if(primary.length<=1&&suite.length){suite[0]=(primary+suite[0]).trim();primary="";}
+  const parts=primary?[primary,...suite]:suite;let desc="",name="";
+  for(const l of parts){const t=(l||"").trim();if(!t||estBruitLib(t))continue;const m=nettoieMarchand(t);if(!/[a-zà-ÿ]{2,}/i.test(m))continue;if(!desc){desc=m.replace(/\s+i$/,"");continue;}name=m.replace(/\s+i$/,"");break;}
+  let lib=desc+(name?" · "+name:"");
+  return lib.replace(/\s+i$/,"").replace(/\s{2,}/g," ").trim()||"(opération)";
+}
+function parseReleveColonnes(pages){
+  let cols=null,ops=[],cur=null;
+  const fin=()=>{if(!cur)return;const lib=construireLibelle(cur);ops.push({date:cur.date,dateISO:dateISO(cur.date),libelle:lib,montant:cur.montant});cur=null;};
+  for(const lignes of pages){
+    for(const ligne of lignes){
+      const items=ligne.items,txt=reconstruireLigne(items);
+      const hasD=items.find(o=>/^Débit$/i.test(o.s)),hasC=items.find(o=>/^Crédit$/i.test(o.s)),hasV=items.find(o=>/^Valeur$/i.test(o.s));
+      if(hasD&&hasC){cols={dX:hasD.x,cX:hasC.x,vX:hasV?hasV.x:hasC.x+70,bound:(hasD.x+hasC.x)/2};continue;}
+      if(!cols)continue;
+      if(RE_SKIP.test(txt)){if(cur&&RE_STOP.test(txt))fin();continue;}
+      const dateTok=items[0]&&/^\d{2}\.\d{2}$/.test(items[0].s)&&items[0].x<130;
+      const amt=items.find(o=>RE_MONTANT_STRICT.test(o.s)&&o.x>=cols.dX-45&&o.x<cols.vX-5);
+      const vd=items.find(o=>/^\d{2}\.\d{2}\.\d{2}$/.test(o.s));
+      if(dateTok&&amt&&vd){
+        fin();
+        const brut=toNombre(amt.s),signe=amt.x<cols.bound?-1:1,annee="20"+vd.s.slice(-2);
+        const labItems=items.filter(o=>o.x>items[0].x+5&&o.x<cols.dX-45&&!/^\d{5,}$/.test(o.s)&&!/^\d{2}\.\d{2}\.\d{2}$/.test(o.s));
+        cur={date:items[0].s+"/"+annee,montant:signe*Math.abs(brut),primary:reconstruireLigne(labItems)||"",suite:[]};
+      }else if(cur){if(txt)cur.suite.push(txt.toLowerCase());}
+    }
+  }
+  fin();
+  return ops;
 }
 function lignesVersOperations(lignes){
   const reMontant=/-?\d{1,3}(?:[ . ]\d{3})*,\d{2}/g;const reDate=/\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\b/;const ops=[];
