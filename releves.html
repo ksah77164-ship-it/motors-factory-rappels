@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motors Factory — Relevés de compte</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:#f0f4ff;min-height:100vh;padding:1rem;color:#1e1b4b;}
+.app{max-width:960px;margin:0 auto;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.logo-text{font-size:17px;font-weight:900;color:#1e1b4b;}
+.logo-sub{font-size:11px;color:#a5b4fc;margin-top:1px;font-weight:600;}
+.link-back{background:#fff;border:none;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:800;color:#6366f1;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 2px 8px rgba(99,102,241,0.2);text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+
+/* Zone de dépôt */
+.dropzone{background:#fff;border:2px dashed #c7d2fe;border-radius:18px;padding:26px 18px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:1rem;}
+.dropzone:hover,.dropzone.drag{border-color:#6366f1;background:#f8f9ff;}
+.dz-icon{font-size:38px;margin-bottom:8px;}
+.dz-title{font-size:15px;font-weight:900;color:#1e1b4b;}
+.dz-sub{font-size:12px;color:#a5b4fc;font-weight:600;margin-top:4px;}
+.dz-formats{font-size:10px;color:#c7d2fe;font-weight:700;margin-top:8px;text-transform:uppercase;letter-spacing:0.5px;}
+
+/* Compteurs */
+.counters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:1rem;}
+.counter{border-radius:16px;padding:12px 8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+.counter-nb{font-size:22px;font-weight:900;line-height:1.1;}
+.counter-label{font-size:10px;font-weight:800;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;}
+.ct{background:#fff;}.ct .counter-nb{color:#1e1b4b;}.ct .counter-label{color:#a5b4fc;}
+.cr{background:linear-gradient(135deg,#fef2f2,#fee2e2);}.cr .counter-nb{color:#dc2626;}.cr .counter-label{color:#f87171;}
+.cc{background:linear-gradient(135deg,#f0fdf4,#dcfce7);}.cc .counter-nb{color:#16a34a;}.cc .counter-label{color:#4ade80;}
+.cs{background:linear-gradient(135deg,#eef2ff,#e0e7ff);}.cs .counter-nb{color:#4f46e5;}.cs .counter-label{color:#a5b4fc;}
+
+/* Barre outils */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:0.8rem;}
+.search{flex:1;min-width:200px;position:relative;}
+.search input{width:100%;background:#fff;border:2px solid #e0e7ff;border-radius:20px;padding:10px 14px 10px 38px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;color:#1e1b4b;}
+.search input:focus{outline:none;border-color:#6366f1;}
+.search-ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#a5b4fc;}
+.filtres{display:flex;gap:6px;flex-wrap:wrap;}
+.filtre{padding:8px 14px;border-radius:20px;border:2px solid transparent;font-size:12px;font-weight:800;cursor:pointer;background:#fff;color:#a5b4fc;font-family:'Nunito',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+.filtre.actif{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+.btn{padding:8px 14px;border-radius:20px;border:none;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+.btn.vert{background:#dcfce7;color:#16a34a;}
+.btn.gris{background:#fff;color:#6366f1;}
+.btn.rouge{background:#fee2e2;color:#dc2626;}
+
+.hint{font-size:12px;color:#a5b4fc;font-weight:700;margin-bottom:0.6rem;}
+.erreur{background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:10px 12px;font-size:13px;color:#dc2626;margin-bottom:10px;font-weight:700;}
+.info{background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:10px;padding:8px 12px;font-size:12px;color:#4f46e5;margin-bottom:10px;font-weight:700;}
+
+/* Tableau */
+.table-wrap{background:#fff;border-radius:16px;box-shadow:0 4px 14px rgba(0,0,0,0.06);overflow:hidden;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{background:#f8f9ff;color:#a5b4fc;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;font-size:10px;padding:10px 12px;text-align:left;position:sticky;top:0;cursor:pointer;user-select:none;white-space:nowrap;}
+thead th:hover{color:#6366f1;}
+thead th.num{text-align:right;}
+tbody td{padding:9px 12px;border-top:1px solid #f0f4ff;vertical-align:top;}
+tbody tr:hover{background:#f8f9ff;}
+.c-date{white-space:nowrap;color:#6366f1;font-weight:800;font-size:12px;}
+.c-lib{color:#1e1b4b;font-weight:700;min-width:180px;}
+.c-mont{text-align:right;white-space:nowrap;font-weight:900;font-variant-numeric:tabular-nums;}
+.montant{cursor:pointer;border-radius:6px;padding:2px 6px;display:inline-block;transition:background 0.1s;}
+.montant:hover{background:#e0e7ff;}
+.montant.debit{color:#dc2626;}
+.montant.credit{color:#16a34a;}
+.montant.copie{background:#fef3c7 !important;}
+mark{background:#fde68a;color:#1e1b4b;border-radius:3px;padding:0 2px;}
+.vide{text-align:center;padding:2.5rem 1rem;color:#c7d2fe;font-size:14px;font-weight:800;}
+.row-actif{background:#eef2ff !important;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e1b4b;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:opacity 0.2s,transform 0.2s;z-index:200;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+.pill-actif{display:inline-flex;align-items:center;gap:6px;background:#fef3c7;color:#d97706;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:800;margin-bottom:8px;}
+.pill-actif button{background:none;border:none;color:#d97706;font-weight:900;cursor:pointer;font-size:14px;line-height:1;}
+.loading{display:inline-block;font-weight:800;color:#6366f1;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-icon">📄</div>
+      <div><div class="logo-text">Motors Factory</div><div class="logo-sub">Relevés de compte</div></div>
+    </div>
+    <a class="link-back" href="index.html">↩ Rappels</a>
+  </div>
+
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="file-input" accept=".pdf,.csv,.txt,.tsv" style="display:none" multiple>
+    <div class="dz-icon">📥</div>
+    <div class="dz-title" id="dz-title">Glissez votre relevé ici ou cliquez pour le télécharger</div>
+    <div class="dz-sub">Le fichier reste sur votre appareil — rien n'est envoyé sur internet</div>
+    <div class="dz-formats">PDF · CSV · TXT</div>
+  </div>
+
+  <div id="erreur-zone"></div>
+
+  <div class="counters">
+    <div class="counter ct"><div class="counter-nb" id="c-nb">—</div><div class="counter-label">Opérations</div></div>
+    <div class="counter cr"><div class="counter-nb" id="c-debit">—</div><div class="counter-label">Débits</div></div>
+    <div class="counter cc"><div class="counter-nb" id="c-credit">—</div><div class="counter-label">Crédits</div></div>
+    <div class="counter cs"><div class="counter-nb" id="c-solde">—</div><div class="counter-label">Solde</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search">
+      <span class="search-ico">🔍</span>
+      <input type="text" id="recherche" placeholder="Chercher un montant (ex : 150 ou 150,00) ou un libellé...">
+    </div>
+    <div class="filtres">
+      <button class="filtre actif" data-f="tous" onclick="setFiltre('tous',this)">Tous</button>
+      <button class="filtre" data-f="debit" onclick="setFiltre('debit',this)">🔴 Débits</button>
+      <button class="filtre" data-f="credit" onclick="setFiltre('credit',this)">🟢 Crédits</button>
+    </div>
+    <button class="btn vert" onclick="exportCSV()">⬇ Export CSV</button>
+    <button class="btn gris" onclick="exportExcel()">⬇ Excel</button>
+    <button class="btn rouge" onclick="toutEffacer()">✕ Vider</button>
+  </div>
+
+  <div class="hint">💡 Astuce : cliquez sur un <b>montant</b> pour le copier et n'afficher que les lignes de ce montant.</div>
+  <div id="pill-zone"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-sort="date" onclick="trier('date')">Date</th>
+          <th data-sort="lib" onclick="trier('lib')">Libellé</th>
+          <th class="num" data-sort="montant" onclick="trier('montant')">Montant</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="3"><div class="vide">Aucune opération pour l'instant.<br>Chargez un relevé pour commencer 📄</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}
+
+let operations=[];      // {date, dateISO, libelle, montant, sens}
+let filtre="tous";
+let recherche="";
+let montantClique=null;  // valeur numérique filtrée par clic
+let tri={col:null,asc:true};
+
+// ── Utilitaires format FR ──
+function toNombre(txt){
+  if(txt==null) return NaN;
+  let s=String(txt).trim().replace(/\s| |\./g,"").replace(",",".").replace(/[^0-9.\-]/g,"");
+  const n=parseFloat(s);
+  return isNaN(n)?NaN:n;
+}
+function fmtMontant(n){
+  return n.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1600);}
+
+function dateISO(d){
+  // d au format jj/mm/aaaa ou jj/mm/aa
+  const m=String(d).match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if(!m) return "";
+  let[_,j,mo,a]=m;
+  if(a.length===2) a="20"+a;
+  return a+"-"+mo.padStart(2,"0")+"-"+j.padStart(2,"0");
+}
+
+// ── Lecture des fichiers ──
+document.getElementById("file-input").addEventListener("change",e=>{
+  [...e.target.files].forEach(traiterFichier);
+  e.target.value="";
+});
+const dz=document.getElementById("dropzone");
+dz.addEventListener("click",()=>document.getElementById("file-input").click());
+dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag");});
+dz.addEventListener("dragleave",()=>dz.classList.remove("drag"));
+dz.addEventListener("drop",e=>{
+  e.preventDefault();dz.classList.remove("drag");
+  [...e.dataTransfer.files].forEach(traiterFichier);
+});
+
+function erreur(msg){document.getElementById("erreur-zone").innerHTML='<div class="erreur">'+escapeHtml(msg)+'</div>';}
+function infoMsg(msg){document.getElementById("erreur-zone").innerHTML='<div class="info">'+msg+'</div>';}
+
+async function traiterFichier(file){
+  document.getElementById("erreur-zone").innerHTML="";
+  document.getElementById("dz-title").innerHTML='<span class="loading">⏳ Lecture de '+escapeHtml(file.name)+'...</span>';
+  try{
+    const nom=file.name.toLowerCase();
+    let ajout=[];
+    if(nom.endsWith(".pdf")){
+      ajout=await lirePDF(file);
+    }else{
+      const txt=await file.text();
+      ajout=lireCSV(txt);
+    }
+    if(!ajout.length){
+      erreur("Aucune opération détectée dans « "+file.name+" ». Si c'est un PDF scanné (image), exportez plutôt le relevé en CSV depuis votre banque.");
+    }else{
+      operations=operations.concat(ajout);
+      infoMsg("✅ "+ajout.length+" opération(s) importée(s) depuis <b>"+escapeHtml(file.name)+"</b>.");
+    }
+  }catch(e){
+    erreur("Impossible de lire « "+file.name+" » : "+(e.message||e));
+  }
+  document.getElementById("dz-title").textContent="Glissez un autre relevé ou cliquez pour ajouter";
+  render();
+}
+
+// ── PDF : extraction texte ligne par ligne ──
+async function lirePDF(file){
+  if(!window.pdfjsLib) throw new Error("Lecteur PDF non chargé (vérifiez votre connexion).");
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  let lignes=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const content=await page.getTextContent();
+    // Regrouper les fragments par ligne selon leur position verticale (y)
+    const parGroupe={};
+    content.items.forEach(it=>{
+      if(!it.str||!it.str.trim()) return;
+      const y=Math.round(it.transform[5]);
+      (parGroupe[y]=parGroupe[y]||[]).push({x:it.transform[4],s:it.str});
+    });
+    Object.keys(parGroupe).map(Number).sort((a,b)=>b-a).forEach(y=>{
+      const ligne=parGroupe[y].sort((a,b)=>a.x-b.x).map(o=>o.s).join(" ").replace(/\s{2,}/g," ").trim();
+      if(ligne) lignes.push(ligne);
+    });
+  }
+  return lignesVersOperations(lignes);
+}
+
+// Transforme des lignes de texte brut en opérations
+function lignesVersOperations(lignes){
+  const reMontant=/-?\d{1,3}(?:[ . ]\d{3})*,\d{2}/g;
+  const reDate=/\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\b/;
+  const ops=[];
+  lignes.forEach(ligne=>{
+    const montants=ligne.match(reMontant);
+    if(!montants) return;
+    const md=ligne.match(reDate);
+    // on ignore les lignes de solde / total récapitulatif éventuel ? on garde tout, l'utilisateur filtre.
+    // Le dernier montant de la ligne = montant de l'opération (colonne débit/crédit ou solde)
+    const brut=montants[montants.length-1];
+    const val=toNombre(brut);
+    if(isNaN(val)) return;
+    // libellé = ligne sans la date ni les montants
+    let lib=ligne.replace(reDate,"").replace(reMontant,"").replace(/\s{2,}/g," ").trim();
+    lib=lib.replace(/^[\-–•\s]+/,"").trim();
+    if(!lib && !md) return; // ligne sans contexte utile
+    const sens=val<0?"debit":"credit";
+    ops.push({
+      date: md?md[1]:"",
+      dateISO: md?dateISO(md[1]):"",
+      libelle: lib||"(sans libellé)",
+      montant: val,
+      sens
+    });
+  });
+  return ops;
+}
+
+// ── CSV / TXT ──
+function detecterSep(txt){
+  const l=txt.split(/\r?\n/).find(x=>x.trim());
+  if(!l) return ";";
+  const c={";":0,",":0,"\t":0,"|":0};
+  for(const ch of l) if(ch in c) c[ch]++;
+  return Object.keys(c).sort((a,b)=>c[b]-c[a])[0];
+}
+function parseCSVLigne(l,sep){
+  const out=[];let cur="",q=false;
+  for(let i=0;i<l.length;i++){
+    const ch=l[i];
+    if(q){ if(ch==='"'){ if(l[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+    else{ if(ch==='"') q=true; else if(ch===sep){out.push(cur);cur="";} else cur+=ch; }
+  }
+  out.push(cur);
+  return out.map(s=>s.trim());
+}
+function lireCSV(txt){
+  const sep=detecterSep(txt);
+  const lignes=txt.split(/\r?\n/).filter(l=>l.trim());
+  if(!lignes.length) return [];
+  const rows=lignes.map(l=>parseCSVLigne(l,sep));
+  // Chercher une ligne d'en-tête
+  const norm=s=>s.toLowerCase().replace(/[^a-z]/g,"");
+  let entete=-1,cols={};
+  for(let i=0;i<Math.min(rows.length,15);i++){
+    const h=rows[i].map(norm);
+    const idxDate=h.findIndex(x=>x.includes("date"));
+    const idxLib=h.findIndex(x=>x.includes("libell")||x.includes("libelle")||x.includes("nature")||x.includes("operation")||x.includes("description")||x.includes("intitule")||x.includes("motif"));
+    const idxMont=h.findIndex(x=>x==="montant"||x.includes("montant")||x.includes("valeur"));
+    const idxDeb=h.findIndex(x=>x.includes("debit"));
+    const idxCred=h.findIndex(x=>x.includes("credit"));
+    if(idxDate>=0 && (idxMont>=0||idxDeb>=0||idxCred>=0||idxLib>=0)){
+      entete=i;cols={idxDate,idxLib,idxMont,idxDeb,idxCred};break;
+    }
+  }
+  const ops=[];
+  if(entete>=0){
+    for(let i=entete+1;i<rows.length;i++){
+      const r=rows[i];if(!r.length) continue;
+      const dateTxt=cols.idxDate>=0?r[cols.idxDate]:"";
+      const lib=cols.idxLib>=0?r[cols.idxLib]:"";
+      let val=NaN,sens="";
+      if(cols.idxMont>=0 && r[cols.idxMont]!=null && r[cols.idxMont]!==""){
+        val=toNombre(r[cols.idxMont]);
+      }
+      if(isNaN(val) && cols.idxDeb>=0 && r[cols.idxDeb]){ const d=toNombre(r[cols.idxDeb]); if(!isNaN(d)) val=-Math.abs(d); }
+      if(isNaN(val) && cols.idxCred>=0 && r[cols.idxCred]){ const c=toNombre(r[cols.idxCred]); if(!isNaN(c)) val=Math.abs(c); }
+      if(isNaN(val)) continue;
+      if(!dateTxt && !lib && val===0) continue;
+      ops.push({date:dateTxt,dateISO:dateISO(dateTxt),libelle:lib||"(sans libellé)",montant:val,sens:val<0?"debit":"credit"});
+    }
+  }else{
+    // Pas d'en-tête reconnu → on retombe sur l'extraction générique ligne par ligne
+    return lignesVersOperations(lignes.map(r=>r.join(" ")));
+  }
+  return ops;
+}
+
+// ── Recherche / filtre / affichage ──
+document.getElementById("recherche").addEventListener("input",e=>{recherche=e.target.value.trim();render();});
+
+function setFiltre(f,btn){
+  filtre=f;
+  document.querySelectorAll(".filtre").forEach(b=>b.classList.remove("actif"));
+  btn.classList.add("actif");
+  render();
+}
+function trier(col){
+  if(tri.col===col) tri.asc=!tri.asc; else {tri.col=col;tri.asc=true;}
+  render();
+}
+
+function operationsFiltrees(){
+  let list=operations.slice();
+  if(filtre!=="tous") list=list.filter(o=>o.sens===filtre);
+  if(montantClique!=null) list=list.filter(o=>Math.abs(Math.abs(o.montant)-Math.abs(montantClique))<0.005);
+  if(recherche){
+    const rNum=toNombre(recherche);
+    const rTxt=recherche.toLowerCase();
+    list=list.filter(o=>{
+      const parLib=o.libelle.toLowerCase().includes(rTxt) || o.date.includes(recherche);
+      let parMont=false;
+      if(!isNaN(rNum) && /[0-9]/.test(recherche)){
+        const am=Math.abs(o.montant);
+        // correspond si le montant contient le nombre tapé (ex "15" trouve 15,00 / 150,00 / 1 150,00)
+        const montStr=am.toLocaleString("fr-FR",{minimumFractionDigits:2}).replace(/\s| /g,"");
+        const recStr=recherche.replace(/\s| /g,"").replace(".",",");
+        parMont = Math.abs(am-Math.abs(rNum))<0.005 || montStr.includes(recStr);
+      }
+      return parLib||parMont;
+    });
+  }
+  if(tri.col){
+    list.sort((a,b)=>{
+      let va,vb;
+      if(tri.col==="date"){va=a.dateISO||"";vb=b.dateISO||"";}
+      else if(tri.col==="montant"){va=a.montant;vb=b.montant;}
+      else{va=a.libelle.toLowerCase();vb=b.libelle.toLowerCase();}
+      if(va<vb) return tri.asc?-1:1;
+      if(va>vb) return tri.asc?1:-1;
+      return 0;
+    });
+  }
+  return list;
+}
+
+function surligner(txt){
+  if(!recherche) return escapeHtml(txt);
+  try{
+    const r=recherche.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    return escapeHtml(txt).replace(new RegExp("("+r+")","ig"),"<mark>$1</mark>");
+  }catch(e){return escapeHtml(txt);}
+}
+
+function render(){
+  const list=operationsFiltrees();
+  // compteurs (sur tout, hors filtre d'affichage)
+  const deb=operations.filter(o=>o.montant<0).reduce((s,o)=>s+o.montant,0);
+  const cred=operations.filter(o=>o.montant>0).reduce((s,o)=>s+o.montant,0);
+  document.getElementById("c-nb").textContent=operations.length;
+  document.getElementById("c-debit").textContent=operations.length?fmtMontant(deb):"—";
+  document.getElementById("c-credit").textContent=operations.length?fmtMontant(cred):"—";
+  document.getElementById("c-solde").textContent=operations.length?fmtMontant(deb+cred):"—";
+
+  // pill montant cliqué
+  const pz=document.getElementById("pill-zone");
+  if(montantClique!=null){
+    pz.innerHTML='<span class="pill-actif">Filtre montant : '+fmtMontant(Math.abs(montantClique))+' <button onclick="clearMontant()">✕</button></span>';
+  }else pz.innerHTML="";
+
+  const tb=document.getElementById("tbody");
+  if(!operations.length){
+    tb.innerHTML='<tr><td colspan="3"><div class="vide">Aucune opération pour l\'instant.<br>Chargez un relevé pour commencer 📄</div></td></tr>';
+    return;
+  }
+  if(!list.length){
+    tb.innerHTML='<tr><td colspan="3"><div class="vide">Aucun résultat pour cette recherche 🔍</div></td></tr>';
+    return;
+  }
+  tb.innerHTML=list.map(o=>{
+    const am=Math.abs(o.montant);
+    return '<tr>'+
+      '<td class="c-date">'+surligner(o.date||"—")+'</td>'+
+      '<td class="c-lib">'+surligner(o.libelle)+'</td>'+
+      '<td class="c-mont"><span class="montant '+o.sens+'" onclick="clicMontant('+o.montant+',this)" title="Cliquer pour copier / filtrer">'+
+        (o.montant<0?"-":"+")+fmtMontant(am)+'</span></td>'+
+    '</tr>';
+  }).join("");
+}
+
+function clicMontant(val,el){
+  const am=Math.abs(val);
+  // copier
+  const txt=am.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  navigator.clipboard&&navigator.clipboard.writeText(txt).catch(()=>{});
+  el.classList.add("copie");setTimeout(()=>el.classList.remove("copie"),600);
+  // filtrer : re-clic sur le même montant annule
+  if(montantClique!=null && Math.abs(Math.abs(montantClique)-am)<0.005){
+    montantClique=null;toast("Filtre montant retiré");
+  }else{
+    montantClique=am;toast("Copié "+txt+" € · "+operations.filter(o=>Math.abs(Math.abs(o.montant)-am)<0.005).length+" ligne(s)");
+  }
+  render();
+}
+function clearMontant(){montantClique=null;render();}
+
+// ── Export ──
+function operationsPourExport(){return operationsFiltrees();}
+function exportCSV(){
+  const list=operationsPourExport();
+  if(!list.length){toast("Rien à exporter");return;}
+  let csv="Date;Libellé;Montant;Sens\n";
+  list.forEach(o=>{
+    const lib='"'+o.libelle.replace(/"/g,'""')+'"';
+    const mont=o.montant.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2}).replace(/\s| /g,"");
+    csv+=[o.date,lib,mont,o.sens==="debit"?"Débit":"Crédit"].join(";")+"\n";
+  });
+  telecharger(csv,"releve-motors-factory.csv","text/csv;charset=utf-8;");
+}
+function exportExcel(){
+  const list=operationsPourExport();
+  if(!list.length){toast("Rien à exporter");return;}
+  let html='<table><tr><th>Date</th><th>Libellé</th><th>Montant</th><th>Sens</th></tr>';
+  list.forEach(o=>{
+    html+='<tr><td>'+escapeHtml(o.date)+'</td><td>'+escapeHtml(o.libelle)+'</td><td>'+
+      o.montant.toLocaleString("fr-FR",{minimumFractionDigits:2}).replace(/\s| /g,"")+
+      '</td><td>'+(o.sens==="debit"?"Débit":"Crédit")+'</td></tr>';
+  });
+  html+='</table>';
+  const doc='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>'+html+'</body></html>';
+  telecharger("﻿"+doc,"releve-motors-factory.xls","application/vnd.ms-excel");
+}
+function telecharger(contenu,nom,type){
+  const blob=new Blob([contenu],{type});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download=nom;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast("Export « "+nom+" »");
+}
+function toutEffacer(){
+  if(operations.length && !confirm("Vider toutes les opérations ?")) return;
+  operations=[];montantClique=null;recherche="";document.getElementById("recherche").value="";
+  document.getElementById("erreur-zone").innerHTML="";
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
