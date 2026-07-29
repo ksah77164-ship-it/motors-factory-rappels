@@ -299,17 +299,17 @@ async function lirePDF(file){
 // ── Lecture structurée BNP Paribas ──
 const RE_AMT_PIECE=/^\d{1,3}(,\d{2})?$/;
 const RE_DATE_BNP=/^\d{2}\.\d{2}\.\d{2}$/;
-function labelBNP(nature){
-  let s=nature.trim(),desc=s,payer="",m=s.match(/^(.*?)\/FRM\s+(.*)$/i);
-  if(m){desc=m[1];payer=m[2];}else{m=s.match(/^(.*?)\/MOTIF\s+(.*)$/i);if(m){desc=m[1];payer=m[2];}}
-  payer=payer.replace(/\/.*$/,"").replace(/\s+[A-Z0-9]{6,}\S*.*$/,"").replace(/\s{2,}/g," ").trim();
-  desc=desc.replace(/[\/\s]+$/,"").replace(/\s{2,}/g," ").trim();
-  let lib=(payer?desc+" · "+payer:desc);
-  lib=lib.replace(/\s+(ech\/|mdt\/|rum\/|ref\/|rcur\b|id)\b.*$/i,"").replace(/\s*\/(motif|eid|frm|rum|ref)\s*$/i,"");
-  return lib.toLowerCase().replace(/\s{2,}/g," ").trim()||"(opération)";
+// Lignes d'en-tête / pied de page BNP à ne PAS inclure dans le libellé
+const RE_SKIP_BNP=/votre compte courant|periode du|raison sociale|^rib\b|^iban\b|^bic\b|bnp paribas|bnpparibas|service gratuit|mabanque|garantie des depots|garantiedesdepots|sommes deposees|resolution|autres operations|amortissements de prets|prelevements, amortiss|comptable\s+valeur|^comptable\b|releve n|paris gambetta|motors factory|villeneuve|jean jaures|orias|rcs paris|^p\. \d|^solde|ancien solde|nouveau solde|^total\b|sous total|^d ate\b|^virements\b|^prelevements\b|^remises de\b|^paiements d|^operations diverses|^commissions|^cartes\b|^cheques\b|^effets\b|exonérée|exoneree|numéro client|numero client|réclamation|reclamation/i;
+function nettoieFullBNP(t){
+  return t.replace(/\/frm\b/gi," ").replace(/\/(motif|eid)\b/gi," ").replace(/\s{2,}/g," ").trim();
 }
 function parseReleveBNP(pages){
-  let cols=null,ops=[];
+  let cols=null,ops=[],cur=null;
+  const fin=()=>{ if(!cur)return;
+    const full=nettoieFullBNP([cur.nature,...cur.suite].join(" ")).toLowerCase().trim();
+    if(full && !/^solde|^total|^report/.test(full)) ops.push({date:cur.date,dateISO:dateISO(cur.date),libelle:full||"(opération)",montant:cur.montant});
+    cur=null; };
   for(const lignes of pages){
     for(const {items} of lignes){
       const ebit=items.find(o=>o.s==="EBIT"),redit=items.find(o=>o.s==="REDIT");
@@ -318,17 +318,26 @@ function parseReleveBNP(pages){
       const d0=items[0], estDate=d0&&RE_DATE_BNP.test(d0.s)&&d0.x<110;
       const pieces=items.filter(o=>o.x>=395&&RE_AMT_PIECE.test(o.s));
       const dec=pieces.find(o=>/,/.test(o.s));
-      if(!(estDate&&dec)) continue;
-      const val=toNombre(pieces.sort((a,b)=>a.x-b.x).map(o=>o.s).join(""));
-      if(isNaN(val)) continue;
-      const sens=dec.x<cols.bound?"debit":"credit";
-      const date=d0.s.replace(/^(\d{2})\.(\d{2})\.(\d{2})$/,"$1.$2/20$3");
-      const nat=items.filter(o=>o.x>=115&&o.x<355&&!RE_DATE_BNP.test(o.s)).map(o=>o.s).join(" ");
-      const lib=labelBNP(nat);
-      if(/^solde|^total|^report|^ancien solde|^nouveau solde/i.test(lib)) continue;
-      ops.push({date, dateISO:dateISO(date), libelle:lib, montant:sens==="debit"?-val:val});
+      if(estDate&&dec){
+        fin();
+        const val=toNombre(pieces.sort((a,b)=>a.x-b.x).map(o=>o.s).join(""));
+        if(isNaN(val)){cur=null;continue;}
+        const sens=dec.x<cols.bound?"debit":"credit";
+        const date=d0.s.replace(/^(\d{2})\.(\d{2})\.(\d{2})$/,"$1.$2/20$3");
+        const nat=items.filter(o=>o.x>=115&&o.x<355&&!RE_DATE_BNP.test(o.s)).map(o=>o.s).join(" ");
+        cur={date, montant:sens==="debit"?-val:val, nature:nat, suite:[]};
+      }else if(cur){
+        // On n'ajoute que les lignes de la colonne « Nature » (x≈120) → exclut en-têtes (x70) et pavé légal (x50)
+        const x0=items[0]?items[0].x:0;
+        if(x0<114||x0>130) continue;
+        const txt=items.map(o=>o.s).join(" ").replace(/\s{2,}/g," ").trim();
+        if(!txt||RE_SKIP_BNP.test(txt)) continue;
+        const cont=items.filter(o=>o.x<395&&!RE_DATE_BNP.test(o.s)).map(o=>o.s).join(" ").trim();
+        if(cont) cur.suite.push(cont);
+      }
     }
   }
+  fin();
   return ops;
 }
 
@@ -352,10 +361,10 @@ function nettoieMarchand(t){return t.replace(/\s+(le\s+\d.*|cb\.\S+.*|ref\b.*|mo
 function construireLibelle(cur){
   let suite=cur.suite.slice();let primary=cur.primary?cur.primary.toLowerCase():"";
   if(primary.length<=1&&suite.length){suite[0]=(primary+suite[0]).trim();primary="";}
-  const parts=primary?[primary,...suite]:suite;let desc="",name="";
-  for(const l of parts){const t=(l||"").trim();if(!t||estBruitLib(t))continue;const m=nettoieMarchand(t);if(!/[a-zà-ÿ]{2,}/i.test(m))continue;if(!desc){desc=m.replace(/\s+i$/,"");continue;}name=m.replace(/\s+i$/,"");break;}
-  let lib=desc+(name?" · "+name:"");
-  return lib.replace(/\s+i$/,"").replace(/\s{2,}/g," ").trim()||"(opération)";
+  const parts=(primary?[primary,...suite]:suite).map(s=>(s||"").trim()).filter(Boolean);
+  // Libellé complet : on garde tout le texte de l'opération (nom client, véhicule, n° facture…)
+  let lib=parts.join(" ").replace(/\s+i(?=\s|$)/g," ").replace(/\s{2,}/g," ").trim();
+  return lib||"(opération)";
 }
 function parseReleveColonnes(pages){
   let cols=null,ops=[],cur=null;
