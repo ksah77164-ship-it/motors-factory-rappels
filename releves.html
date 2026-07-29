@@ -160,6 +160,7 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 .m-select:focus{outline:none;border-color:var(--gold);}
 .sens-toggle{display:flex;gap:8px;}
 .sens-toggle .filtre{flex:1;text-align:center;}
+.sel-inline{width:auto;flex:1;min-width:140px;padding:9px 12px;font-size:13px;font-weight:700;border-radius:22px;}
 
 /* Connexion */
 .login-overlay{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:18px;
@@ -230,6 +231,25 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
     </div>
   </div>
 
+  <div class="rowbtns">
+    <span class="grp-label">Période</span>
+    <select id="sel-annee" class="m-select sel-inline" onchange="setAnnee(this.value)"><option value="toutes">Toutes les années</option></select>
+    <select id="sel-mois" class="m-select sel-inline" onchange="setMois(this.value)">
+      <option value="tous">Tous les mois</option>
+      <option value="01">Janvier</option>
+      <option value="02">Février</option>
+      <option value="03">Mars</option>
+      <option value="04">Avril</option>
+      <option value="05">Mai</option>
+      <option value="06">Juin</option>
+      <option value="07">Juillet</option>
+      <option value="08">Août</option>
+      <option value="09">Septembre</option>
+      <option value="10">Octobre</option>
+      <option value="11">Novembre</option>
+      <option value="12">Décembre</option>
+    </select>
+  </div>
   <div class="rowbtns">
     <span class="grp-label">Vue</span>
     <button class="filtre actif" data-v="actives" onclick="setVue('actives',this)">✔ Actives</button>
@@ -330,7 +350,7 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}
 
 let operations=[];
-let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dateAu="", typeFiltre="tous", pointage="toutes";
+let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dateAu="", typeFiltre="tous", pointage="toutes", filtreAnnee="toutes", filtreMois="tous";
 let tri={col:null,asc:true}, nextId=1, dernierSupprime=null;
 
 // ── Synchronisation cloud (Google Apps Script + Google Sheet) ──
@@ -574,6 +594,15 @@ document.getElementById("date-au").addEventListener("change",e=>{dateAu=e.target
 function setSens(f,btn){sens=f;document.querySelectorAll('[data-f]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
 function setVue(v,btn){vue=v;document.querySelectorAll('[data-v]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
 function setPointage(p,btn){pointage=p;document.querySelectorAll('[data-p]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
+function setAnnee(v){filtreAnnee=v;render();}
+function setMois(v){filtreMois=v;render();}
+function majSelectAnnee(){
+  const sel=document.getElementById("sel-annee");if(!sel)return;
+  const annees=[...new Set(operations.map(o=>(o.dateISO||"").slice(0,4)).filter(a=>/^\d{4}$/.test(a)))].sort((a,b)=>b-a);
+  if(filtreAnnee!=="toutes"&&!annees.includes(filtreAnnee))filtreAnnee="toutes";
+  sel.innerHTML='<option value="toutes">Toutes les années</option>'+annees.map(a=>'<option value="'+a+'">'+a+'</option>').join("");
+  sel.value=filtreAnnee;
+}
 function trier(col){if(tri.col===col)tri.asc=!tri.asc;else{tri.col=col;tri.asc=true;}render();}
 
 function operationsFiltrees(){
@@ -582,6 +611,8 @@ function operationsFiltrees(){
   if(sens!=="tous")list=list.filter(o=>o.sens===sens);
   if(typeFiltre!=="tous")list=list.filter(o=>o.type===typeFiltre);
   if(pointage==="non")list=list.filter(o=>!o.pointe);else if(pointage==="oui")list=list.filter(o=>o.pointe);
+  if(filtreAnnee!=="toutes")list=list.filter(o=>(o.dateISO||"").slice(0,4)===filtreAnnee);
+  if(filtreMois!=="tous")list=list.filter(o=>(o.dateISO||"").slice(5,7)===filtreMois);
   if(dateDu)list=list.filter(o=>o.dateISO&&o.dateISO>=dateDu);
   if(dateAu)list=list.filter(o=>o.dateISO&&o.dateISO<=dateAu);
   if(montantClique!=null)list=list.filter(o=>Math.abs(Math.abs(o.montant)-Math.abs(montantClique))<0.005);
@@ -625,6 +656,8 @@ function render(){
   let chips='<span class="grp-label">Type</span><button class="filtre '+(typeFiltre==="tous"?"actif":"")+'" onclick="setType(\'tous\')">Tous</button>';
   presents.forEach(t=>{chips+='<button class="filtre '+(typeFiltre===t?"actif":"")+'" onclick="setType(\''+t+'\')">'+LABEL_TYPE[t]+' <span style="opacity:.65">'+compte(t)+'</span></button>';});
   document.getElementById("type-filtres").innerHTML=chips;
+  majSelectAnnee();
+  const selM=document.getElementById("sel-mois");if(selM)selM.value=filtreMois;
 
   const list=operationsFiltrees();const el=document.getElementById("liste");
   if(!operations.length){el.innerHTML='<div class="vide">Aucune opération pour l\'instant.<br>Chargez un relevé pour commencer 📄</div>';return;}
