@@ -149,9 +149,39 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 .modal-status{font-size:12.5px;font-weight:700;margin-top:12px;line-height:1.5;min-height:18px;}
 .modal-status.ok{color:var(--credit);} .modal-status.err{color:var(--debit);} .modal-status.info{color:var(--champ);}
 .modal-close{width:100%;margin-top:14px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;}
+.m-select{width:100%;background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--cream);color-scheme:dark;}
+.m-select:focus{outline:none;border-color:var(--gold);}
+.sens-toggle{display:flex;gap:8px;}
+.sens-toggle .filtre{flex:1;text-align:center;}
+
+/* Connexion */
+.login-overlay{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:18px;
+  background:radial-gradient(1200px 600px at 50% -10%,#1a1611 0%,var(--bg) 55%);}
+.login-box{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line-strong);border-radius:22px;padding:26px 22px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.login-logo{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:20px;}
+.login-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:var(--champ);text-align:center;margin-bottom:18px;}
+.login-lbl{display:block;font-size:10px;font-weight:800;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.login-overlay input{width:100%;background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--cream);margin-bottom:14px;}
+.login-overlay input:focus{outline:none;border-color:var(--gold);}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;}
+.login-err{display:none;background:rgba(229,143,143,0.12);border:1px solid rgba(229,143,143,0.4);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--debit);font-weight:700;text-align:center;margin-bottom:14px;}
 </style>
 </head>
 <body>
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-icon">📄</div>
+      <div><div class="logo-text">Motors Factory</div><div class="logo-sub">Relevés</div></div>
+    </div>
+    <div class="login-title">Connexion requise</div>
+    <div class="login-err" id="login-err">Mot de passe incorrect</div>
+    <label class="login-lbl">Mot de passe</label>
+    <input type="password" id="login-pwd" placeholder="Mot de passe" autocomplete="current-password">
+    <button class="login-btn" onclick="seConnecter()">Accéder</button>
+  </div>
+</div>
+
 <div class="app">
   <div class="topbar">
     <div class="logo">
@@ -207,6 +237,7 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
   </div>
   <div class="rowbtns" id="type-filtres"><span class="grp-label">Type</span></div>
   <div class="rowbtns">
+    <button class="btn vert" onclick="ouvrirAjout()">➕ Ajouter une ligne</button>
     <button class="btn jaune" onclick="ecarterType('virement')">⏸ Écarter virements</button>
     <button class="btn jaune" onclick="ecarterType('interne')">⏸ Vir. internes</button>
     <button class="btn jaune" onclick="ecarterType('rejet')">⏸ Rejets prélèv.</button>
@@ -239,6 +270,43 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
     </div>
     <div class="modal-status" id="cf-status"></div>
     <button class="modal-close" onclick="fermerCloud()">Fermer</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ajout-modal" onclick="if(event.target===this)fermerAjout()">
+  <div class="modal">
+    <div class="modal-title">➕ Ajouter une opération</div>
+    <p class="modal-sub">Saisissez une ligne à la main (elle sera enregistrée comme les autres).</p>
+    <label>Date</label>
+    <input type="date" id="m-date">
+    <label>Libellé</label>
+    <input id="m-lib" placeholder="Ex : Facture 1234 — Client Dupont" autocomplete="off">
+    <label>Sens</label>
+    <div class="sens-toggle">
+      <button type="button" class="filtre" id="m-sens-deb" onclick="choisirSensManuel('debit')">Débit</button>
+      <button type="button" class="filtre actif" id="m-sens-cred" onclick="choisirSensManuel('credit')">Crédit</button>
+    </div>
+    <label>Montant (€)</label>
+    <input id="m-montant" inputmode="decimal" placeholder="Ex : 1250,00" autocomplete="off">
+    <label>Type</label>
+    <select id="m-type" class="m-select">
+      <option value="auto">Détection automatique</option>
+      <option value="virement">Virement</option>
+      <option value="interne">Vir. interne</option>
+      <option value="rejet">Rejet prélèv.</option>
+      <option value="remise">Remise CB</option>
+      <option value="carte">Carte</option>
+      <option value="prelevement">Prélèvement</option>
+      <option value="cheque">Chèque</option>
+      <option value="frais">Frais</option>
+      <option value="especes">Espèces</option>
+      <option value="autre">Autre</option>
+    </select>
+    <div class="modal-btns">
+      <button class="btn vert" onclick="ajouterManuel()">✓ Ajouter</button>
+    </div>
+    <div class="modal-status" id="m-status"></div>
+    <button class="modal-close" onclick="fermerAjout()">Annuler</button>
   </div>
 </div>
 
@@ -655,8 +723,54 @@ function deconnecterCloud(){
   cloudEtat="off";majCloudBadge();cfStatus("Déconnecté de cet appareil. Vos données restent en ligne dans votre coffre.","info");
 }
 
-majCloudBadge();
-if(apiURL()){chargerCloud();}else{render();}
+// ── Connexion (mot de passe SHA-256, identique à l'appli Rappels) ──
+const AUTH_HASH="dd8985ffcf5ce1ce924642d5a9c20f649bac2a5bd5487aca1df43e3bce235065";
+function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
+async function seConnecter(){
+  const pwd=document.getElementById("login-pwd").value;if(!pwd)return;
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pwd));
+  if(toHexAuth(buf)===AUTH_HASH){sessionStorage.setItem("mf_releves_auth","1");deverrouiller();}
+  else{document.getElementById("login-err").style.display="block";document.getElementById("login-pwd").value="";}
+}
+function deverrouiller(){document.getElementById("login-overlay").style.display="none";demarrer();}
+document.getElementById("login-pwd").addEventListener("keydown",e=>{if(e.key==="Enter")seConnecter();});
+
+// ── Ajout manuel d'une opération ──
+let sensManuel="credit";
+function ouvrirAjout(){
+  const d=new Date();const iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  document.getElementById("m-date").value=iso;
+  document.getElementById("m-lib").value="";document.getElementById("m-montant").value="";
+  document.getElementById("m-type").value="auto";choisirSensManuel("credit");maStatus("","");
+  document.getElementById("ajout-modal").classList.add("show");
+  setTimeout(()=>document.getElementById("m-lib").focus(),50);
+}
+function fermerAjout(){document.getElementById("ajout-modal").classList.remove("show");}
+function maStatus(msg,cls){const s=document.getElementById("m-status");if(s){s.textContent=msg;s.className="modal-status "+(cls||"");}}
+function choisirSensManuel(v){sensManuel=v;
+  document.getElementById("m-sens-deb").classList.toggle("actif",v==="debit");
+  document.getElementById("m-sens-cred").classList.toggle("actif",v==="credit");}
+function ajouterManuel(){
+  const dv=document.getElementById("m-date").value;
+  const lib=document.getElementById("m-lib").value.trim();
+  const val=toNombre(document.getElementById("m-montant").value);
+  if(!lib){maStatus("Indiquez un libellé.","err");return;}
+  if(isNaN(val)||val<=0){maStatus("Indiquez un montant valide (ex : 1250,00).","err");return;}
+  let dateAff="",dISO="";
+  if(dv){const p=dv.split("-");dateAff=p[2]+"/"+p[1]+"/"+p[0];dISO=dv;}
+  const montant=(sensManuel==="debit"?-1:1)*Math.abs(val);
+  const typeSel=document.getElementById("m-type").value;
+  const o={date:dateAff,dateISO:dISO,libelle:lib,montant:montant};
+  o.id=nextId++;o.type=(typeSel==="auto")?detecterType(lib):typeSel;o.sens=montant<0?"debit":"credit";o.ecarte=false;o.ecarteAuto=false;
+  if(operations.some(x=>cleOp(x)===cleOp(o))&&!confirm("Une opération identique existe déjà. L'ajouter quand même ?"))return;
+  operations.push(o);
+  fermerAjout();render();planifierSauvegarde();toast("✅ Ligne ajoutée");
+}
+
+// ── Démarrage (uniquement une fois connecté) ──
+function demarrer(){majCloudBadge();if(apiURL()){chargerCloud();}else{render();}}
+if(sessionStorage.getItem("mf_releves_auth")==="1"){document.getElementById("login-overlay").style.display="none";demarrer();}
+else{setTimeout(()=>{const p=document.getElementById("login-pwd");if(p)p.focus();},50);}
 </script>
 </body>
 </html>
