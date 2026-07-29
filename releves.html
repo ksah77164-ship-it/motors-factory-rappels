@@ -251,24 +251,26 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
     </select>
   </div>
   <div class="rowbtns">
-    <span class="grp-label">Vue</span>
-    <button class="filtre actif" data-v="actives" onclick="setVue('actives',this)">✔ Actives</button>
-    <button class="filtre" data-v="ecartes" onclick="setVue('ecartes',this)">⏸ Écartés</button>
-    <button class="filtre" data-v="toutes" onclick="setVue('toutes',this)">Toutes</button>
+    <span class="grp-label">Filtres</span>
+    <select id="sel-vue" class="m-select sel-inline" onchange="setVue(this.value)">
+      <option value="actives">✔ Actives</option>
+      <option value="ecartes">⏸ Écartés</option>
+      <option value="toutes">Toutes</option>
+    </select>
+    <select id="sel-sens" class="m-select sel-inline" onchange="setSens(this.value)">
+      <option value="tous">Sens : tous</option>
+      <option value="debit">Débits</option>
+      <option value="credit">Crédits</option>
+    </select>
+    <select id="sel-type" class="m-select sel-inline" onchange="setType(this.value)">
+      <option value="tous">Type : tous</option>
+    </select>
+    <select id="sel-pointage" class="m-select sel-inline" onchange="setPointage(this.value)">
+      <option value="toutes">Pointage : tous</option>
+      <option value="non">À pointer</option>
+      <option value="oui">✓ Pointées</option>
+    </select>
   </div>
-  <div class="rowbtns">
-    <span class="grp-label">Sens</span>
-    <button class="filtre actif" data-f="tous" onclick="setSens('tous',this)">Tous</button>
-    <button class="filtre" data-f="debit" onclick="setSens('debit',this)">Débits</button>
-    <button class="filtre" data-f="credit" onclick="setSens('credit',this)">Crédits</button>
-  </div>
-  <div class="rowbtns">
-    <span class="grp-label">Pointage</span>
-    <button class="filtre actif" data-p="toutes" onclick="setPointage('toutes',this)">Toutes</button>
-    <button class="filtre" data-p="non" onclick="setPointage('non',this)">À pointer</button>
-    <button class="filtre" data-p="oui" onclick="setPointage('oui',this)">✓ Pointées</button>
-  </div>
-  <div class="rowbtns" id="type-filtres"><span class="grp-label">Type</span></div>
   <div class="rowbtns">
     <button class="btn vert" onclick="ouvrirAjout()">➕ Ajouter une ligne</button>
     <button class="btn jaune" onclick="ecarterType('virement')">⏸ Écarter virements</button>
@@ -592,9 +594,9 @@ function lireCSV(txt){
 document.getElementById("recherche").addEventListener("input",e=>{recherche=e.target.value.trim();render();});
 document.getElementById("date-du").addEventListener("change",e=>{dateDu=e.target.value;render();});
 document.getElementById("date-au").addEventListener("change",e=>{dateAu=e.target.value;render();});
-function setSens(f,btn){sens=f;document.querySelectorAll('[data-f]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
-function setVue(v,btn){vue=v;document.querySelectorAll('[data-v]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
-function setPointage(p,btn){pointage=p;document.querySelectorAll('[data-p]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
+function setSens(f){sens=f;render();}
+function setVue(v){vue=v;render();}
+function setPointage(p){pointage=p;render();}
 function setAnnee(v){filtreAnnee=v;render();}
 function setMois(v){filtreMois=v;render();}
 function libellePeriode(){
@@ -675,15 +677,22 @@ function render(){
   if(dernierSupprime) pills+='<span class="pill-actif">🗑 Transaction supprimée <button onclick="annulerSuppression()" title="Rétablir">↩ Annuler</button></span>';
   document.getElementById("pill-zone").innerHTML=pills;
 
-  // Filtres par type : on n'affiche que les types réellement présents
+  // Menu « Type » : on ne propose que les types réellement présents
   const ordre=["virement","interne","rejet","remise","carte","prelevement","cheque","frais","especes","autre"];
   const presents=ordre.filter(t=>operations.some(o=>o.type===t));
   const compte=t=>operations.filter(o=>o.type===t).length;
-  let chips='<span class="grp-label">Type</span><button class="filtre '+(typeFiltre==="tous"?"actif":"")+'" onclick="setType(\'tous\')">Tous</button>';
-  presents.forEach(t=>{chips+='<button class="filtre '+(typeFiltre===t?"actif":"")+'" onclick="setType(\''+t+'\')">'+LABEL_TYPE[t]+' <span style="opacity:.65">'+compte(t)+'</span></button>';});
-  document.getElementById("type-filtres").innerHTML=chips;
+  const selType=document.getElementById("sel-type");
+  if(selType){
+    if(typeFiltre!=="tous"&&!presents.includes(typeFiltre))typeFiltre="tous";
+    selType.innerHTML='<option value="tous">Type : tous</option>'+presents.map(t=>'<option value="'+t+'">'+LABEL_TYPE[t]+' ('+compte(t)+')</option>').join("");
+    selType.value=typeFiltre;
+  }
+  // Synchronisation des autres menus déroulants avec l'état courant
   majSelectAnnee();
   const selM=document.getElementById("sel-mois");if(selM)selM.value=filtreMois;
+  const selV=document.getElementById("sel-vue");if(selV)selV.value=vue;
+  const selS=document.getElementById("sel-sens");if(selS)selS.value=sens;
+  const selP=document.getElementById("sel-pointage");if(selP)selP.value=pointage;
 
   const list=operationsFiltrees();const el=document.getElementById("liste");
   if(!operations.length){el.innerHTML='<div class="vide">Aucune opération pour l\'instant.<br>Chargez un relevé pour commencer 📄</div>';return;}
