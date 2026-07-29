@@ -94,7 +94,7 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .op{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:16px;padding:13px 14px;transition:.12s;}
 .op:active{border-color:var(--line-strong);}
 .op.ec{opacity:.5;}
-.op-top{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.op-top{display:flex;align-items:center;gap:9px;margin-bottom:9px;flex-wrap:wrap;}
 .op-date{font-size:12px;font-weight:800;color:var(--gold2);background:rgba(201,161,90,0.1);border:1px solid var(--line);padding:3px 10px;border-radius:20px;white-space:nowrap;}
 .tag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;letter-spacing:.4px;white-space:nowrap;border:1px solid var(--line);}
 .tag.virement{color:var(--gold2);background:rgba(201,161,90,0.12);}
@@ -113,6 +113,13 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .delbtn{background:var(--bg2);border:1px solid var(--line);border-radius:10px;width:34px;height:30px;cursor:pointer;
   font-size:14px;line-height:1;color:var(--debit);flex-shrink:0;}
 .delbtn:active{background:rgba(229,143,143,0.16);border-color:rgba(229,143,143,0.4);}
+.editbtn{background:var(--bg2);border:1px solid var(--line);border-radius:10px;width:34px;height:30px;cursor:pointer;
+  font-size:13px;line-height:1;color:var(--gold2);flex-shrink:0;}
+.editbtn:active{background:rgba(201,161,90,0.14);border-color:var(--line-strong);}
+.pointbtn{background:var(--bg2);border:1px solid var(--line);border-radius:10px;width:34px;height:30px;cursor:pointer;
+  font-size:14px;line-height:1;color:var(--muted);flex-shrink:0;}
+.pointbtn.on{border-color:rgba(174,203,144,0.5);background:rgba(174,203,144,0.16);color:var(--credit);}
+.op.pointe{border-left:3px solid var(--credit);}
 .op-lib{font-size:14px;font-weight:800;color:var(--cream);line-height:1.4;margin-bottom:11px;word-break:break-word;}
 .op-amts{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
 .amt{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:9px 11px;text-align:center;}
@@ -131,16 +138,67 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
   box-shadow:0 10px 30px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:.2s;z-index:200;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
 .loading{font-weight:800;color:var(--gold2);}
+
+/* Cloud */
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+#cloud-btn.ok{color:var(--credit);border-color:rgba(174,203,144,0.4);}
+#cloud-btn.err{color:var(--debit);border-color:rgba(229,143,143,0.4);}
+#cloud-btn.sync{color:var(--gold2);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.62);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:18px;z-index:300;}
+.modal-overlay.show{display:flex;}
+.modal{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line-strong);border-radius:20px;padding:20px;width:100%;max-width:430px;max-height:90vh;overflow:auto;}
+.modal-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--champ);margin-bottom:6px;}
+.modal-sub{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.55;margin-bottom:6px;}
+.modal label{display:block;font-size:10px;font-weight:800;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;margin-top:14px;}
+.modal input{width:100%;background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--cream);}
+.modal input:focus{outline:none;border-color:var(--gold);}
+.modal-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.modal-status{font-size:12.5px;font-weight:700;margin-top:12px;line-height:1.5;min-height:18px;}
+.modal-status.ok{color:var(--credit);} .modal-status.err{color:var(--debit);} .modal-status.info{color:var(--champ);}
+.modal-close{width:100%;margin-top:14px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;}
+.m-select{width:100%;background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--cream);color-scheme:dark;}
+.m-select:focus{outline:none;border-color:var(--gold);}
+.sens-toggle{display:flex;gap:8px;}
+.sens-toggle .filtre{flex:1;text-align:center;}
+
+/* Connexion */
+.login-overlay{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:18px;
+  background:radial-gradient(1200px 600px at 50% -10%,#1a1611 0%,var(--bg) 55%);}
+.login-box{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line-strong);border-radius:22px;padding:26px 22px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.login-logo{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:20px;}
+.login-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:var(--champ);text-align:center;margin-bottom:18px;}
+.login-lbl{display:block;font-size:10px;font-weight:800;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.login-overlay input{width:100%;background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--cream);margin-bottom:14px;}
+.login-overlay input:focus{outline:none;border-color:var(--gold);}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;}
+.login-err{display:none;background:rgba(229,143,143,0.12);border:1px solid rgba(229,143,143,0.4);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--debit);font-weight:700;text-align:center;margin-bottom:14px;}
 </style>
 </head>
 <body>
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-icon">📄</div>
+      <div><div class="logo-text">Motors Factory</div><div class="logo-sub">Relevés</div></div>
+    </div>
+    <div class="login-title">Connexion requise</div>
+    <div class="login-err" id="login-err">Mot de passe incorrect</div>
+    <label class="login-lbl">Mot de passe</label>
+    <input type="password" id="login-pwd" placeholder="Mot de passe" autocomplete="current-password">
+    <button class="login-btn" onclick="seConnecter()">Accéder</button>
+  </div>
+</div>
+
 <div class="app">
   <div class="topbar">
     <div class="logo">
       <div class="logo-icon">📄</div>
       <div><div class="logo-text">Motors Factory</div><div class="logo-sub">Relevés</div></div>
     </div>
-    <a class="link-back" href="index.html">↩ Rappels</a>
+    <div class="topbar-actions">
+      <button class="link-back" id="cloud-btn" onclick="ouvrirCloud()">☁︎ <span id="cloud-txt">Cloud</span></button>
+      <a class="link-back" href="index.html">↩ Rappels</a>
+    </div>
   </div>
 
   <div class="dropzone" id="dropzone">
@@ -184,8 +242,15 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
     <button class="filtre" data-f="debit" onclick="setSens('debit',this)">Débits</button>
     <button class="filtre" data-f="credit" onclick="setSens('credit',this)">Crédits</button>
   </div>
+  <div class="rowbtns">
+    <span class="grp-label">Pointage</span>
+    <button class="filtre actif" data-p="toutes" onclick="setPointage('toutes',this)">Toutes</button>
+    <button class="filtre" data-p="non" onclick="setPointage('non',this)">À pointer</button>
+    <button class="filtre" data-p="oui" onclick="setPointage('oui',this)">✓ Pointées</button>
+  </div>
   <div class="rowbtns" id="type-filtres"><span class="grp-label">Type</span></div>
   <div class="rowbtns">
+    <button class="btn vert" onclick="ouvrirAjout()">➕ Ajouter une ligne</button>
     <button class="btn jaune" onclick="ecarterType('virement')">⏸ Écarter virements</button>
     <button class="btn jaune" onclick="ecarterType('interne')">⏸ Vir. internes</button>
     <button class="btn jaune" onclick="ecarterType('rejet')">⏸ Rejets prélèv.</button>
@@ -203,6 +268,61 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
   </div>
 </div>
 
+<div class="modal-overlay" id="cloud-modal" onclick="if(event.target===this)fermerCloud()">
+  <div class="modal">
+    <div class="modal-title">☁︎ Synchronisation en ligne</div>
+    <p class="modal-sub">Enregistrez vos relevés dans votre coffre Google pour les retrouver sur tous vos appareils. À configurer <b>une fois par appareil</b>.</p>
+    <label>Adresse du script (Google Apps Script)</label>
+    <input id="cf-url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false">
+    <label>Mot de passe (identique à celui du script)</label>
+    <input id="cf-token" type="password" placeholder="Votre mot de passe" autocomplete="off">
+    <div class="modal-btns">
+      <button class="btn vert" onclick="connecterCloud()">✓ Connecter &amp; charger</button>
+      <button class="btn jaune" onclick="sauvegarderCloud(true)">⬆ Enregistrer maintenant</button>
+      <button class="btn rouge" onclick="deconnecterCloud()">Déconnecter</button>
+    </div>
+    <div class="modal-status" id="cf-status"></div>
+    <button class="modal-close" onclick="fermerCloud()">Fermer</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ajout-modal" onclick="if(event.target===this)fermerAjout()">
+  <div class="modal">
+    <div class="modal-title" id="ajout-title">➕ Ajouter une opération</div>
+    <p class="modal-sub">Saisissez une ligne à la main (elle sera enregistrée comme les autres).</p>
+    <label>Date</label>
+    <input type="date" id="m-date">
+    <label>Libellé</label>
+    <input id="m-lib" placeholder="Ex : Facture 1234 — Client Dupont" autocomplete="off">
+    <label>Sens</label>
+    <div class="sens-toggle">
+      <button type="button" class="filtre" id="m-sens-deb" onclick="choisirSensManuel('debit')">Débit</button>
+      <button type="button" class="filtre actif" id="m-sens-cred" onclick="choisirSensManuel('credit')">Crédit</button>
+    </div>
+    <label>Montant (€)</label>
+    <input id="m-montant" inputmode="decimal" placeholder="Ex : 1250,00" autocomplete="off">
+    <label>Type</label>
+    <select id="m-type" class="m-select">
+      <option value="auto">Détection automatique</option>
+      <option value="virement">Virement</option>
+      <option value="interne">Vir. interne</option>
+      <option value="rejet">Rejet prélèv.</option>
+      <option value="remise">Remise CB</option>
+      <option value="carte">Carte</option>
+      <option value="prelevement">Prélèvement</option>
+      <option value="cheque">Chèque</option>
+      <option value="frais">Frais</option>
+      <option value="especes">Espèces</option>
+      <option value="autre">Autre</option>
+    </select>
+    <div class="modal-btns">
+      <button class="btn vert" id="ajout-submit" onclick="ajouterManuel()">✓ Ajouter</button>
+    </div>
+    <div class="modal-status" id="m-status"></div>
+    <button class="modal-close" onclick="fermerAjout()">Annuler</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -210,8 +330,17 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}
 
 let operations=[];
-let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dateAu="", typeFiltre="tous";
+let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dateAu="", typeFiltre="tous", pointage="toutes";
 let tri={col:null,asc:true}, nextId=1, dernierSupprime=null;
+
+// ── Synchronisation cloud (Google Apps Script + Google Sheet) ──
+// Laissez vide : chaque appareil colle son adresse via le bouton ☁︎ Cloud (stocké localement).
+const API_RELEVES_DEFAUT="";
+function apiURL(){return (localStorage.getItem("mf_releves_api")||API_RELEVES_DEFAUT||"").trim();}
+function apiToken(){return (localStorage.getItem("mf_releves_token")||"").trim();}
+let cloudEtat="off", saveTimer=null;
+// Clé d'unicité d'une opération (pour ignorer les doublons à l'import)
+function cleOp(o){return (o.dateISO||o.date||"")+"|"+(Number(o.montant)||0).toFixed(2)+"|"+(o.libelle||"").toLowerCase().replace(/\s+/g," ").trim();}
 
 const MOTS_VIREMENT=["virement","vir sepa","vir inst","vir recu","vir reçu","vir emis","vir émis","vir.","vir ","internet","vir web","virt"];
 const LABEL_TYPE={virement:"Virement",interne:"Vir. interne",rejet:"Rejet prélèv.",remise:"Remise CB",carte:"Carte",prelevement:"Prélèvement",cheque:"Chèque",frais:"Frais",especes:"Espèces",autre:"Autre"};
@@ -246,7 +375,7 @@ function estVirementSortant(op){
   const l=op.libelle.toLowerCase();
   return !/reçu|recu|compens|instantané|instantane/.test(l);
 }
-function finaliser(op){op.id=nextId++;op.type=detecterType(op.libelle);op.sens=op.montant<0?"debit":"credit";op.ecarte=estVirementSortant(op);op.ecarteAuto=op.ecarte;return op;}
+function finaliser(op){op.id=nextId++;op.type=detecterType(op.libelle);op.sens=op.montant<0?"debit":"credit";op.ecarte=estVirementSortant(op);op.ecarteAuto=op.ecarte;op.pointe=false;return op;}
 
 document.getElementById("file-input").addEventListener("change",e=>{[...e.target.files].forEach(traiterFichier);e.target.value="";});
 const dz=document.getElementById("dropzone");
@@ -266,9 +395,18 @@ async function traiterFichier(file){
     let ajout=nom.endsWith(".pdf")?await lirePDF(file):lireCSV(await file.text());
     if(!ajout.length){erreur("Aucune opération détectée dans « "+file.name+" ». Si c'est un PDF scanné (image), exportez plutôt le relevé en CSV depuis votre banque.");}
     else{
-      ajout.forEach(finaliser);operations=operations.concat(ajout);
-      const nbVir=ajout.filter(o=>o.ecarte).length;
-      infoMsg("✅ "+ajout.length+" opération(s) importée(s) depuis <b>"+escapeHtml(file.name)+"</b>"+(nbVir?" · <b>"+nbVir+" virement(s) mis de côté</b>.":"."));
+      ajout.forEach(finaliser);
+      // Anti-doublon : on ignore les opérations déjà présentes (même date, montant et libellé)
+      const existantes=new Set(operations.map(cleOp));
+      const nouvelles=ajout.filter(o=>{const k=cleOp(o);if(existantes.has(k))return false;existantes.add(k);return true;});
+      const doublons=ajout.length-nouvelles.length;
+      operations=operations.concat(nouvelles);
+      const nbVir=nouvelles.filter(o=>o.ecarte).length;
+      let msg="✅ "+nouvelles.length+" opération(s) importée(s) depuis <b>"+escapeHtml(file.name)+"</b>";
+      if(nbVir)msg+=" · <b>"+nbVir+" virement(s) mis de côté</b>";
+      if(doublons)msg+=" · <b>"+doublons+" doublon(s) ignoré(s)</b>";
+      infoMsg(msg+".");
+      if(nouvelles.length)planifierSauvegarde();
     }
   }catch(e){erreur("Impossible de lire « "+file.name+" » : "+(e.message||e));}
   document.getElementById("dz-title").textContent="Charger un autre relevé";
@@ -435,6 +573,7 @@ document.getElementById("date-du").addEventListener("change",e=>{dateDu=e.target
 document.getElementById("date-au").addEventListener("change",e=>{dateAu=e.target.value;render();});
 function setSens(f,btn){sens=f;document.querySelectorAll('[data-f]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
 function setVue(v,btn){vue=v;document.querySelectorAll('[data-v]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
+function setPointage(p,btn){pointage=p;document.querySelectorAll('[data-p]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
 function trier(col){if(tri.col===col)tri.asc=!tri.asc;else{tri.col=col;tri.asc=true;}render();}
 
 function operationsFiltrees(){
@@ -442,6 +581,7 @@ function operationsFiltrees(){
   if(vue==="actives")list=list.filter(o=>!o.ecarte);else if(vue==="ecartes")list=list.filter(o=>o.ecarte);
   if(sens!=="tous")list=list.filter(o=>o.sens===sens);
   if(typeFiltre!=="tous")list=list.filter(o=>o.type===typeFiltre);
+  if(pointage==="non")list=list.filter(o=>!o.pointe);else if(pointage==="oui")list=list.filter(o=>o.pointe);
   if(dateDu)list=list.filter(o=>o.dateISO&&o.dateISO>=dateDu);
   if(dateAu)list=list.filter(o=>o.dateISO&&o.dateISO<=dateAu);
   if(montantClique!=null)list=list.filter(o=>Math.abs(Math.abs(o.montant)-Math.abs(montantClique))<0.005);
@@ -494,21 +634,24 @@ function render(){
     const deb=o.montant<0?'<div class="amt debit"><span class="amt-lbl">Débit</span><span class="amt-val debit" onclick="clicMontant('+o.montant+',this)">'+fmtMontant(am)+'</span></div>':'<div class="amt"><span class="amt-lbl">Débit</span><span class="amt-dash">—</span></div>';
     const cred=o.montant>0?'<div class="amt credit"><span class="amt-lbl">Crédit</span><span class="amt-val credit" onclick="clicMontant('+o.montant+',this)">'+fmtMontant(am)+'</span></div>':'<div class="amt"><span class="amt-lbl">Crédit</span><span class="amt-dash">—</span></div>';
     const tag='<span class="tag '+o.type+'">'+LABEL_TYPE[o.type]+(o.ecarteAuto&&o.type==="virement"?" ✨":"")+'</span>';
-    return '<div class="op '+(o.ecarte?"ec":"")+'">'+
+    return '<div class="op '+(o.ecarte?"ec ":"")+(o.pointe?"pointe":"")+'">'+
       '<div class="op-top"><span class="op-date">'+surligner(o.date||"—")+'</span>'+tag+
+      '<button class="pointbtn '+(o.pointe?"on":"")+'" onclick="togglePointe('+o.id+')" title="'+(o.pointe?"Retirer le pointage":"Marquer comme pointée")+'">✓</button>'+
       '<button class="ecbtn '+(o.ecarte?"on":"")+'" onclick="toggleEcarte('+o.id+')" title="'+(o.ecarte?"Réintégrer":"Mettre de côté")+'">'+(o.ecarte?"⏸":"○")+'</button>'+
+      '<button class="editbtn" onclick="ouvrirEdition('+o.id+')" title="Modifier cette opération">✏️</button>'+
       '<button class="delbtn" onclick="supprimer('+o.id+')" title="Supprimer cette transaction">🗑</button></div>'+
       '<div class="op-lib">'+surligner(o.libelle)+'</div>'+
       '<div class="op-amts">'+deb+cred+'</div></div>';
   }).join("");
 }
 
-function toggleEcarte(id){const o=operations.find(x=>x.id===id);if(!o)return;o.ecarte=!o.ecarte;o.ecarteAuto=false;toast(o.ecarte?"Mis de côté":"Réintégré");render();}
+function toggleEcarte(id){const o=operations.find(x=>x.id===id);if(!o)return;o.ecarte=!o.ecarte;o.ecarteAuto=false;toast(o.ecarte?"Mis de côté":"Réintégré");render();planifierSauvegarde();}
+function togglePointe(id){const o=operations.find(x=>x.id===id);if(!o)return;o.pointe=!o.pointe;toast(o.pointe?"✓ Pointée":"Pointage retiré");render();planifierSauvegarde();}
 function setType(t){typeFiltre=t;render();}
-function ecarterType(type){let n=0;operations.forEach(o=>{if(o.type===type&&!o.ecarte){o.ecarte=true;n++;}});toast(n?n+" « "+LABEL_TYPE[type]+" » mis de côté":"Aucune ligne de ce type");render();}
-function reintegrerTout(){operations.forEach(o=>o.ecarte=false);toast("Tout réintégré");render();}
-function supprimer(id){const i=operations.findIndex(x=>x.id===id);if(i<0)return;dernierSupprime={op:operations[i],idx:i};operations.splice(i,1);toast("Transaction supprimée");render();}
-function annulerSuppression(){if(!dernierSupprime)return;operations.splice(Math.min(dernierSupprime.idx,operations.length),0,dernierSupprime.op);dernierSupprime=null;toast("Transaction rétablie");render();}
+function ecarterType(type){let n=0;operations.forEach(o=>{if(o.type===type&&!o.ecarte){o.ecarte=true;n++;}});toast(n?n+" « "+LABEL_TYPE[type]+" » mis de côté":"Aucune ligne de ce type");render();if(n)planifierSauvegarde();}
+function reintegrerTout(){operations.forEach(o=>o.ecarte=false);toast("Tout réintégré");render();planifierSauvegarde();}
+function supprimer(id){const i=operations.findIndex(x=>x.id===id);if(i<0)return;dernierSupprime={op:operations[i],idx:i};operations.splice(i,1);toast("Transaction supprimée");render();planifierSauvegarde();}
+function annulerSuppression(){if(!dernierSupprime)return;operations.splice(Math.min(dernierSupprime.idx,operations.length),0,dernierSupprime.op);dernierSupprime=null;toast("Transaction rétablie");render();planifierSauvegarde();}
 
 function clicMontant(val,el){
   const am=Math.abs(val);const txt=am.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -535,9 +678,141 @@ function exportExcel(){
   telecharger("﻿<html xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><head><meta charset=\"utf-8\"></head><body>"+html+"</body></html>","releve-motors-factory.xls","application/vnd.ms-excel");
 }
 function telecharger(contenu,nom,type){const blob=new Blob([contenu],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=nom;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast("Export « "+nom+" »");}
-function toutEffacer(){if(operations.length&&!confirm("Vider toutes les opérations ?"))return;operations=[];montantClique=null;recherche="";dateDu="";dateAu="";dernierSupprime=null;document.getElementById("recherche").value="";document.getElementById("date-du").value="";document.getElementById("date-au").value="";document.getElementById("erreur-zone").innerHTML="";render();}
+function toutEffacer(){if(operations.length&&!confirm("Vider toutes les opérations ?"+(apiURL()?"\n(Cela videra aussi votre coffre en ligne.)":"")))return;operations=[];montantClique=null;recherche="";dateDu="";dateAu="";dernierSupprime=null;document.getElementById("recherche").value="";document.getElementById("date-du").value="";document.getElementById("date-au").value="";document.getElementById("erreur-zone").innerHTML="";render();planifierSauvegarde();}
 
-render();
+// ── Cloud : chargement / sauvegarde / réglages ──
+function opsPourCloud(){return operations.map(o=>({date:o.date,dateISO:o.dateISO,libelle:o.libelle,montant:o.montant,type:o.type,sens:o.sens,ecarte:o.ecarte?1:0,ecarteAuto:o.ecarteAuto?1:0,pointe:o.pointe?1:0}));}
+function majCloudBadge(){
+  const b=document.getElementById("cloud-btn"),t=document.getElementById("cloud-txt");if(!b)return;
+  b.classList.remove("ok","err","sync");
+  if(!apiURL()){t.textContent="Cloud";return;}
+  if(cloudEtat==="sync"){b.classList.add("sync");t.textContent="…";}
+  else if(cloudEtat==="ok"){b.classList.add("ok");t.textContent="Synchro";}
+  else if(cloudEtat==="err"){b.classList.add("err");t.textContent="Hors-ligne";}
+  else{t.textContent="Cloud";}
+}
+async function chargerCloud(){
+  const url=apiURL();if(!url)return false;
+  cloudEtat="sync";majCloudBadge();
+  try{
+    const res=await fetch(url+(url.includes("?")?"&":"?")+"token="+encodeURIComponent(apiToken())+"&t="+Date.now());
+    const data=await res.json();
+    if(data&&data.error)throw new Error(data.error);
+    const rows=Array.isArray(data)?data:(data.ops||[]);
+    operations=rows.map(r=>{
+      const o={date:r.date||"",dateISO:r.dateISO||dateISO(r.date||""),libelle:r.libelle||"",montant:Number(r.montant)||0};
+      o.id=nextId++;o.type=r.type||detecterType(o.libelle);o.sens=o.montant<0?"debit":"credit";
+      o.ecarte=(r.ecarte==1||r.ecarte===true||r.ecarte==="1");o.ecarteAuto=(r.ecarteAuto==1||r.ecarteAuto===true||r.ecarteAuto==="1");
+      o.pointe=(r.pointe==1||r.pointe===true||r.pointe==="1");
+      return o;
+    });
+    cloudEtat="ok";majCloudBadge();render();return true;
+  }catch(e){cloudEtat="err";majCloudBadge();render();return false;}
+}
+async function sauvegarderCloud(manuel){
+  const url=apiURL();if(!url){if(manuel){toast("Configurez d'abord le cloud ☁︎");cfStatus("Aucune adresse enregistrée sur cet appareil.","err");}return false;}
+  clearTimeout(saveTimer);cloudEtat="sync";majCloudBadge();
+  try{
+    await fetch(url,{method:"POST",body:JSON.stringify({token:apiToken(),ops:opsPourCloud()})});
+    cloudEtat="ok";majCloudBadge();
+    if(manuel){toast("✅ Enregistré en ligne");cfStatus("✅ "+operations.length+" opération(s) enregistrée(s) en ligne.","ok");}
+    return true;
+  }catch(e){cloudEtat="err";majCloudBadge();if(manuel){toast("⚠︎ Échec de l'enregistrement");cfStatus("⚠︎ Échec. Vérifiez votre connexion et le déploiement du script.","err");}return false;}
+}
+function planifierSauvegarde(){if(!apiURL())return;clearTimeout(saveTimer);cloudEtat="sync";majCloudBadge();saveTimer=setTimeout(()=>sauvegarderCloud(false),1000);}
+
+function ouvrirCloud(){
+  document.getElementById("cf-url").value=localStorage.getItem("mf_releves_api")||API_RELEVES_DEFAUT||"";
+  document.getElementById("cf-token").value=localStorage.getItem("mf_releves_token")||"";
+  cfStatus("","");document.getElementById("cloud-modal").classList.add("show");
+}
+function fermerCloud(){document.getElementById("cloud-modal").classList.remove("show");}
+function cfStatus(msg,cls){const s=document.getElementById("cf-status");if(s){s.textContent=msg;s.className="modal-status "+(cls||"");}}
+async function connecterCloud(){
+  const url=document.getElementById("cf-url").value.trim(),tok=document.getElementById("cf-token").value.trim();
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec\/?$/.test(url)){cfStatus("Adresse invalide : elle doit ressembler à https://script.google.com/macros/s/…/exec","err");return;}
+  localStorage.setItem("mf_releves_api",url);localStorage.setItem("mf_releves_token",tok);
+  cfStatus("Connexion…","info");
+  const ok=await chargerCloud();
+  if(ok)cfStatus("✅ Connecté · "+operations.length+" opération(s) chargée(s) depuis votre coffre.","ok");
+  else cfStatus("⚠︎ Échec. Vérifiez l'adresse, le mot de passe et que le script est bien déployé (« Tout le monde »).","err");
+}
+function deconnecterCloud(){
+  localStorage.removeItem("mf_releves_api");localStorage.removeItem("mf_releves_token");
+  cloudEtat="off";majCloudBadge();cfStatus("Déconnecté de cet appareil. Vos données restent en ligne dans votre coffre.","info");
+}
+
+// ── Connexion (mot de passe SHA-256, propre à l'outil relevés) ──
+const AUTH_HASH="fde83057674ff5ece52819657d42fb1771cf0e1765a6e36d3225ee4be1085361";
+function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
+async function seConnecter(){
+  const pwd=document.getElementById("login-pwd").value;if(!pwd)return;
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pwd));
+  if(toHexAuth(buf)===AUTH_HASH){sessionStorage.setItem("mf_releves_auth","1");deverrouiller();}
+  else{document.getElementById("login-err").style.display="block";document.getElementById("login-pwd").value="";}
+}
+function deverrouiller(){document.getElementById("login-overlay").style.display="none";demarrer();}
+document.getElementById("login-pwd").addEventListener("keydown",e=>{if(e.key==="Enter")seConnecter();});
+
+// ── Ajout / modification manuelle d'une opération ──
+let sensManuel="credit", editionId=null;
+function ouvrirAjout(){
+  editionId=null;
+  document.getElementById("ajout-title").textContent="➕ Ajouter une opération";
+  document.getElementById("ajout-submit").textContent="✓ Ajouter";
+  const d=new Date();const iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  document.getElementById("m-date").value=iso;
+  document.getElementById("m-lib").value="";document.getElementById("m-montant").value="";
+  document.getElementById("m-type").value="auto";choisirSensManuel("credit");maStatus("","");
+  document.getElementById("ajout-modal").classList.add("show");
+  setTimeout(()=>document.getElementById("m-lib").focus(),50);
+}
+function ouvrirEdition(id){
+  const o=operations.find(x=>x.id===id);if(!o)return;
+  editionId=id;
+  document.getElementById("ajout-title").textContent="✏️ Modifier l'opération";
+  document.getElementById("ajout-submit").textContent="✓ Enregistrer";
+  document.getElementById("m-date").value=o.dateISO||"";
+  document.getElementById("m-lib").value=o.libelle||"";
+  document.getElementById("m-montant").value=Math.abs(o.montant).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById("m-type").value=o.type||"autre";
+  choisirSensManuel(o.montant<0?"debit":"credit");maStatus("","");
+  document.getElementById("ajout-modal").classList.add("show");
+  setTimeout(()=>document.getElementById("m-lib").focus(),50);
+}
+function fermerAjout(){document.getElementById("ajout-modal").classList.remove("show");editionId=null;}
+function maStatus(msg,cls){const s=document.getElementById("m-status");if(s){s.textContent=msg;s.className="modal-status "+(cls||"");}}
+function choisirSensManuel(v){sensManuel=v;
+  document.getElementById("m-sens-deb").classList.toggle("actif",v==="debit");
+  document.getElementById("m-sens-cred").classList.toggle("actif",v==="credit");}
+function ajouterManuel(){
+  const dv=document.getElementById("m-date").value;
+  const lib=document.getElementById("m-lib").value.trim();
+  const val=toNombre(document.getElementById("m-montant").value);
+  if(!lib){maStatus("Indiquez un libellé.","err");return;}
+  if(isNaN(val)||val<=0){maStatus("Indiquez un montant valide (ex : 1250,00).","err");return;}
+  let dateAff="",dISO="";
+  if(dv){const p=dv.split("-");dateAff=p[2]+"/"+p[1]+"/"+p[0];dISO=dv;}
+  const montant=(sensManuel==="debit"?-1:1)*Math.abs(val);
+  const typeSel=document.getElementById("m-type").value;
+  if(editionId!=null){
+    const o=operations.find(x=>x.id===editionId);
+    if(o){o.date=dateAff;o.dateISO=dISO;o.libelle=lib;o.montant=montant;
+      o.type=(typeSel==="auto")?detecterType(lib):typeSel;o.sens=montant<0?"debit":"credit";}
+    fermerAjout();render();planifierSauvegarde();toast("✅ Opération modifiée");
+    return;
+  }
+  const o={date:dateAff,dateISO:dISO,libelle:lib,montant:montant};
+  o.id=nextId++;o.type=(typeSel==="auto")?detecterType(lib):typeSel;o.sens=montant<0?"debit":"credit";o.ecarte=false;o.ecarteAuto=false;o.pointe=false;
+  if(operations.some(x=>cleOp(x)===cleOp(o))&&!confirm("Une opération identique existe déjà. L'ajouter quand même ?"))return;
+  operations.push(o);
+  fermerAjout();render();planifierSauvegarde();toast("✅ Ligne ajoutée");
+}
+
+// ── Démarrage (uniquement une fois connecté) ──
+function demarrer(){majCloudBadge();if(apiURL()){chargerCloud();}else{render();}}
+if(sessionStorage.getItem("mf_releves_auth")==="1"){document.getElementById("login-overlay").style.display="none";demarrer();}
+else{setTimeout(()=>{const p=document.getElementById("login-pwd");if(p)p.focus();},50);}
 </script>
 </body>
 </html>
