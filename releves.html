@@ -94,7 +94,7 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .op{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:16px;padding:13px 14px;transition:.12s;}
 .op:active{border-color:var(--line-strong);}
 .op.ec{opacity:.5;}
-.op-top{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.op-top{display:flex;align-items:center;gap:9px;margin-bottom:9px;flex-wrap:wrap;}
 .op-date{font-size:12px;font-weight:800;color:var(--gold2);background:rgba(201,161,90,0.1);border:1px solid var(--line);padding:3px 10px;border-radius:20px;white-space:nowrap;}
 .tag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;letter-spacing:.4px;white-space:nowrap;border:1px solid var(--line);}
 .tag.virement{color:var(--gold2);background:rgba(201,161,90,0.12);}
@@ -113,6 +113,13 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .delbtn{background:var(--bg2);border:1px solid var(--line);border-radius:10px;width:34px;height:30px;cursor:pointer;
   font-size:14px;line-height:1;color:var(--debit);flex-shrink:0;}
 .delbtn:active{background:rgba(229,143,143,0.16);border-color:rgba(229,143,143,0.4);}
+.editbtn{background:var(--bg2);border:1px solid var(--line);border-radius:10px;width:34px;height:30px;cursor:pointer;
+  font-size:13px;line-height:1;color:var(--gold2);flex-shrink:0;}
+.editbtn:active{background:rgba(201,161,90,0.14);border-color:var(--line-strong);}
+.pointbtn{background:var(--bg2);border:1px solid var(--line);border-radius:10px;width:34px;height:30px;cursor:pointer;
+  font-size:14px;line-height:1;color:var(--muted);flex-shrink:0;}
+.pointbtn.on{border-color:rgba(174,203,144,0.5);background:rgba(174,203,144,0.16);color:var(--credit);}
+.op.pointe{border-left:3px solid var(--credit);}
 .op-lib{font-size:14px;font-weight:800;color:var(--cream);line-height:1.4;margin-bottom:11px;word-break:break-word;}
 .op-amts{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
 .amt{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:9px 11px;text-align:center;}
@@ -235,6 +242,12 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
     <button class="filtre" data-f="debit" onclick="setSens('debit',this)">Débits</button>
     <button class="filtre" data-f="credit" onclick="setSens('credit',this)">Crédits</button>
   </div>
+  <div class="rowbtns">
+    <span class="grp-label">Pointage</span>
+    <button class="filtre actif" data-p="toutes" onclick="setPointage('toutes',this)">Toutes</button>
+    <button class="filtre" data-p="non" onclick="setPointage('non',this)">À pointer</button>
+    <button class="filtre" data-p="oui" onclick="setPointage('oui',this)">✓ Pointées</button>
+  </div>
   <div class="rowbtns" id="type-filtres"><span class="grp-label">Type</span></div>
   <div class="rowbtns">
     <button class="btn vert" onclick="ouvrirAjout()">➕ Ajouter une ligne</button>
@@ -275,7 +288,7 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 
 <div class="modal-overlay" id="ajout-modal" onclick="if(event.target===this)fermerAjout()">
   <div class="modal">
-    <div class="modal-title">➕ Ajouter une opération</div>
+    <div class="modal-title" id="ajout-title">➕ Ajouter une opération</div>
     <p class="modal-sub">Saisissez une ligne à la main (elle sera enregistrée comme les autres).</p>
     <label>Date</label>
     <input type="date" id="m-date">
@@ -303,7 +316,7 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
       <option value="autre">Autre</option>
     </select>
     <div class="modal-btns">
-      <button class="btn vert" onclick="ajouterManuel()">✓ Ajouter</button>
+      <button class="btn vert" id="ajout-submit" onclick="ajouterManuel()">✓ Ajouter</button>
     </div>
     <div class="modal-status" id="m-status"></div>
     <button class="modal-close" onclick="fermerAjout()">Annuler</button>
@@ -317,7 +330,7 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}
 
 let operations=[];
-let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dateAu="", typeFiltre="tous";
+let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dateAu="", typeFiltre="tous", pointage="toutes";
 let tri={col:null,asc:true}, nextId=1, dernierSupprime=null;
 
 // ── Synchronisation cloud (Google Apps Script + Google Sheet) ──
@@ -362,7 +375,7 @@ function estVirementSortant(op){
   const l=op.libelle.toLowerCase();
   return !/reçu|recu|compens|instantané|instantane/.test(l);
 }
-function finaliser(op){op.id=nextId++;op.type=detecterType(op.libelle);op.sens=op.montant<0?"debit":"credit";op.ecarte=estVirementSortant(op);op.ecarteAuto=op.ecarte;return op;}
+function finaliser(op){op.id=nextId++;op.type=detecterType(op.libelle);op.sens=op.montant<0?"debit":"credit";op.ecarte=estVirementSortant(op);op.ecarteAuto=op.ecarte;op.pointe=false;return op;}
 
 document.getElementById("file-input").addEventListener("change",e=>{[...e.target.files].forEach(traiterFichier);e.target.value="";});
 const dz=document.getElementById("dropzone");
@@ -560,6 +573,7 @@ document.getElementById("date-du").addEventListener("change",e=>{dateDu=e.target
 document.getElementById("date-au").addEventListener("change",e=>{dateAu=e.target.value;render();});
 function setSens(f,btn){sens=f;document.querySelectorAll('[data-f]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
 function setVue(v,btn){vue=v;document.querySelectorAll('[data-v]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
+function setPointage(p,btn){pointage=p;document.querySelectorAll('[data-p]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
 function trier(col){if(tri.col===col)tri.asc=!tri.asc;else{tri.col=col;tri.asc=true;}render();}
 
 function operationsFiltrees(){
@@ -567,6 +581,7 @@ function operationsFiltrees(){
   if(vue==="actives")list=list.filter(o=>!o.ecarte);else if(vue==="ecartes")list=list.filter(o=>o.ecarte);
   if(sens!=="tous")list=list.filter(o=>o.sens===sens);
   if(typeFiltre!=="tous")list=list.filter(o=>o.type===typeFiltre);
+  if(pointage==="non")list=list.filter(o=>!o.pointe);else if(pointage==="oui")list=list.filter(o=>o.pointe);
   if(dateDu)list=list.filter(o=>o.dateISO&&o.dateISO>=dateDu);
   if(dateAu)list=list.filter(o=>o.dateISO&&o.dateISO<=dateAu);
   if(montantClique!=null)list=list.filter(o=>Math.abs(Math.abs(o.montant)-Math.abs(montantClique))<0.005);
@@ -619,9 +634,11 @@ function render(){
     const deb=o.montant<0?'<div class="amt debit"><span class="amt-lbl">Débit</span><span class="amt-val debit" onclick="clicMontant('+o.montant+',this)">'+fmtMontant(am)+'</span></div>':'<div class="amt"><span class="amt-lbl">Débit</span><span class="amt-dash">—</span></div>';
     const cred=o.montant>0?'<div class="amt credit"><span class="amt-lbl">Crédit</span><span class="amt-val credit" onclick="clicMontant('+o.montant+',this)">'+fmtMontant(am)+'</span></div>':'<div class="amt"><span class="amt-lbl">Crédit</span><span class="amt-dash">—</span></div>';
     const tag='<span class="tag '+o.type+'">'+LABEL_TYPE[o.type]+(o.ecarteAuto&&o.type==="virement"?" ✨":"")+'</span>';
-    return '<div class="op '+(o.ecarte?"ec":"")+'">'+
+    return '<div class="op '+(o.ecarte?"ec ":"")+(o.pointe?"pointe":"")+'">'+
       '<div class="op-top"><span class="op-date">'+surligner(o.date||"—")+'</span>'+tag+
+      '<button class="pointbtn '+(o.pointe?"on":"")+'" onclick="togglePointe('+o.id+')" title="'+(o.pointe?"Retirer le pointage":"Marquer comme pointée")+'">✓</button>'+
       '<button class="ecbtn '+(o.ecarte?"on":"")+'" onclick="toggleEcarte('+o.id+')" title="'+(o.ecarte?"Réintégrer":"Mettre de côté")+'">'+(o.ecarte?"⏸":"○")+'</button>'+
+      '<button class="editbtn" onclick="ouvrirEdition('+o.id+')" title="Modifier cette opération">✏️</button>'+
       '<button class="delbtn" onclick="supprimer('+o.id+')" title="Supprimer cette transaction">🗑</button></div>'+
       '<div class="op-lib">'+surligner(o.libelle)+'</div>'+
       '<div class="op-amts">'+deb+cred+'</div></div>';
@@ -629,6 +646,7 @@ function render(){
 }
 
 function toggleEcarte(id){const o=operations.find(x=>x.id===id);if(!o)return;o.ecarte=!o.ecarte;o.ecarteAuto=false;toast(o.ecarte?"Mis de côté":"Réintégré");render();planifierSauvegarde();}
+function togglePointe(id){const o=operations.find(x=>x.id===id);if(!o)return;o.pointe=!o.pointe;toast(o.pointe?"✓ Pointée":"Pointage retiré");render();planifierSauvegarde();}
 function setType(t){typeFiltre=t;render();}
 function ecarterType(type){let n=0;operations.forEach(o=>{if(o.type===type&&!o.ecarte){o.ecarte=true;n++;}});toast(n?n+" « "+LABEL_TYPE[type]+" » mis de côté":"Aucune ligne de ce type");render();if(n)planifierSauvegarde();}
 function reintegrerTout(){operations.forEach(o=>o.ecarte=false);toast("Tout réintégré");render();planifierSauvegarde();}
@@ -663,7 +681,7 @@ function telecharger(contenu,nom,type){const blob=new Blob([contenu],{type});con
 function toutEffacer(){if(operations.length&&!confirm("Vider toutes les opérations ?"+(apiURL()?"\n(Cela videra aussi votre coffre en ligne.)":"")))return;operations=[];montantClique=null;recherche="";dateDu="";dateAu="";dernierSupprime=null;document.getElementById("recherche").value="";document.getElementById("date-du").value="";document.getElementById("date-au").value="";document.getElementById("erreur-zone").innerHTML="";render();planifierSauvegarde();}
 
 // ── Cloud : chargement / sauvegarde / réglages ──
-function opsPourCloud(){return operations.map(o=>({date:o.date,dateISO:o.dateISO,libelle:o.libelle,montant:o.montant,type:o.type,sens:o.sens,ecarte:o.ecarte?1:0,ecarteAuto:o.ecarteAuto?1:0}));}
+function opsPourCloud(){return operations.map(o=>({date:o.date,dateISO:o.dateISO,libelle:o.libelle,montant:o.montant,type:o.type,sens:o.sens,ecarte:o.ecarte?1:0,ecarteAuto:o.ecarteAuto?1:0,pointe:o.pointe?1:0}));}
 function majCloudBadge(){
   const b=document.getElementById("cloud-btn"),t=document.getElementById("cloud-txt");if(!b)return;
   b.classList.remove("ok","err","sync");
@@ -685,6 +703,7 @@ async function chargerCloud(){
       const o={date:r.date||"",dateISO:r.dateISO||dateISO(r.date||""),libelle:r.libelle||"",montant:Number(r.montant)||0};
       o.id=nextId++;o.type=r.type||detecterType(o.libelle);o.sens=o.montant<0?"debit":"credit";
       o.ecarte=(r.ecarte==1||r.ecarte===true||r.ecarte==="1");o.ecarteAuto=(r.ecarteAuto==1||r.ecarteAuto===true||r.ecarteAuto==="1");
+      o.pointe=(r.pointe==1||r.pointe===true||r.pointe==="1");
       return o;
     });
     cloudEtat="ok";majCloudBadge();render();return true;
@@ -735,9 +754,12 @@ async function seConnecter(){
 function deverrouiller(){document.getElementById("login-overlay").style.display="none";demarrer();}
 document.getElementById("login-pwd").addEventListener("keydown",e=>{if(e.key==="Enter")seConnecter();});
 
-// ── Ajout manuel d'une opération ──
-let sensManuel="credit";
+// ── Ajout / modification manuelle d'une opération ──
+let sensManuel="credit", editionId=null;
 function ouvrirAjout(){
+  editionId=null;
+  document.getElementById("ajout-title").textContent="➕ Ajouter une opération";
+  document.getElementById("ajout-submit").textContent="✓ Ajouter";
   const d=new Date();const iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   document.getElementById("m-date").value=iso;
   document.getElementById("m-lib").value="";document.getElementById("m-montant").value="";
@@ -745,7 +767,20 @@ function ouvrirAjout(){
   document.getElementById("ajout-modal").classList.add("show");
   setTimeout(()=>document.getElementById("m-lib").focus(),50);
 }
-function fermerAjout(){document.getElementById("ajout-modal").classList.remove("show");}
+function ouvrirEdition(id){
+  const o=operations.find(x=>x.id===id);if(!o)return;
+  editionId=id;
+  document.getElementById("ajout-title").textContent="✏️ Modifier l'opération";
+  document.getElementById("ajout-submit").textContent="✓ Enregistrer";
+  document.getElementById("m-date").value=o.dateISO||"";
+  document.getElementById("m-lib").value=o.libelle||"";
+  document.getElementById("m-montant").value=Math.abs(o.montant).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById("m-type").value=o.type||"autre";
+  choisirSensManuel(o.montant<0?"debit":"credit");maStatus("","");
+  document.getElementById("ajout-modal").classList.add("show");
+  setTimeout(()=>document.getElementById("m-lib").focus(),50);
+}
+function fermerAjout(){document.getElementById("ajout-modal").classList.remove("show");editionId=null;}
 function maStatus(msg,cls){const s=document.getElementById("m-status");if(s){s.textContent=msg;s.className="modal-status "+(cls||"");}}
 function choisirSensManuel(v){sensManuel=v;
   document.getElementById("m-sens-deb").classList.toggle("actif",v==="debit");
@@ -760,8 +795,15 @@ function ajouterManuel(){
   if(dv){const p=dv.split("-");dateAff=p[2]+"/"+p[1]+"/"+p[0];dISO=dv;}
   const montant=(sensManuel==="debit"?-1:1)*Math.abs(val);
   const typeSel=document.getElementById("m-type").value;
+  if(editionId!=null){
+    const o=operations.find(x=>x.id===editionId);
+    if(o){o.date=dateAff;o.dateISO=dISO;o.libelle=lib;o.montant=montant;
+      o.type=(typeSel==="auto")?detecterType(lib):typeSel;o.sens=montant<0?"debit":"credit";}
+    fermerAjout();render();planifierSauvegarde();toast("✅ Opération modifiée");
+    return;
+  }
   const o={date:dateAff,dateISO:dISO,libelle:lib,montant:montant};
-  o.id=nextId++;o.type=(typeSel==="auto")?detecterType(lib):typeSel;o.sens=montant<0?"debit":"credit";o.ecarte=false;o.ecarteAuto=false;
+  o.id=nextId++;o.type=(typeSel==="auto")?detecterType(lib):typeSel;o.sens=montant<0?"debit":"credit";o.ecarte=false;o.ecarteAuto=false;o.pointe=false;
   if(operations.some(x=>cleOp(x)===cleOp(o))&&!confirm("Une opération identique existe déjà. L'ajouter quand même ?"))return;
   operations.push(o);
   fermerAjout();render();planifierSauvegarde();toast("✅ Ligne ajoutée");

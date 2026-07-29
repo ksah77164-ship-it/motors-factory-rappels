@@ -35,7 +35,7 @@
 const TOKEN = "";
 
 const FEUILLE = "Releves";
-const ENTETES = ["date", "dateISO", "libelle", "montant", "type", "sens", "ecarte", "ecarteAuto"];
+const ENTETES = ["date", "dateISO", "libelle", "montant", "type", "sens", "ecarte", "ecarteAuto", "pointe"];
 
 function feuille_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -68,7 +68,7 @@ function doGet(e) {
       const r = vals[i];
       ops.push({
         date: r[0], dateISO: r[1], libelle: r[2], montant: Number(r[3]) || 0,
-        type: r[4], sens: r[5], ecarte: r[6], ecarteAuto: r[7]
+        type: r[4], sens: r[5], ecarte: r[6], ecarteAuto: r[7], pointe: r[8]
       });
     }
   }
@@ -91,7 +91,7 @@ function doPost(e) {
     const rows = ops.map(function (o) {
       return [
         o.date || "", o.dateISO || "", o.libelle || "", Number(o.montant) || 0,
-        o.type || "", o.sens || "", o.ecarte ? 1 : 0, o.ecarteAuto ? 1 : 0
+        o.type || "", o.sens || "", o.ecarte ? 1 : 0, o.ecarteAuto ? 1 : 0, o.pointe ? 1 : 0
       ];
     });
     sh.getRange(2, 1, rows.length, ENTETES.length).setValues(rows);
