@@ -108,6 +108,9 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .ecbtn{margin-left:auto;background:var(--bg2);border:1px solid var(--line);border-radius:10px;width:34px;height:30px;cursor:pointer;
   font-size:14px;line-height:1;color:var(--muted);flex-shrink:0;}
 .ecbtn.on{border-color:var(--line-strong);background:rgba(201,161,90,0.14);color:var(--gold2);}
+.delbtn{background:var(--bg2);border:1px solid var(--line);border-radius:10px;width:34px;height:30px;cursor:pointer;
+  font-size:14px;line-height:1;color:var(--debit);flex-shrink:0;}
+.delbtn:active{background:rgba(229,143,143,0.16);border-color:rgba(229,143,143,0.4);}
 .op-lib{font-size:14px;font-weight:800;color:var(--cream);line-height:1.4;margin-bottom:11px;word-break:break-word;}
 .op-amts{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
 .amt{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:9px 11px;text-align:center;}
@@ -203,7 +206,7 @@ if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudf
 
 let operations=[];
 let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dateAu="";
-let tri={col:null,asc:true}, nextId=1;
+let tri={col:null,asc:true}, nextId=1, dernierSupprime=null;
 
 const MOTS_VIREMENT=["virement","vir sepa","vir inst","vir recu","vir reçu","vir emis","vir émis","vir.","vir ","internet","vir web","virt"];
 const LABEL_TYPE={virement:"Virement",remise:"Remise CB",carte:"Carte",prelevement:"Prélèvement",cheque:"Chèque",frais:"Frais",especes:"Espèces",autre:"Autre"};
@@ -449,7 +452,10 @@ function render(){
   document.getElementById("c-credit").textContent=operations.length?fmtMontant(cred):"—";
   document.getElementById("c-solde").textContent=operations.length?fmtMontant(deb+cred):"—";
 
-  document.getElementById("pill-zone").innerHTML=montantClique!=null?'<span class="pill-actif">Montant filtré : '+fmtMontant(Math.abs(montantClique))+' <button onclick="clearMontant()">✕</button></span>':"";
+  let pills="";
+  if(montantClique!=null) pills+='<span class="pill-actif">Montant filtré : '+fmtMontant(Math.abs(montantClique))+' <button onclick="clearMontant()">✕</button></span> ';
+  if(dernierSupprime) pills+='<span class="pill-actif">🗑 Transaction supprimée <button onclick="annulerSuppression()" title="Rétablir">↩ Annuler</button></span>';
+  document.getElementById("pill-zone").innerHTML=pills;
 
   const list=operationsFiltrees();const el=document.getElementById("liste");
   if(!operations.length){el.innerHTML='<div class="vide">Aucune opération pour l\'instant.<br>Chargez un relevé pour commencer 📄</div>';return;}
@@ -461,7 +467,8 @@ function render(){
     const tag='<span class="tag '+o.type+'">'+LABEL_TYPE[o.type]+(o.ecarteAuto&&o.type==="virement"?" ✨":"")+'</span>';
     return '<div class="op '+(o.ecarte?"ec":"")+'">'+
       '<div class="op-top"><span class="op-date">'+surligner(o.date||"—")+'</span>'+tag+
-      '<button class="ecbtn '+(o.ecarte?"on":"")+'" onclick="toggleEcarte('+o.id+')" title="'+(o.ecarte?"Réintégrer":"Mettre de côté")+'">'+(o.ecarte?"⏸":"○")+'</button></div>'+
+      '<button class="ecbtn '+(o.ecarte?"on":"")+'" onclick="toggleEcarte('+o.id+')" title="'+(o.ecarte?"Réintégrer":"Mettre de côté")+'">'+(o.ecarte?"⏸":"○")+'</button>'+
+      '<button class="delbtn" onclick="supprimer('+o.id+')" title="Supprimer cette transaction">🗑</button></div>'+
       '<div class="op-lib">'+surligner(o.libelle)+'</div>'+
       '<div class="op-amts">'+deb+cred+'</div></div>';
   }).join("");
@@ -470,6 +477,8 @@ function render(){
 function toggleEcarte(id){const o=operations.find(x=>x.id===id);if(!o)return;o.ecarte=!o.ecarte;o.ecarteAuto=false;toast(o.ecarte?"Mis de côté":"Réintégré");render();}
 function ecarterVirements(){let n=0;operations.forEach(o=>{if(o.type==="virement"&&!o.ecarte){o.ecarte=true;n++;}});toast(n?n+" virement(s) mis de côté":"Aucun virement");render();}
 function reintegrerTout(){operations.forEach(o=>o.ecarte=false);toast("Tout réintégré");render();}
+function supprimer(id){const i=operations.findIndex(x=>x.id===id);if(i<0)return;dernierSupprime={op:operations[i],idx:i};operations.splice(i,1);toast("Transaction supprimée");render();}
+function annulerSuppression(){if(!dernierSupprime)return;operations.splice(Math.min(dernierSupprime.idx,operations.length),0,dernierSupprime.op);dernierSupprime=null;toast("Transaction rétablie");render();}
 
 function clicMontant(val,el){
   const am=Math.abs(val);const txt=am.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -496,7 +505,7 @@ function exportExcel(){
   telecharger("﻿<html xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><head><meta charset=\"utf-8\"></head><body>"+html+"</body></html>","releve-motors-factory.xls","application/vnd.ms-excel");
 }
 function telecharger(contenu,nom,type){const blob=new Blob([contenu],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=nom;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast("Export « "+nom+" »");}
-function toutEffacer(){if(operations.length&&!confirm("Vider toutes les opérations ?"))return;operations=[];montantClique=null;recherche="";dateDu="";dateAu="";document.getElementById("recherche").value="";document.getElementById("date-du").value="";document.getElementById("date-au").value="";document.getElementById("erreur-zone").innerHTML="";render();}
+function toutEffacer(){if(operations.length&&!confirm("Vider toutes les opérations ?"))return;operations=[];montantClique=null;recherche="";dateDu="";dateAu="";dernierSupprime=null;document.getElementById("recherche").value="";document.getElementById("date-du").value="";document.getElementById("date-au").value="";document.getElementById("erreur-zone").innerHTML="";render();}
 
 render();
 </script>
