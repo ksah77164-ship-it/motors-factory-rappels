@@ -98,6 +98,8 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .op-date{font-size:12px;font-weight:800;color:var(--gold2);background:rgba(201,161,90,0.1);border:1px solid var(--line);padding:3px 10px;border-radius:20px;white-space:nowrap;}
 .tag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;letter-spacing:.4px;white-space:nowrap;border:1px solid var(--line);}
 .tag.virement{color:var(--gold2);background:rgba(201,161,90,0.12);}
+.tag.interne{color:#e0c8f0;background:rgba(190,140,220,0.14);}
+.tag.rejet{color:#e6b39a;background:rgba(220,140,90,0.14);}
 .tag.remise{color:var(--credit);background:rgba(140,180,110,0.12);}
 .tag.carte{color:#cbb6e6;background:rgba(150,120,200,0.12);}
 .tag.prelevement{color:#c3a6e0;background:rgba(150,110,200,0.1);}
@@ -182,8 +184,11 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
     <button class="filtre" data-f="debit" onclick="setSens('debit',this)">Débits</button>
     <button class="filtre" data-f="credit" onclick="setSens('credit',this)">Crédits</button>
   </div>
+  <div class="rowbtns" id="type-filtres"><span class="grp-label">Type</span></div>
   <div class="rowbtns">
-    <button class="btn jaune" onclick="ecarterVirements()">⏸ Écarter virements</button>
+    <button class="btn jaune" onclick="ecarterType('virement')">⏸ Écarter virements</button>
+    <button class="btn jaune" onclick="ecarterType('interne')">⏸ Vir. internes</button>
+    <button class="btn jaune" onclick="ecarterType('rejet')">⏸ Rejets prélèv.</button>
     <button class="btn" onclick="reintegrerTout()">↩ Réintégrer</button>
     <button class="btn vert" onclick="exportCSV()">⬇ CSV</button>
     <button class="btn" onclick="exportExcel()">⬇ Excel</button>
@@ -205,11 +210,11 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}
 
 let operations=[];
-let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dateAu="";
+let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dateAu="", typeFiltre="tous";
 let tri={col:null,asc:true}, nextId=1, dernierSupprime=null;
 
 const MOTS_VIREMENT=["virement","vir sepa","vir inst","vir recu","vir reçu","vir emis","vir émis","vir.","vir ","internet","vir web","virt"];
-const LABEL_TYPE={virement:"Virement",remise:"Remise CB",carte:"Carte",prelevement:"Prélèvement",cheque:"Chèque",frais:"Frais",especes:"Espèces",autre:"Autre"};
+const LABEL_TYPE={virement:"Virement",interne:"Vir. interne",rejet:"Rejet prélèv.",remise:"Remise CB",carte:"Carte",prelevement:"Prélèvement",cheque:"Chèque",frais:"Frais",especes:"Espèces",autre:"Autre"};
 
 function toNombre(txt){if(txt==null)return NaN;let s=String(txt).trim().replace(/\s| |\./g,"").replace(",",".").replace(/[^0-9.\-]/g,"");const n=parseFloat(s);return isNaN(n)?NaN:n;}
 function fmtMontant(n){return n.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";}
@@ -219,7 +224,13 @@ function dateISO(d){const m=String(d).match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d
 
 function detecterType(lib){
   const l=" "+lib.toLowerCase()+" ";
-  if(/virement|vir sepa|vir inst|\bvir\b/.test(l))return"virement";
+  const estVir=/virement|vir sepa|vir inst|\bvir\b/.test(l);
+  // Rejet / retour / remboursement de prélèvement (avant prélèvement normal)
+  if(/retourn|rejet|rembt|represent|impay/.test(l)&&/prlv|prélèv|prelev|effet|prel|sepa/.test(l)&&!estVir)return"rejet";
+  if(estVir){
+    if(/\binterne\b|compte à compte|compte a compte|entre comptes|vir interne|\bmotors\b/.test(l))return"interne";
+    return"virement";
+  }
   if(/remise/.test(l))return"remise";
   if(/prlv|prélèvement|prelevement|prlt/.test(l))return"prelevement";
   if(/chèque|cheque|chq/.test(l))return"cheque";
@@ -421,6 +432,7 @@ function operationsFiltrees(){
   let list=operations.slice();
   if(vue==="actives")list=list.filter(o=>!o.ecarte);else if(vue==="ecartes")list=list.filter(o=>o.ecarte);
   if(sens!=="tous")list=list.filter(o=>o.sens===sens);
+  if(typeFiltre!=="tous")list=list.filter(o=>o.type===typeFiltre);
   if(dateDu)list=list.filter(o=>o.dateISO&&o.dateISO>=dateDu);
   if(dateAu)list=list.filter(o=>o.dateISO&&o.dateISO<=dateAu);
   if(montantClique!=null)list=list.filter(o=>Math.abs(Math.abs(o.montant)-Math.abs(montantClique))<0.005);
@@ -457,6 +469,14 @@ function render(){
   if(dernierSupprime) pills+='<span class="pill-actif">🗑 Transaction supprimée <button onclick="annulerSuppression()" title="Rétablir">↩ Annuler</button></span>';
   document.getElementById("pill-zone").innerHTML=pills;
 
+  // Filtres par type : on n'affiche que les types réellement présents
+  const ordre=["virement","interne","rejet","remise","carte","prelevement","cheque","frais","especes","autre"];
+  const presents=ordre.filter(t=>operations.some(o=>o.type===t));
+  const compte=t=>operations.filter(o=>o.type===t).length;
+  let chips='<span class="grp-label">Type</span><button class="filtre '+(typeFiltre==="tous"?"actif":"")+'" onclick="setType(\'tous\')">Tous</button>';
+  presents.forEach(t=>{chips+='<button class="filtre '+(typeFiltre===t?"actif":"")+'" onclick="setType(\''+t+'\')">'+LABEL_TYPE[t]+' <span style="opacity:.65">'+compte(t)+'</span></button>';});
+  document.getElementById("type-filtres").innerHTML=chips;
+
   const list=operationsFiltrees();const el=document.getElementById("liste");
   if(!operations.length){el.innerHTML='<div class="vide">Aucune opération pour l\'instant.<br>Chargez un relevé pour commencer 📄</div>';return;}
   if(!list.length){el.innerHTML='<div class="vide">Aucun résultat 🔍</div>';return;}
@@ -475,7 +495,8 @@ function render(){
 }
 
 function toggleEcarte(id){const o=operations.find(x=>x.id===id);if(!o)return;o.ecarte=!o.ecarte;o.ecarteAuto=false;toast(o.ecarte?"Mis de côté":"Réintégré");render();}
-function ecarterVirements(){let n=0;operations.forEach(o=>{if(o.type==="virement"&&!o.ecarte){o.ecarte=true;n++;}});toast(n?n+" virement(s) mis de côté":"Aucun virement");render();}
+function setType(t){typeFiltre=t;render();}
+function ecarterType(type){let n=0;operations.forEach(o=>{if(o.type===type&&!o.ecarte){o.ecarte=true;n++;}});toast(n?n+" « "+LABEL_TYPE[type]+" » mis de côté":"Aucune ligne de ce type");render();}
 function reintegrerTout(){operations.forEach(o=>o.ecarte=false);toast("Tout réintégré");render();}
 function supprimer(id){const i=operations.findIndex(x=>x.id===id);if(i<0)return;dernierSupprime={op:operations[i],idx:i};operations.splice(i,1);toast("Transaction supprimée");render();}
 function annulerSuppression(){if(!dernierSupprime)return;operations.splice(Math.min(dernierSupprime.idx,operations.length),0,dernierSupprime.op);dernierSupprime=null;toast("Transaction rétablie");render();}
