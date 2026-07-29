@@ -1,0 +1,18 @@
+PENSE-BÊTE — MOTS DE PASSE
+==========================
+
+Outil RELEVÉS (releves.html)
+  Mot de passe : Motors92390
+
+Appli RAPPELS (login.html)
+  Mot de passe : (inchangé — non noté ici volontairement)
+
+--------------------------------------------------------------------
+⚠️  ATTENTION SÉCURITÉ
+Ce fichier contient un mot de passe EN CLAIR. Toute personne ayant
+accès à ce dépôt peut le lire, et il restera visible dans l'historique
+Git même s'il est supprimé plus tard.
+- Ne partagez pas ce dépôt avec quelqu'un qui ne doit pas voir ce mot de passe.
+- Si le mot de passe fuite, demandez à le changer (l'empreinte SHA-256
+  dans releves.html sera remplacée).
+--------------------------------------------------------------------
