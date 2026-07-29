@@ -364,6 +364,7 @@ function cleOp(o){return (o.dateISO||o.date||"")+"|"+(Number(o.montant)||0).toFi
 
 const MOTS_VIREMENT=["virement","vir sepa","vir inst","vir recu","vir reçu","vir emis","vir émis","vir.","vir ","internet","vir web","virt"];
 const LABEL_TYPE={virement:"Virement",interne:"Vir. interne",rejet:"Rejet prélèv.",remise:"Remise CB",carte:"Carte",prelevement:"Prélèvement",cheque:"Chèque",frais:"Frais",especes:"Espèces",autre:"Autre"};
+const MOIS_NOMS=["","Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 
 function toNombre(txt){if(txt==null)return NaN;let s=String(txt).trim().replace(/\s| |\./g,"").replace(",",".").replace(/[^0-9.\-]/g,"");const n=parseFloat(s);return isNaN(n)?NaN:n;}
 function fmtMontant(n){return n.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";}
@@ -596,6 +597,19 @@ function setVue(v,btn){vue=v;document.querySelectorAll('[data-v]').forEach(b=>b.
 function setPointage(p,btn){pointage=p;document.querySelectorAll('[data-p]').forEach(b=>b.classList.remove("actif"));btn.classList.add("actif");render();}
 function setAnnee(v){filtreAnnee=v;render();}
 function setMois(v){filtreMois=v;render();}
+function libellePeriode(){
+  const parts=[];
+  if(filtreMois!=="tous")parts.push(MOIS_NOMS[parseInt(filtreMois,10)]);
+  if(filtreAnnee!=="toutes")parts.push(filtreAnnee);
+  let t=parts.join(" ");
+  if(dateDu||dateAu){const d=dateDu?dateDu.split("-").reverse().join("/"):"…";const a=dateAu?dateAu.split("-").reverse().join("/"):"…";t=(t?t+" · ":"")+d+" → "+a;}
+  return t||"Toute la période";
+}
+function resetPeriode(){
+  filtreAnnee="toutes";filtreMois="tous";dateDu="";dateAu="";
+  document.getElementById("date-du").value="";document.getElementById("date-au").value="";
+  render();
+}
 function majSelectAnnee(){
   const sel=document.getElementById("sel-annee");if(!sel)return;
   const annees=[...new Set(operations.map(o=>(o.dateISO||"").slice(0,4)).filter(a=>/^\d{4}$/.test(a)))].sort((a,b)=>b-a);
@@ -604,6 +618,16 @@ function majSelectAnnee(){
   sel.value=filtreAnnee;
 }
 function trier(col){if(tri.col===col)tri.asc=!tri.asc;else{tri.col=col;tri.asc=true;}render();}
+
+// Une opération est-elle dans la période choisie (année / mois / dates Du-Au) ?
+function dansPeriode(o){
+  if(filtreAnnee!=="toutes"&&(o.dateISO||"").slice(0,4)!==filtreAnnee)return false;
+  if(filtreMois!=="tous"&&(o.dateISO||"").slice(5,7)!==filtreMois)return false;
+  if(dateDu&&!(o.dateISO&&o.dateISO>=dateDu))return false;
+  if(dateAu&&!(o.dateISO&&o.dateISO<=dateAu))return false;
+  return true;
+}
+function periodeActive(){return filtreAnnee!=="toutes"||filtreMois!=="tous"||dateDu||dateAu;}
 
 function operationsFiltrees(){
   let list=operations.slice();
@@ -635,16 +659,18 @@ function operationsFiltrees(){
 function surligner(txt){if(!recherche)return escapeHtml(txt);try{const r=recherche.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");return escapeHtml(txt).replace(new RegExp("("+r+")","ig"),"<mark>$1</mark>");}catch(e){return escapeHtml(txt);}}
 
 function render(){
-  const actives=operations.filter(o=>!o.ecarte);
+  const periode=operations.filter(dansPeriode);
+  const actives=periode.filter(o=>!o.ecarte);
   const deb=actives.filter(o=>o.montant<0).reduce((s,o)=>s+o.montant,0);
   const cred=actives.filter(o=>o.montant>0).reduce((s,o)=>s+o.montant,0);
-  document.getElementById("c-nb").textContent=operations.length;
-  document.getElementById("c-ecarte").textContent=operations.filter(o=>o.ecarte).length;
-  document.getElementById("c-debit").textContent=operations.length?fmtMontant(deb):"—";
-  document.getElementById("c-credit").textContent=operations.length?fmtMontant(cred):"—";
-  document.getElementById("c-solde").textContent=operations.length?fmtMontant(deb+cred):"—";
+  document.getElementById("c-nb").textContent=periode.length;
+  document.getElementById("c-ecarte").textContent=periode.filter(o=>o.ecarte).length;
+  document.getElementById("c-debit").textContent=periode.length?fmtMontant(deb):"—";
+  document.getElementById("c-credit").textContent=periode.length?fmtMontant(cred):"—";
+  document.getElementById("c-solde").textContent=periode.length?fmtMontant(deb+cred):"—";
 
   let pills="";
+  if(periodeActive()) pills+='<span class="pill-actif">📅 '+libellePeriode()+' <button onclick="resetPeriode()" title="Retirer le filtre de période">✕</button></span> ';
   if(montantClique!=null) pills+='<span class="pill-actif">Montant filtré : '+fmtMontant(Math.abs(montantClique))+' <button onclick="clearMontant()">✕</button></span> ';
   if(dernierSupprime) pills+='<span class="pill-actif">🗑 Transaction supprimée <button onclick="annulerSuppression()" title="Rétablir">↩ Annuler</button></span>';
   document.getElementById("pill-zone").innerHTML=pills;
