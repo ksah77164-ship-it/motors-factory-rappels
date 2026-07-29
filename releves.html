@@ -326,7 +326,6 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
       <div class="fac-form">
         <div><label>Date</label><input type="date" id="f-date"></div>
         <div><label>N° de facture</label><input id="f-num" placeholder="Ex : 2025-0142" autocomplete="off"></div>
-        <div class="full"><label>Client (facultatif)</label><input id="f-client" placeholder="Nom du client" autocomplete="off"></div>
         <div><label>Montant (€)</label><input id="f-montant" inputmode="decimal" placeholder="Ex : 1250,00" autocomplete="off"></div>
         <div><label>Mode de paiement</label>
           <select id="f-mode">
@@ -924,7 +923,7 @@ function facturesPourCloud(){return factures.map(f=>({date:f.date,dateISO:f.date
 function ajouterFacture(){
   const dv=document.getElementById("f-date").value;
   const num=document.getElementById("f-num").value.trim();
-  const client=document.getElementById("f-client").value.trim();
+  const client="";
   const val=toNombre(document.getElementById("f-montant").value);
   const mode=document.getElementById("f-mode").value;
   const statut=document.getElementById("f-statut").value;
@@ -940,7 +939,7 @@ function ajouterFacture(){
     factures.push({id:nextFactureId++,date:dateAff,dateISO:dISO,numero:num,client:client,montant:val,mode:mode,statut:statut,note:""});
     facStatus("✅ Facture enregistrée.","ok");
   }
-  document.getElementById("f-num").value="";document.getElementById("f-client").value="";document.getElementById("f-montant").value="";
+  document.getElementById("f-num").value="";document.getElementById("f-montant").value="";
   document.getElementById("f-submit").textContent="✓ Ajouter la facture";
   renderFactures();planifierSauvegarde();
 }
@@ -949,7 +948,6 @@ function editerFacture(id){
   factureEditId=id;
   document.getElementById("f-date").value=f.dateISO||"";
   document.getElementById("f-num").value=f.numero||"";
-  document.getElementById("f-client").value=f.client||"";
   document.getElementById("f-montant").value=Math.abs(f.montant).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
   document.getElementById("f-mode").value=f.mode||"especes";
   document.getElementById("f-statut").value=f.statut||"payee";
@@ -990,17 +988,17 @@ function renderFactures(){
       '<span class="op-date">'+escapeHtml(f.date||"—")+'</span>'+st+
       '<button class="editbtn" style="margin-left:auto" onclick="editerFacture('+f.id+')" title="Modifier">✏️</button>'+
       '<button class="delbtn" onclick="supprimerFacture('+f.id+')" title="Supprimer">🗑</button></div>'+
-      '<div class="op-lib">N° '+escapeHtml(f.numero)+(f.client?' — '+escapeHtml(f.client):'')+'</div>'+
+      '<div class="op-lib">N° '+escapeHtml(f.numero)+'</div>'+
       '<div class="op-amts"><div class="amt credit"><span class="amt-lbl">Montant</span><span class="amt-val credit" style="cursor:default">'+fmtMontant(f.montant)+'</span></div>'+
       '<div class="amt"><span class="amt-lbl">Mode</span><span class="amt-val" style="color:var(--champ);cursor:default">'+MODE_LABEL[f.mode]+'</span></div></div></div>';
   }).join("");
 }
 function exportFacturesCSV(){
   if(!factures.length){toast("Rien à exporter");return;}
-  let csv="Date;N° facture;Client;Montant;Mode;Statut\n";
+  let csv="Date;N° facture;Montant;Mode;Statut\n";
   factures.forEach(f=>{
     const am=Math.abs(f.montant).toLocaleString("fr-FR",{minimumFractionDigits:2}).replace(/\s| /g,"");
-    csv+=[f.date,'"'+String(f.numero||"").replace(/"/g,'""')+'"','"'+String(f.client||"").replace(/"/g,'""')+'"',am,MODE_LABEL[f.mode],f.statut==="attente"?"En attente":"Payée"].join(";")+"\n";
+    csv+=[f.date,'"'+String(f.numero||"").replace(/"/g,'""')+'"',am,MODE_LABEL[f.mode],f.statut==="attente"?"En attente":"Payée"].join(";")+"\n";
   });
   telecharger(csv,"factures-motors-factory.csv","text/csv;charset=utf-8;");
 }
