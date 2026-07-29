@@ -723,8 +723,8 @@ function deconnecterCloud(){
   cloudEtat="off";majCloudBadge();cfStatus("Déconnecté de cet appareil. Vos données restent en ligne dans votre coffre.","info");
 }
 
-// ── Connexion (mot de passe SHA-256, identique à l'appli Rappels) ──
-const AUTH_HASH="dd8985ffcf5ce1ce924642d5a9c20f649bac2a5bd5487aca1df43e3bce235065";
+// ── Connexion (mot de passe SHA-256, propre à l'outil relevés) ──
+const AUTH_HASH="fde83057674ff5ece52819657d42fb1771cf0e1765a6e36d3225ee4be1085361";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
   const pwd=document.getElementById("login-pwd").value;if(!pwd)return;
