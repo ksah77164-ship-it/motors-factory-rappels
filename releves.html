@@ -866,7 +866,7 @@ async function chargerCloud(){
       nextFactureId=1;
       factures=data.factures.map(r=>({id:nextFactureId++,date:r.date||"",dateISO:r.dateISO||dateISO(r.date||""),numero:String(r.numero||""),client:r.client||"",montant:Number(r.montant)||0,mode:r.mode||"especes",statut:r.statut||"payee",note:r.note||""}));
     }
-    cloudEtat="ok";majCloudBadge();render();renderFactures();return true;
+    cloudEtat="ok";majCloudBadge();sauvegarderLocal();render();renderFactures();return true;
   }catch(e){cloudEtat="err";majCloudBadge();render();return false;}
 }
 async function sauvegarderCloud(manuel){
@@ -879,7 +879,30 @@ async function sauvegarderCloud(manuel){
     return true;
   }catch(e){cloudEtat="err";majCloudBadge();if(manuel){toast("⚠︎ Échec de l'enregistrement");cfStatus("⚠︎ Échec. Vérifiez votre connexion et le déploiement du script.","err");}return false;}
 }
-function planifierSauvegarde(){if(!apiURL())return;clearTimeout(saveTimer);cloudEtat="sync";majCloudBadge();saveTimer=setTimeout(()=>sauvegarderCloud(false),1000);}
+function sauvegarderLocal(){
+  try{
+    localStorage.setItem("mf_releves_ops",JSON.stringify(opsPourCloud()));
+    localStorage.setItem("mf_releves_fac",JSON.stringify(facturesPourCloud()));
+  }catch(e){}
+}
+function chargerLocal(){
+  try{
+    const ops=JSON.parse(localStorage.getItem("mf_releves_ops")||"[]");
+    operations=ops.map(r=>{
+      const o={date:r.date||"",dateISO:r.dateISO||dateISO(r.date||""),libelle:r.libelle||"",montant:Number(r.montant)||0};
+      o.id=nextId++;o.type=r.type||detecterType(o.libelle);o.sens=o.montant<0?"debit":"credit";
+      o.ecarte=(r.ecarte==1||r.ecarte===true||r.ecarte==="1");o.ecarteAuto=(r.ecarteAuto==1||r.ecarteAuto===true||r.ecarteAuto==="1");o.pointe=(r.pointe==1||r.pointe===true||r.pointe==="1");
+      return o;
+    });
+    const fac=JSON.parse(localStorage.getItem("mf_releves_fac")||"[]");
+    factures=fac.map(r=>({id:nextFactureId++,date:r.date||"",dateISO:r.dateISO||dateISO(r.date||""),numero:String(r.numero||""),client:r.client||"",montant:Number(r.montant)||0,mode:r.mode||"especes",statut:r.statut||"payee",note:r.note||""}));
+  }catch(e){}
+}
+function planifierSauvegarde(){
+  sauvegarderLocal();
+  if(!apiURL())return;
+  clearTimeout(saveTimer);cloudEtat="sync";majCloudBadge();saveTimer=setTimeout(()=>sauvegarderCloud(false),1000);
+}
 
 function ouvrirCloud(){
   document.getElementById("cf-url").value=localStorage.getItem("mf_releves_api")||API_RELEVES_DEFAUT||"";
@@ -1071,7 +1094,13 @@ function ajouterManuel(){
 }
 
 // ── Démarrage (uniquement une fois connecté) ──
-function demarrer(){majCloudBadge();if(apiURL()){chargerCloud();}else{render();}}
+function demarrer(){
+  chargerLocal();
+  majCloudBadge();
+  render();renderFactures();
+  // Si le cloud est configuré, il prend le relais comme source partagée entre appareils.
+  if(apiURL())chargerCloud();
+}
 if(sessionStorage.getItem("mf_releves_auth")==="1"){document.getElementById("login-overlay").style.display="none";demarrer();}
 else{setTimeout(()=>{const p=document.getElementById("login-pwd");if(p)p.focus();},50);}
 </script>
