@@ -162,6 +162,20 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 .sens-toggle .filtre{flex:1;text-align:center;}
 .sel-inline{width:auto;flex:1;min-width:140px;padding:9px 12px;font-size:13px;font-weight:700;border-radius:22px;}
 
+/* Onglets Relevés / Factures */
+.tabbar{display:flex;gap:6px;margin-bottom:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:5px;}
+.tabbar button{flex:1;background:none;border:none;padding:11px 8px;border-radius:12px;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;}
+.tabbar button.actif{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;box-shadow:0 4px 14px rgba(201,161,90,0.3);}
+/* Formulaire facture */
+.fac-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fac-form>div{display:flex;flex-direction:column;}
+.fac-form .full{grid-column:span 2;}
+.fac-form label{font-size:10px;font-weight:800;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+.fac-form input,.fac-form select{background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--cream);color-scheme:dark;}
+.fac-form input:focus,.fac-form select:focus{outline:none;border-color:var(--gold);}
+.fac-item{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:16px;padding:13px 14px;}
+.fac-mode{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--champ);white-space:nowrap;}
+
 /* Connexion */
 .login-overlay{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:18px;
   background:radial-gradient(1200px 600px at 50% -10%,#1a1611 0%,var(--bg) 55%);}
@@ -202,12 +216,19 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
     </div>
   </div>
 
+  <div class="tabbar">
+    <button id="tab-releves" class="actif" onclick="switchTab('releves')">📄 Relevés</button>
+    <button id="tab-factures" onclick="switchTab('factures')">🧾 Factures</button>
+  </div>
+
+  <div id="view-releves">
+
   <div class="dropzone" id="dropzone">
     <input type="file" id="file-input" accept=".pdf,.csv,.txt,.tsv" style="display:none" multiple>
     <div class="dz-icon">📥</div>
     <div class="dz-title" id="dz-title">Charger un relevé</div>
     <div class="dz-sub">Touchez pour choisir un fichier · les virements sont mis de côté automatiquement</div>
-    <div class="dz-formats">PDF · CSV · TXT</div>
+    <div class="dz-formats">PDF · CSV · TXT · PAYPAL</div>
   </div>
 
   <div id="erreur-zone"></div>
@@ -288,6 +309,71 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
   <div class="liste" id="liste">
     <div class="vide">Aucune opération pour l'instant.<br>Chargez un relevé pour commencer 📄</div>
   </div>
+
+  </div><!-- fin view-releves -->
+
+  <div id="view-factures" style="display:none">
+    <div class="counters">
+      <div class="counter ct"><div class="counter-nb" id="f-c-nb">—</div><div class="counter-label">Factures</div></div>
+      <div class="counter cs"><div class="counter-nb" id="f-c-total">—</div><div class="counter-label">Total</div></div>
+      <div class="counter cc"><div class="counter-nb" id="f-c-esp">—</div><div class="counter-label">Espèces</div></div>
+      <div class="counter cc"><div class="counter-nb" id="f-c-cb">—</div><div class="counter-label">Carte</div></div>
+      <div class="counter ce big"><div class="counter-nb" id="f-c-attente">—</div><div class="counter-label">En attente</div></div>
+    </div>
+
+    <div class="panel">
+      <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:800;color:var(--champ);margin-bottom:12px;">🧾 Nouvelle facture</div>
+      <div class="fac-form">
+        <div><label>Date</label><input type="date" id="f-date"></div>
+        <div><label>N° de facture</label><input id="f-num" placeholder="Ex : 2025-0142" autocomplete="off"></div>
+        <div class="full"><label>Client (facultatif)</label><input id="f-client" placeholder="Nom du client" autocomplete="off"></div>
+        <div><label>Montant (€)</label><input id="f-montant" inputmode="decimal" placeholder="Ex : 1250,00" autocomplete="off"></div>
+        <div><label>Mode de paiement</label>
+          <select id="f-mode">
+            <option value="especes">Espèces</option>
+            <option value="cb">Carte bancaire</option>
+            <option value="cheque">Chèque</option>
+            <option value="virement">Virement</option>
+            <option value="paypal">PayPal</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div><label>Statut</label>
+          <select id="f-statut">
+            <option value="payee">Payée</option>
+            <option value="attente">En attente</option>
+          </select>
+        </div>
+        <div style="justify-content:flex-end;"><label>&nbsp;</label>
+          <button class="btn vert" id="f-submit" onclick="ajouterFacture()" style="padding:11px 14px;">✓ Ajouter la facture</button>
+        </div>
+      </div>
+      <div class="modal-status" id="f-status"></div>
+    </div>
+
+    <div class="rowbtns">
+      <span class="grp-label">Mode</span>
+      <select id="f-filtre-mode" class="m-select sel-inline" onchange="renderFactures()">
+        <option value="tous">Tous les modes</option>
+        <option value="especes">Espèces</option>
+        <option value="cb">Carte bancaire</option>
+        <option value="cheque">Chèque</option>
+        <option value="virement">Virement</option>
+        <option value="paypal">PayPal</option>
+        <option value="autre">Autre</option>
+      </select>
+      <select id="f-filtre-statut" class="m-select sel-inline" onchange="renderFactures()">
+        <option value="tous">Tous les statuts</option>
+        <option value="payee">Payées</option>
+        <option value="attente">En attente</option>
+      </select>
+      <button class="btn vert" onclick="exportFacturesCSV()">⬇ CSV</button>
+    </div>
+
+    <div class="liste" id="fac-liste">
+      <div class="vide">Aucune facture pour l'instant.<br>Ajoutez-en une ci-dessus 🧾</div>
+    </div>
+  </div><!-- fin view-factures -->
 </div>
 
 <div class="modal-overlay" id="cloud-modal" onclick="if(event.target===this)fermerCloud()">
@@ -568,11 +654,14 @@ function lireCSV(txt){
   const sep=detecterSep(txt);const lignes=txt.split(/\r?\n/).filter(l=>l.trim());if(!lignes.length)return[];
   const rows=lignes.map(l=>parseCSVLigne(l,sep));const norm=s=>s.toLowerCase().replace(/[^a-z]/g,"");
   let entete=-1,cols={};
+  const trouve=(h,pats)=>{for(const p of pats){const k=h.findIndex(x=>x.includes(p));if(k>=0)return k;}return -1;};
   for(let i=0;i<Math.min(rows.length,15);i++){
     const h=rows[i].map(norm);
     const idxDate=h.findIndex(x=>x.includes("date"));
-    const idxLib=h.findIndex(x=>x.includes("libell")||x.includes("libelle")||x.includes("nature")||x.includes("operation")||x.includes("description")||x.includes("intitule")||x.includes("motif"));
-    const idxMont=h.findIndex(x=>x==="montant"||x.includes("montant")||x.includes("valeur"));
+    // libellé : banque (Libellé/Nature…) OU PayPal (Nom/Name)
+    const idxLib=trouve(h,["libell","nature","description","intitule","motif","operation","objet","nom","name"]);
+    // montant : banque (Montant/Valeur) OU PayPal (Net puis Brut) OU export anglais (Amount)
+    const idxMont=trouve(h,["montantnet","montant","valeur","net","brut","gross","amount"]);
     const idxDeb=h.findIndex(x=>x.includes("debit"));const idxCred=h.findIndex(x=>x.includes("credit"));
     if(idxDate>=0&&(idxMont>=0||idxDeb>=0||idxCred>=0||idxLib>=0)){entete=i;cols={idxDate,idxLib,idxMont,idxDeb,idxCred};break;}
   }
@@ -662,14 +751,14 @@ function surligner(txt){if(!recherche)return escapeHtml(txt);try{const r=recherc
 
 function render(){
   const periode=operations.filter(dansPeriode);
-  const actives=periode.filter(o=>!o.ecarte);
-  const deb=actives.filter(o=>o.montant<0).reduce((s,o)=>s+o.montant,0);
-  const cred=actives.filter(o=>o.montant>0).reduce((s,o)=>s+o.montant,0);
-  document.getElementById("c-nb").textContent=periode.length;
+  const list=operationsFiltrees();
+  const deb=list.filter(o=>o.montant<0).reduce((s,o)=>s+o.montant,0);
+  const cred=list.filter(o=>o.montant>0).reduce((s,o)=>s+o.montant,0);
+  document.getElementById("c-nb").textContent=list.length;
   document.getElementById("c-ecarte").textContent=periode.filter(o=>o.ecarte).length;
-  document.getElementById("c-debit").textContent=periode.length?fmtMontant(deb):"—";
-  document.getElementById("c-credit").textContent=periode.length?fmtMontant(cred):"—";
-  document.getElementById("c-solde").textContent=periode.length?fmtMontant(deb+cred):"—";
+  document.getElementById("c-debit").textContent=list.length?fmtMontant(deb):"—";
+  document.getElementById("c-credit").textContent=list.length?fmtMontant(cred):"—";
+  document.getElementById("c-solde").textContent=list.length?fmtMontant(deb+cred):"—";
 
   let pills="";
   if(periodeActive()) pills+='<span class="pill-actif">📅 '+libellePeriode()+' <button onclick="resetPeriode()" title="Retirer le filtre de période">✕</button></span> ';
@@ -694,7 +783,7 @@ function render(){
   const selS=document.getElementById("sel-sens");if(selS)selS.value=sens;
   const selP=document.getElementById("sel-pointage");if(selP)selP.value=pointage;
 
-  const list=operationsFiltrees();const el=document.getElementById("liste");
+  const el=document.getElementById("liste");
   if(!operations.length){el.innerHTML='<div class="vide">Aucune opération pour l\'instant.<br>Chargez un relevé pour commencer 📄</div>';return;}
   if(!list.length){el.innerHTML='<div class="vide">Aucun résultat 🔍</div>';return;}
   el.innerHTML=list.map(o=>{
@@ -774,14 +863,18 @@ async function chargerCloud(){
       o.pointe=(r.pointe==1||r.pointe===true||r.pointe==="1");
       return o;
     });
-    cloudEtat="ok";majCloudBadge();render();return true;
+    if(data&&Array.isArray(data.factures)){
+      nextFactureId=1;
+      factures=data.factures.map(r=>({id:nextFactureId++,date:r.date||"",dateISO:r.dateISO||dateISO(r.date||""),numero:String(r.numero||""),client:r.client||"",montant:Number(r.montant)||0,mode:r.mode||"especes",statut:r.statut||"payee",note:r.note||""}));
+    }
+    cloudEtat="ok";majCloudBadge();render();renderFactures();return true;
   }catch(e){cloudEtat="err";majCloudBadge();render();return false;}
 }
 async function sauvegarderCloud(manuel){
   const url=apiURL();if(!url){if(manuel){toast("Configurez d'abord le cloud ☁︎");cfStatus("Aucune adresse enregistrée sur cet appareil.","err");}return false;}
   clearTimeout(saveTimer);cloudEtat="sync";majCloudBadge();
   try{
-    await fetch(url,{method:"POST",body:JSON.stringify({token:apiToken(),ops:opsPourCloud()})});
+    await fetch(url,{method:"POST",body:JSON.stringify({token:apiToken(),ops:opsPourCloud(),factures:facturesPourCloud()})});
     cloudEtat="ok";majCloudBadge();
     if(manuel){toast("✅ Enregistré en ligne");cfStatus("✅ "+operations.length+" opération(s) enregistrée(s) en ligne.","ok");}
     return true;
@@ -808,6 +901,108 @@ async function connecterCloud(){
 function deconnecterCloud(){
   localStorage.removeItem("mf_releves_api");localStorage.removeItem("mf_releves_token");
   cloudEtat="off";majCloudBadge();cfStatus("Déconnecté de cet appareil. Vos données restent en ligne dans votre coffre.","info");
+}
+
+// ── Onglet « Factures » (suivi des encaissements) ──
+let factures=[], factureEditId=null, nextFactureId=1;
+const MODE_LABEL={especes:"Espèces",cb:"Carte bancaire",cheque:"Chèque",virement:"Virement",paypal:"PayPal",autre:"Autre"};
+
+function switchTab(name){
+  document.getElementById("view-releves").style.display=(name==="releves")?"":"none";
+  document.getElementById("view-factures").style.display=(name==="factures")?"":"none";
+  document.getElementById("tab-releves").classList.toggle("actif",name==="releves");
+  document.getElementById("tab-factures").classList.toggle("actif",name==="factures");
+  if(name==="factures"){
+    const fd=document.getElementById("f-date");
+    if(fd&&!fd.value){const d=new Date();fd.value=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+    renderFactures();
+  }
+}
+function facStatus(msg,cls){const s=document.getElementById("f-status");if(s){s.textContent=msg;s.className="modal-status "+(cls||"");}}
+function facturesPourCloud(){return factures.map(f=>({date:f.date,dateISO:f.dateISO,numero:f.numero,client:f.client,montant:f.montant,mode:f.mode,statut:f.statut,note:f.note||""}));}
+
+function ajouterFacture(){
+  const dv=document.getElementById("f-date").value;
+  const num=document.getElementById("f-num").value.trim();
+  const client=document.getElementById("f-client").value.trim();
+  const val=toNombre(document.getElementById("f-montant").value);
+  const mode=document.getElementById("f-mode").value;
+  const statut=document.getElementById("f-statut").value;
+  if(!num){facStatus("Indiquez un numéro de facture.","err");return;}
+  if(isNaN(val)||val<=0){facStatus("Indiquez un montant valide (ex : 1250,00).","err");return;}
+  let dateAff="",dISO="";
+  if(dv){const p=dv.split("-");dateAff=p[2]+"/"+p[1]+"/"+p[0];dISO=dv;}
+  if(factureEditId!=null){
+    const f=factures.find(x=>x.id===factureEditId);
+    if(f){f.date=dateAff;f.dateISO=dISO;f.numero=num;f.client=client;f.montant=val;f.mode=mode;f.statut=statut;}
+    factureEditId=null;facStatus("✅ Facture modifiée.","ok");
+  }else{
+    factures.push({id:nextFactureId++,date:dateAff,dateISO:dISO,numero:num,client:client,montant:val,mode:mode,statut:statut,note:""});
+    facStatus("✅ Facture enregistrée.","ok");
+  }
+  document.getElementById("f-num").value="";document.getElementById("f-client").value="";document.getElementById("f-montant").value="";
+  document.getElementById("f-submit").textContent="✓ Ajouter la facture";
+  renderFactures();planifierSauvegarde();
+}
+function editerFacture(id){
+  const f=factures.find(x=>x.id===id);if(!f)return;
+  factureEditId=id;
+  document.getElementById("f-date").value=f.dateISO||"";
+  document.getElementById("f-num").value=f.numero||"";
+  document.getElementById("f-client").value=f.client||"";
+  document.getElementById("f-montant").value=Math.abs(f.montant).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById("f-mode").value=f.mode||"especes";
+  document.getElementById("f-statut").value=f.statut||"payee";
+  document.getElementById("f-submit").textContent="✓ Enregistrer les modifications";
+  facStatus("Modification en cours…","info");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function supprimerFacture(id){
+  const i=factures.findIndex(x=>x.id===id);if(i<0)return;
+  if(!confirm("Supprimer cette facture ?"))return;
+  factures.splice(i,1);renderFactures();planifierSauvegarde();toast("Facture supprimée");
+}
+function renderFactures(){
+  const esp=factures.filter(f=>f.statut==="payee"&&f.mode==="especes").reduce((s,f)=>s+f.montant,0);
+  const cb=factures.filter(f=>f.statut==="payee"&&f.mode==="cb").reduce((s,f)=>s+f.montant,0);
+  const totalPaye=factures.filter(f=>f.statut==="payee").reduce((s,f)=>s+f.montant,0);
+  const attente=factures.filter(f=>f.statut==="attente").reduce((s,f)=>s+f.montant,0);
+  const setTxt=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setTxt("f-c-nb",factures.length);
+  setTxt("f-c-total",factures.length?fmtMontant(totalPaye):"—");
+  setTxt("f-c-esp",factures.length?fmtMontant(esp):"—");
+  setTxt("f-c-cb",factures.length?fmtMontant(cb):"—");
+  setTxt("f-c-attente",factures.length?fmtMontant(attente):"—");
+  const el=document.getElementById("fac-liste");if(!el)return;
+  const fmEl=document.getElementById("f-filtre-mode"),fsEl=document.getElementById("f-filtre-statut");
+  const fm=fmEl?fmEl.value:"tous",fs=fsEl?fsEl.value:"tous";
+  let arr=factures.slice();
+  if(fm!=="tous")arr=arr.filter(f=>f.mode===fm);
+  if(fs!=="tous")arr=arr.filter(f=>f.statut===fs);
+  arr.sort((a,b)=>((b.dateISO||"").localeCompare(a.dateISO||""))||(b.id-a.id));
+  if(!factures.length){el.innerHTML='<div class="vide">Aucune facture pour l\'instant.<br>Ajoutez-en une ci-dessus 🧾</div>';return;}
+  if(!arr.length){el.innerHTML='<div class="vide">Aucune facture pour ce filtre 🔍</div>';return;}
+  el.innerHTML=arr.map(f=>{
+    const st=f.statut==="attente"
+      ?'<span class="fac-mode" style="color:var(--gold2);border-color:var(--line-strong)">⏳ En attente</span>'
+      :'<span class="fac-mode" style="color:var(--credit)">✓ Payée</span>';
+    return '<div class="fac-item"><div class="op-top">'+
+      '<span class="op-date">'+escapeHtml(f.date||"—")+'</span>'+st+
+      '<button class="editbtn" style="margin-left:auto" onclick="editerFacture('+f.id+')" title="Modifier">✏️</button>'+
+      '<button class="delbtn" onclick="supprimerFacture('+f.id+')" title="Supprimer">🗑</button></div>'+
+      '<div class="op-lib">N° '+escapeHtml(f.numero)+(f.client?' — '+escapeHtml(f.client):'')+'</div>'+
+      '<div class="op-amts"><div class="amt credit"><span class="amt-lbl">Montant</span><span class="amt-val credit" style="cursor:default">'+fmtMontant(f.montant)+'</span></div>'+
+      '<div class="amt"><span class="amt-lbl">Mode</span><span class="amt-val" style="color:var(--champ);cursor:default">'+MODE_LABEL[f.mode]+'</span></div></div></div>';
+  }).join("");
+}
+function exportFacturesCSV(){
+  if(!factures.length){toast("Rien à exporter");return;}
+  let csv="Date;N° facture;Client;Montant;Mode;Statut\n";
+  factures.forEach(f=>{
+    const am=Math.abs(f.montant).toLocaleString("fr-FR",{minimumFractionDigits:2}).replace(/\s| /g,"");
+    csv+=[f.date,'"'+String(f.numero||"").replace(/"/g,'""')+'"','"'+String(f.client||"").replace(/"/g,'""')+'"',am,MODE_LABEL[f.mode],f.statut==="attente"?"En attente":"Payée"].join(";")+"\n";
+  });
+  telecharger(csv,"factures-motors-factory.csv","text/csv;charset=utf-8;");
 }
 
 // ── Connexion (mot de passe SHA-256, propre à l'outil relevés) ──

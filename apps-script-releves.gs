@@ -36,12 +36,16 @@ const TOKEN = "";
 
 const FEUILLE = "Releves";
 const ENTETES = ["date", "dateISO", "libelle", "montant", "type", "sens", "ecarte", "ecarteAuto", "pointe"];
+const FEUILLE_FAC = "Factures";
+const ENTETES_FAC = ["date", "dateISO", "numero", "client", "montant", "mode", "statut", "note"];
 
-function feuille_() {
+function feuille_(nom, entetes) {
+  nom = nom || FEUILLE;
+  entetes = entetes || ENTETES;
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sh = ss.getSheetByName(FEUILLE);
-  if (!sh) sh = ss.insertSheet(FEUILLE);
-  if (sh.getLastRow() === 0) sh.appendRow(ENTETES);
+  let sh = ss.getSheetByName(nom);
+  if (!sh) sh = ss.insertSheet(nom);
+  if (sh.getLastRow() === 0) sh.appendRow(entetes);
   return sh;
 }
 
@@ -55,10 +59,11 @@ function json_(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Lecture : renvoie toutes les opérations enregistrées.
+// Lecture : renvoie les opérations ET les factures enregistrées.
 function doGet(e) {
   const t = (e && e.parameter) ? e.parameter.token : "";
   if (!tokenOk_(t)) return json_({ error: "unauthorized" });
+
   const sh = feuille_();
   const last = sh.getLastRow();
   const ops = [];
@@ -72,29 +77,60 @@ function doGet(e) {
       });
     }
   }
-  return json_({ ops: ops });
+
+  const shF = feuille_(FEUILLE_FAC, ENTETES_FAC);
+  const lastF = shF.getLastRow();
+  const factures = [];
+  if (lastF > 1) {
+    const valsF = shF.getRange(2, 1, lastF - 1, ENTETES_FAC.length).getValues();
+    for (let i = 0; i < valsF.length; i++) {
+      const r = valsF[i];
+      factures.push({
+        date: r[0], dateISO: r[1], numero: r[2], client: r[3],
+        montant: Number(r[4]) || 0, mode: r[5], statut: r[6], note: r[7]
+      });
+    }
+  }
+
+  return json_({ ops: ops, factures: factures });
 }
 
-// Écriture : remplace l'intégralité du coffre par les opérations reçues.
+// Écriture : remplace le coffre par les données reçues (opérations et/ou factures).
 function doPost(e) {
   let body = {};
   try { body = JSON.parse(e.postData.contents); }
   catch (err) { return json_({ error: "bad json" }); }
   if (!tokenOk_(body.token)) return json_({ error: "unauthorized" });
 
-  const ops = Array.isArray(body.ops) ? body.ops : [];
-  const sh = feuille_();
-  const last = sh.getLastRow();
-  if (last > 1) sh.getRange(2, 1, last - 1, ENTETES.length).clearContent();
-
-  if (ops.length) {
-    const rows = ops.map(function (o) {
-      return [
-        o.date || "", o.dateISO || "", o.libelle || "", Number(o.montant) || 0,
-        o.type || "", o.sens || "", o.ecarte ? 1 : 0, o.ecarteAuto ? 1 : 0, o.pointe ? 1 : 0
-      ];
-    });
-    sh.getRange(2, 1, rows.length, ENTETES.length).setValues(rows);
+  if (Array.isArray(body.ops)) {
+    const sh = feuille_();
+    const last = sh.getLastRow();
+    if (last > 1) sh.getRange(2, 1, last - 1, ENTETES.length).clearContent();
+    if (body.ops.length) {
+      const rows = body.ops.map(function (o) {
+        return [
+          o.date || "", o.dateISO || "", o.libelle || "", Number(o.montant) || 0,
+          o.type || "", o.sens || "", o.ecarte ? 1 : 0, o.ecarteAuto ? 1 : 0, o.pointe ? 1 : 0
+        ];
+      });
+      sh.getRange(2, 1, rows.length, ENTETES.length).setValues(rows);
+    }
   }
-  return json_({ ok: true, count: ops.length });
+
+  if (Array.isArray(body.factures)) {
+    const shF = feuille_(FEUILLE_FAC, ENTETES_FAC);
+    const lastF = shF.getLastRow();
+    if (lastF > 1) shF.getRange(2, 1, lastF - 1, ENTETES_FAC.length).clearContent();
+    if (body.factures.length) {
+      const rowsF = body.factures.map(function (f) {
+        return [
+          f.date || "", f.dateISO || "", String(f.numero || ""), f.client || "",
+          Number(f.montant) || 0, f.mode || "", f.statut || "", f.note || ""
+        ];
+      });
+      shF.getRange(2, 1, rowsF.length, ENTETES_FAC.length).setValues(rowsF);
+    }
+  }
+
+  return json_({ ok: true });
 }
