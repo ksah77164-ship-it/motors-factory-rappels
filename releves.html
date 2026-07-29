@@ -131,6 +131,24 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
   box-shadow:0 10px 30px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:.2s;z-index:200;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
 .loading{font-weight:800;color:var(--gold2);}
+
+/* Cloud */
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+#cloud-btn.ok{color:var(--credit);border-color:rgba(174,203,144,0.4);}
+#cloud-btn.err{color:var(--debit);border-color:rgba(229,143,143,0.4);}
+#cloud-btn.sync{color:var(--gold2);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.62);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:18px;z-index:300;}
+.modal-overlay.show{display:flex;}
+.modal{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line-strong);border-radius:20px;padding:20px;width:100%;max-width:430px;max-height:90vh;overflow:auto;}
+.modal-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--champ);margin-bottom:6px;}
+.modal-sub{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.55;margin-bottom:6px;}
+.modal label{display:block;font-size:10px;font-weight:800;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;margin-top:14px;}
+.modal input{width:100%;background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--cream);}
+.modal input:focus{outline:none;border-color:var(--gold);}
+.modal-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.modal-status{font-size:12.5px;font-weight:700;margin-top:12px;line-height:1.5;min-height:18px;}
+.modal-status.ok{color:var(--credit);} .modal-status.err{color:var(--debit);} .modal-status.info{color:var(--champ);}
+.modal-close{width:100%;margin-top:14px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;}
 </style>
 </head>
 <body>
@@ -140,7 +158,10 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
       <div class="logo-icon">📄</div>
       <div><div class="logo-text">Motors Factory</div><div class="logo-sub">Relevés</div></div>
     </div>
-    <a class="link-back" href="index.html">↩ Rappels</a>
+    <div class="topbar-actions">
+      <button class="link-back" id="cloud-btn" onclick="ouvrirCloud()">☁︎ <span id="cloud-txt">Cloud</span></button>
+      <a class="link-back" href="index.html">↩ Rappels</a>
+    </div>
   </div>
 
   <div class="dropzone" id="dropzone">
@@ -203,6 +224,24 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
   </div>
 </div>
 
+<div class="modal-overlay" id="cloud-modal" onclick="if(event.target===this)fermerCloud()">
+  <div class="modal">
+    <div class="modal-title">☁︎ Synchronisation en ligne</div>
+    <p class="modal-sub">Enregistrez vos relevés dans votre coffre Google pour les retrouver sur tous vos appareils. À configurer <b>une fois par appareil</b>.</p>
+    <label>Adresse du script (Google Apps Script)</label>
+    <input id="cf-url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false">
+    <label>Mot de passe (identique à celui du script)</label>
+    <input id="cf-token" type="password" placeholder="Votre mot de passe" autocomplete="off">
+    <div class="modal-btns">
+      <button class="btn vert" onclick="connecterCloud()">✓ Connecter &amp; charger</button>
+      <button class="btn jaune" onclick="sauvegarderCloud(true)">⬆ Enregistrer maintenant</button>
+      <button class="btn rouge" onclick="deconnecterCloud()">Déconnecter</button>
+    </div>
+    <div class="modal-status" id="cf-status"></div>
+    <button class="modal-close" onclick="fermerCloud()">Fermer</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -212,6 +251,15 @@ if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudf
 let operations=[];
 let sens="tous", vue="actives", recherche="", montantClique=null, dateDu="", dateAu="", typeFiltre="tous";
 let tri={col:null,asc:true}, nextId=1, dernierSupprime=null;
+
+// ── Synchronisation cloud (Google Apps Script + Google Sheet) ──
+// Laissez vide : chaque appareil colle son adresse via le bouton ☁︎ Cloud (stocké localement).
+const API_RELEVES_DEFAUT="";
+function apiURL(){return (localStorage.getItem("mf_releves_api")||API_RELEVES_DEFAUT||"").trim();}
+function apiToken(){return (localStorage.getItem("mf_releves_token")||"").trim();}
+let cloudEtat="off", saveTimer=null;
+// Clé d'unicité d'une opération (pour ignorer les doublons à l'import)
+function cleOp(o){return (o.dateISO||o.date||"")+"|"+(Number(o.montant)||0).toFixed(2)+"|"+(o.libelle||"").toLowerCase().replace(/\s+/g," ").trim();}
 
 const MOTS_VIREMENT=["virement","vir sepa","vir inst","vir recu","vir reçu","vir emis","vir émis","vir.","vir ","internet","vir web","virt"];
 const LABEL_TYPE={virement:"Virement",interne:"Vir. interne",rejet:"Rejet prélèv.",remise:"Remise CB",carte:"Carte",prelevement:"Prélèvement",cheque:"Chèque",frais:"Frais",especes:"Espèces",autre:"Autre"};
@@ -266,9 +314,18 @@ async function traiterFichier(file){
     let ajout=nom.endsWith(".pdf")?await lirePDF(file):lireCSV(await file.text());
     if(!ajout.length){erreur("Aucune opération détectée dans « "+file.name+" ». Si c'est un PDF scanné (image), exportez plutôt le relevé en CSV depuis votre banque.");}
     else{
-      ajout.forEach(finaliser);operations=operations.concat(ajout);
-      const nbVir=ajout.filter(o=>o.ecarte).length;
-      infoMsg("✅ "+ajout.length+" opération(s) importée(s) depuis <b>"+escapeHtml(file.name)+"</b>"+(nbVir?" · <b>"+nbVir+" virement(s) mis de côté</b>.":"."));
+      ajout.forEach(finaliser);
+      // Anti-doublon : on ignore les opérations déjà présentes (même date, montant et libellé)
+      const existantes=new Set(operations.map(cleOp));
+      const nouvelles=ajout.filter(o=>{const k=cleOp(o);if(existantes.has(k))return false;existantes.add(k);return true;});
+      const doublons=ajout.length-nouvelles.length;
+      operations=operations.concat(nouvelles);
+      const nbVir=nouvelles.filter(o=>o.ecarte).length;
+      let msg="✅ "+nouvelles.length+" opération(s) importée(s) depuis <b>"+escapeHtml(file.name)+"</b>";
+      if(nbVir)msg+=" · <b>"+nbVir+" virement(s) mis de côté</b>";
+      if(doublons)msg+=" · <b>"+doublons+" doublon(s) ignoré(s)</b>";
+      infoMsg(msg+".");
+      if(nouvelles.length)planifierSauvegarde();
     }
   }catch(e){erreur("Impossible de lire « "+file.name+" » : "+(e.message||e));}
   document.getElementById("dz-title").textContent="Charger un autre relevé";
@@ -503,12 +560,12 @@ function render(){
   }).join("");
 }
 
-function toggleEcarte(id){const o=operations.find(x=>x.id===id);if(!o)return;o.ecarte=!o.ecarte;o.ecarteAuto=false;toast(o.ecarte?"Mis de côté":"Réintégré");render();}
+function toggleEcarte(id){const o=operations.find(x=>x.id===id);if(!o)return;o.ecarte=!o.ecarte;o.ecarteAuto=false;toast(o.ecarte?"Mis de côté":"Réintégré");render();planifierSauvegarde();}
 function setType(t){typeFiltre=t;render();}
-function ecarterType(type){let n=0;operations.forEach(o=>{if(o.type===type&&!o.ecarte){o.ecarte=true;n++;}});toast(n?n+" « "+LABEL_TYPE[type]+" » mis de côté":"Aucune ligne de ce type");render();}
-function reintegrerTout(){operations.forEach(o=>o.ecarte=false);toast("Tout réintégré");render();}
-function supprimer(id){const i=operations.findIndex(x=>x.id===id);if(i<0)return;dernierSupprime={op:operations[i],idx:i};operations.splice(i,1);toast("Transaction supprimée");render();}
-function annulerSuppression(){if(!dernierSupprime)return;operations.splice(Math.min(dernierSupprime.idx,operations.length),0,dernierSupprime.op);dernierSupprime=null;toast("Transaction rétablie");render();}
+function ecarterType(type){let n=0;operations.forEach(o=>{if(o.type===type&&!o.ecarte){o.ecarte=true;n++;}});toast(n?n+" « "+LABEL_TYPE[type]+" » mis de côté":"Aucune ligne de ce type");render();if(n)planifierSauvegarde();}
+function reintegrerTout(){operations.forEach(o=>o.ecarte=false);toast("Tout réintégré");render();planifierSauvegarde();}
+function supprimer(id){const i=operations.findIndex(x=>x.id===id);if(i<0)return;dernierSupprime={op:operations[i],idx:i};operations.splice(i,1);toast("Transaction supprimée");render();planifierSauvegarde();}
+function annulerSuppression(){if(!dernierSupprime)return;operations.splice(Math.min(dernierSupprime.idx,operations.length),0,dernierSupprime.op);dernierSupprime=null;toast("Transaction rétablie");render();planifierSauvegarde();}
 
 function clicMontant(val,el){
   const am=Math.abs(val);const txt=am.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -535,9 +592,71 @@ function exportExcel(){
   telecharger("﻿<html xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><head><meta charset=\"utf-8\"></head><body>"+html+"</body></html>","releve-motors-factory.xls","application/vnd.ms-excel");
 }
 function telecharger(contenu,nom,type){const blob=new Blob([contenu],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=nom;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast("Export « "+nom+" »");}
-function toutEffacer(){if(operations.length&&!confirm("Vider toutes les opérations ?"))return;operations=[];montantClique=null;recherche="";dateDu="";dateAu="";dernierSupprime=null;document.getElementById("recherche").value="";document.getElementById("date-du").value="";document.getElementById("date-au").value="";document.getElementById("erreur-zone").innerHTML="";render();}
+function toutEffacer(){if(operations.length&&!confirm("Vider toutes les opérations ?"+(apiURL()?"\n(Cela videra aussi votre coffre en ligne.)":"")))return;operations=[];montantClique=null;recherche="";dateDu="";dateAu="";dernierSupprime=null;document.getElementById("recherche").value="";document.getElementById("date-du").value="";document.getElementById("date-au").value="";document.getElementById("erreur-zone").innerHTML="";render();planifierSauvegarde();}
 
-render();
+// ── Cloud : chargement / sauvegarde / réglages ──
+function opsPourCloud(){return operations.map(o=>({date:o.date,dateISO:o.dateISO,libelle:o.libelle,montant:o.montant,type:o.type,sens:o.sens,ecarte:o.ecarte?1:0,ecarteAuto:o.ecarteAuto?1:0}));}
+function majCloudBadge(){
+  const b=document.getElementById("cloud-btn"),t=document.getElementById("cloud-txt");if(!b)return;
+  b.classList.remove("ok","err","sync");
+  if(!apiURL()){t.textContent="Cloud";return;}
+  if(cloudEtat==="sync"){b.classList.add("sync");t.textContent="…";}
+  else if(cloudEtat==="ok"){b.classList.add("ok");t.textContent="Synchro";}
+  else if(cloudEtat==="err"){b.classList.add("err");t.textContent="Hors-ligne";}
+  else{t.textContent="Cloud";}
+}
+async function chargerCloud(){
+  const url=apiURL();if(!url)return false;
+  cloudEtat="sync";majCloudBadge();
+  try{
+    const res=await fetch(url+(url.includes("?")?"&":"?")+"token="+encodeURIComponent(apiToken())+"&t="+Date.now());
+    const data=await res.json();
+    if(data&&data.error)throw new Error(data.error);
+    const rows=Array.isArray(data)?data:(data.ops||[]);
+    operations=rows.map(r=>{
+      const o={date:r.date||"",dateISO:r.dateISO||dateISO(r.date||""),libelle:r.libelle||"",montant:Number(r.montant)||0};
+      o.id=nextId++;o.type=r.type||detecterType(o.libelle);o.sens=o.montant<0?"debit":"credit";
+      o.ecarte=(r.ecarte==1||r.ecarte===true||r.ecarte==="1");o.ecarteAuto=(r.ecarteAuto==1||r.ecarteAuto===true||r.ecarteAuto==="1");
+      return o;
+    });
+    cloudEtat="ok";majCloudBadge();render();return true;
+  }catch(e){cloudEtat="err";majCloudBadge();render();return false;}
+}
+async function sauvegarderCloud(manuel){
+  const url=apiURL();if(!url){if(manuel){toast("Configurez d'abord le cloud ☁︎");cfStatus("Aucune adresse enregistrée sur cet appareil.","err");}return false;}
+  clearTimeout(saveTimer);cloudEtat="sync";majCloudBadge();
+  try{
+    await fetch(url,{method:"POST",body:JSON.stringify({token:apiToken(),ops:opsPourCloud()})});
+    cloudEtat="ok";majCloudBadge();
+    if(manuel){toast("✅ Enregistré en ligne");cfStatus("✅ "+operations.length+" opération(s) enregistrée(s) en ligne.","ok");}
+    return true;
+  }catch(e){cloudEtat="err";majCloudBadge();if(manuel){toast("⚠︎ Échec de l'enregistrement");cfStatus("⚠︎ Échec. Vérifiez votre connexion et le déploiement du script.","err");}return false;}
+}
+function planifierSauvegarde(){if(!apiURL())return;clearTimeout(saveTimer);cloudEtat="sync";majCloudBadge();saveTimer=setTimeout(()=>sauvegarderCloud(false),1000);}
+
+function ouvrirCloud(){
+  document.getElementById("cf-url").value=localStorage.getItem("mf_releves_api")||API_RELEVES_DEFAUT||"";
+  document.getElementById("cf-token").value=localStorage.getItem("mf_releves_token")||"";
+  cfStatus("","");document.getElementById("cloud-modal").classList.add("show");
+}
+function fermerCloud(){document.getElementById("cloud-modal").classList.remove("show");}
+function cfStatus(msg,cls){const s=document.getElementById("cf-status");if(s){s.textContent=msg;s.className="modal-status "+(cls||"");}}
+async function connecterCloud(){
+  const url=document.getElementById("cf-url").value.trim(),tok=document.getElementById("cf-token").value.trim();
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec\/?$/.test(url)){cfStatus("Adresse invalide : elle doit ressembler à https://script.google.com/macros/s/…/exec","err");return;}
+  localStorage.setItem("mf_releves_api",url);localStorage.setItem("mf_releves_token",tok);
+  cfStatus("Connexion…","info");
+  const ok=await chargerCloud();
+  if(ok)cfStatus("✅ Connecté · "+operations.length+" opération(s) chargée(s) depuis votre coffre.","ok");
+  else cfStatus("⚠︎ Échec. Vérifiez l'adresse, le mot de passe et que le script est bien déployé (« Tout le monde »).","err");
+}
+function deconnecterCloud(){
+  localStorage.removeItem("mf_releves_api");localStorage.removeItem("mf_releves_token");
+  cloudEtat="off";majCloudBadge();cfStatus("Déconnecté de cet appareil. Vos données restent en ligne dans votre coffre.","info");
+}
+
+majCloudBadge();
+if(apiURL()){chargerCloud();}else{render();}
 </script>
 </body>
 </html>
