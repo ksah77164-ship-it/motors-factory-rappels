@@ -107,18 +107,19 @@ body{font-family:'Nunito',sans-serif;background:#f0f4ff;min-height:100vh;padding
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
+  <header class="topbar">
     <div class="logo">
-      <div class="logo-icon">📞</div>
-      <div><div class="logo-text">Motors Factory</div><div class="logo-sub">Rappels clients</div></div>
+      <div class="logo-icon" aria-hidden="true">📞</div>
+      <div><h1 class="logo-text">Motors Factory</h1><div class="logo-sub">Rappels clients</div></div>
     </div>
     <div class="topright">
-      <span class="badge-live"><span class="dot-live"></span>Live</span>
-      <button class="sync-btn" id="sync-btn" onclick="charger()">↻ Sync</button>
+      <span class="badge-live"><span class="dot-live" aria-hidden="true"></span>Live</span>
+      <button class="sync-btn" id="sync-btn" type="button" onclick="charger()" aria-label="Synchroniser les rappels">↻ Sync</button>
     </div>
-  </div>
+  </header>
 
-  <div class="counters">
+  <main>
+  <div class="counters" role="group" aria-label="Compteurs de rappels">
     <div class="counter ct"><div class="counter-nb" id="c-total">—</div><div class="counter-label">Total</div></div>
     <div class="counter cr"><div class="counter-nb" id="c-rappeler">—</div><div class="counter-label">Urgent</div></div>
     <div class="counter co"><div class="counter-nb" id="c-attente">—</div><div class="counter-label">Attente</div></div>
@@ -126,32 +127,33 @@ body{font-family:'Nunito',sans-serif;background:#f0f4ff;min-height:100vh;padding
   </div>
 
   <!-- ONGLETS par personne -->
-  <div class="tabs" id="tabs"></div>
+  <div class="tabs" id="tabs" role="group" aria-label="Filtrer par personne"></div>
 
   <div class="section-filtres">
-    <div class="section-label">Statut</div>
-    <div class="filtres" id="filtres-statut">
-      <button class="filtre" onclick="filtrerStatut('tous',this)">Tous</button>
-      <button class="filtre actif" onclick="filtrerStatut('rappeler',this)">🔴 Urgent</button>
-      <button class="filtre" onclick="filtrerStatut('attente',this)">🟡 Attente</button>
-      <button class="filtre" onclick="filtrerStatut('traite',this)">🟢 Traités</button>
+    <div class="section-label" id="lbl-statut">Statut</div>
+    <div class="filtres" id="filtres-statut" role="group" aria-labelledby="lbl-statut">
+      <button class="filtre" type="button" aria-pressed="false" onclick="filtrerStatut('tous',this)">Tous</button>
+      <button class="filtre actif" type="button" aria-pressed="true" onclick="filtrerStatut('rappeler',this)">🔴 Urgent</button>
+      <button class="filtre" type="button" aria-pressed="false" onclick="filtrerStatut('attente',this)">🟡 Attente</button>
+      <button class="filtre" type="button" aria-pressed="false" onclick="filtrerStatut('traite',this)">🟢 Traités</button>
     </div>
   </div>
 
-  <div class="sync-info" id="sync-info" style="margin-top:8px;">Chargement...</div>
-  <div id="erreur-zone"></div>
+  <div class="sync-info" id="sync-info" style="margin-top:8px;" aria-live="polite">Chargement...</div>
+  <div id="erreur-zone" role="alert" aria-live="assertive"></div>
   <div id="liste"></div>
-  <button class="ajout-btn" onclick="ouvrirModal()">+ Ajouter manuellement</button>
+  <button class="ajout-btn" type="button" onclick="ouvrirModal()">+ Ajouter manuellement</button>
+  </main>
 </div>
 
-<div class="modal-wrap" id="modal">
+<div class="modal-wrap" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="modal">
-    <h3>Ajouter un rappel</h3>
-    <label>Nom</label><input type="text" id="m-nom" placeholder="Ex : Mme Dupont"/>
-    <label>Téléphone</label><input type="text" id="m-tel" placeholder="06 XX XX XX XX"/>
-    <label>Véhicule / Immat</label><input type="text" id="m-veh" placeholder="Ex : EG 206 KH"/>
-    <label>Motif</label><textarea id="m-motif" placeholder="Détail..."></textarea>
-    <label>Attribuer à</label>
+    <h3 id="modal-title">Ajouter un rappel</h3>
+    <label for="m-nom">Nom</label><input type="text" id="m-nom" placeholder="Ex : Mme Dupont"/>
+    <label for="m-tel">Téléphone</label><input type="tel" id="m-tel" placeholder="06 XX XX XX XX"/>
+    <label for="m-veh">Véhicule / Immat</label><input type="text" id="m-veh" placeholder="Ex : EG 206 KH"/>
+    <label for="m-motif">Motif</label><textarea id="m-motif" placeholder="Détail..."></textarea>
+    <label for="m-dest">Attribuer à</label>
     <select id="m-dest">
       <option value="Global">🌐 Global (non attribué)</option>
       <option value="Yaya">👤 Yaya</option>
@@ -160,8 +162,8 @@ body{font-family:'Nunito',sans-serif;background:#f0f4ff;min-height:100vh;padding
       <option value="Jelani">👤 Jelani</option>
     </select>
     <div class="modal-actions">
-      <button class="btn gris" onclick="fermerModal()">Annuler</button>
-      <button class="btn vert" onclick="ajouterManuel()">Ajouter</button>
+      <button class="btn gris" type="button" onclick="fermerModal()">Annuler</button>
+      <button class="btn vert" type="button" onclick="ajouterManuel()">Ajouter</button>
     </div>
   </div>
 </div>
@@ -257,15 +259,15 @@ function majOnglets(){
     return rappels.filter(r=>r.destinataire===p&&r.statut!=="traite").length;
   };
   const libelle=p=>{
-    if(p==="tous") return "🌐 Tous";
-    if(p==="Global") return "🌐 Global";
-    return "👤 "+p;
+    if(p==="tous") return '<span aria-hidden="true">🌐</span> Tous';
+    if(p==="Global") return '<span aria-hidden="true">🌐</span> Global';
+    return '<span aria-hidden="true">👤</span> '+p;
   };
 
   document.getElementById("tabs").innerHTML=liste.map(p=>`
-    <button class="tab ${filtrePersonne===p?"actif":""}" onclick="choisirPersonne('${p}')">
+    <button class="tab ${filtrePersonne===p?"actif":""}" type="button" aria-pressed="${filtrePersonne===p}" onclick="choisirPersonne('${p}')">
       ${libelle(p)}
-      <span class="tab-count">${compte(p)}</span>
+      <span class="tab-count" aria-label="${compte(p)} rappel(s) non traité(s)">${compte(p)}</span>
     </button>
   `).join("");
 }
@@ -298,20 +300,20 @@ function afficher(){
       :"";
     return `
     <div>
-      <div class="item ${ouvert===r.id?"active":""}" onclick="toggle(${r.id})">
-        <div class="emoji-statut">${emoji(r.statut)}</div>
+      <div class="item ${ouvert===r.id?"active":""}" role="button" tabindex="0" aria-expanded="${ouvert===r.id}" aria-controls="detail-${r.id}" onclick="toggle(${r.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggle(${r.id});}">
+        <div class="emoji-statut" aria-hidden="true">${emoji(r.statut)}</div>
         <div class="item-nom">${r.nom||"Inconnu"}${badgeDest}</div>
         <div class="item-tel">${r.tel||"—"}</div>
         <span class="item-badge ${r.statut}">${lab(r.statut)}</span>
         <div class="item-date">${r.date}${r.heure?" · "+r.heure:""}</div>
-        <div class="arrow">${ouvert===r.id?"▲":"▼"}</div>
+        <div class="arrow" aria-hidden="true">${ouvert===r.id?"▲":"▼"}</div>
       </div>
       <div class="detail ${ouvert===r.id?"open":""}" id="detail-${r.id}">
         <div class="detail-row">
           <a class="detail-tel" href="tel:${r.tel.replace(/\s/g,'')}">📞 ${r.tel||"—"}</a>
           ${r.vehicule?`<span class="detail-chip">🚗 ${r.vehicule}</span>`:""}
-          <span class="detail-chip dest ${r.destAuto?"auto":""}" onclick="toggleAttrib(${r.id})" title="Clic pour réattribuer">
-            ${r.destAuto?"✨":"👤"} ${r.destinataire}${r.destAuto?" (auto)":""} ✎
+          <span class="detail-chip dest ${r.destAuto?"auto":""}" role="button" tabindex="0" onclick="toggleAttrib(${r.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAttrib(${r.id});}" title="Clic pour réattribuer" aria-label="Réattribuer (actuellement ${r.destinataire})">
+            <span aria-hidden="true">${r.destAuto?"✨":"👤"}</span> ${r.destinataire}${r.destAuto?" (auto)":""} <span aria-hidden="true">✎</span>
           </span>
           ${r.modifie?`<span style="font-size:10px;color:#c7d2fe;margin-left:auto;">↻ ${r.modifie}</span>`:""}
         </div>
@@ -321,27 +323,27 @@ function afficher(){
           <div class="attrib-label">Attribuer à</div>
           <div class="attrib-choices">
             ${["Global",...EQUIPE_DEFAUT].map(p=>`
-              <button class="attrib-choice ${r.destinataire===p?"selected":""}" onclick="attribuer(${r.id},'${p}')">
-                ${p==="Global"?"🌐 Global":"👤 "+p}
+              <button class="attrib-choice ${r.destinataire===p?"selected":""}" type="button" aria-pressed="${r.destinataire===p}" onclick="attribuer(${r.id},'${p}')">
+                ${p==="Global"?'<span aria-hidden="true">🌐</span> Global':'<span aria-hidden="true">👤</span> '+p}
               </button>
             `).join("")}
           </div>
           <div class="attrib-new">
-            <input type="text" id="attrib-new-${r.id}" placeholder="Autre personne..."/>
-            <button onclick="attribuerNouveau(${r.id})">+ Ajouter</button>
+            <input type="text" id="attrib-new-${r.id}" placeholder="Autre personne..." aria-label="Nom d'une autre personne"/>
+            <button type="button" onclick="attribuerNouveau(${r.id})">+ Ajouter</button>
           </div>
         </div>
         <div class="note-area" id="note-${r.id}">
-          <textarea id="note-txt-${r.id}" placeholder="Ajouter une note...">${r.note}</textarea>
-          <button class="save-note-btn" onclick="sauveNote(${r.id})">💾 Enregistrer</button>
+          <textarea id="note-txt-${r.id}" placeholder="Ajouter une note..." aria-label="Note">${r.note}</textarea>
+          <button class="save-note-btn" type="button" onclick="sauveNote(${r.id})">💾 Enregistrer</button>
         </div>
         <div class="detail-actions">
-          ${r.statut!=="traite"?`<button class="btn vert" onclick="setStatut(${r.id},'traite')">✓ Traité</button>`:""}
-          ${r.statut==="rappeler"?`<button class="btn jaune" onclick="setStatut(${r.id},'attente')">⏱ Attente</button>`:""}
-          ${r.statut==="attente"?`<button class="btn rouge" onclick="setStatut(${r.id},'rappeler')">↩ Urgent</button>`:""}
-          ${r.statut==="traite"?`<button class="btn rouge" onclick="setStatut(${r.id},'rappeler')">↩ Réouvrir</button>`:""}
-          <button class="btn violet" onclick="toggleAttrib(${r.id})">👤 Réattribuer</button>
-          <button class="btn gris" onclick="toggleNote(${r.id})">📝 Note</button>
+          ${r.statut!=="traite"?`<button class="btn vert" type="button" onclick="setStatut(${r.id},'traite')">✓ Traité</button>`:""}
+          ${r.statut==="rappeler"?`<button class="btn jaune" type="button" onclick="setStatut(${r.id},'attente')">⏱ Attente</button>`:""}
+          ${r.statut==="attente"?`<button class="btn rouge" type="button" onclick="setStatut(${r.id},'rappeler')">↩ Urgent</button>`:""}
+          ${r.statut==="traite"?`<button class="btn rouge" type="button" onclick="setStatut(${r.id},'rappeler')">↩ Réouvrir</button>`:""}
+          <button class="btn violet" type="button" onclick="toggleAttrib(${r.id})">👤 Réattribuer</button>
+          <button class="btn gris" type="button" onclick="toggleNote(${r.id})">📝 Note</button>
         </div>
       </div>
     </div>`;
@@ -350,8 +352,8 @@ function afficher(){
 
 function filtrerStatut(v,b){
   filtreStatut=v;
-  document.querySelectorAll("#filtres-statut .filtre").forEach(x=>x.classList.remove("actif"));
-  b.classList.add("actif");ouvert=null;afficher();
+  document.querySelectorAll("#filtres-statut .filtre").forEach(x=>{x.classList.remove("actif");x.setAttribute("aria-pressed","false");});
+  b.classList.add("actif");b.setAttribute("aria-pressed","true");ouvert=null;afficher();
 }
 
 function toggle(id){ouvert=ouvert===id?null:id;afficher();}
@@ -379,8 +381,10 @@ function attribuerNouveau(id){
 async function setStatut(id,s){const r=rappels.find(r=>r.id===id);if(!r)return;r.statut=s;await sauvegarderSheet(r);majOnglets();afficher();}
 function toggleNote(id){const el=document.getElementById("note-"+id);if(el)el.style.display=el.style.display==="block"?"none":"block";}
 async function sauveNote(id){const r=rappels.find(r=>r.id===id);const txt=document.getElementById("note-txt-"+id);if(!r||!txt)return;r.note=txt.value;await sauvegarderSheet(r);afficher();}
-function ouvrirModal(){document.getElementById("modal").classList.add("open");}
-function fermerModal(){document.getElementById("modal").classList.remove("open");["m-nom","m-tel","m-veh","m-motif"].forEach(id=>document.getElementById(id).value="");document.getElementById("m-dest").value="Global";}
+let modalDeclencheur=null;
+function ouvrirModal(){modalDeclencheur=document.activeElement;document.getElementById("modal").classList.add("open");setTimeout(()=>document.getElementById("m-nom").focus(),50);}
+function fermerModal(){document.getElementById("modal").classList.remove("open");["m-nom","m-tel","m-veh","m-motif"].forEach(id=>document.getElementById(id).value="");document.getElementById("m-dest").value="Global";if(modalDeclencheur&&modalDeclencheur.focus){modalDeclencheur.focus();}modalDeclencheur=null;}
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.getElementById("modal").classList.contains("open")){fermerModal();}});
 function ajouterManuel(){
   const nom=document.getElementById("m-nom").value.trim();
   const tel=document.getElementById("m-tel").value.trim();

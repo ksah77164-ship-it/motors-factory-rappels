@@ -190,50 +190,53 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 </style>
 </head>
 <body>
-<div class="login-overlay" id="login-overlay">
+<div class="login-overlay" id="login-overlay" role="dialog" aria-modal="true" aria-labelledby="login-title">
   <div class="login-box">
     <div class="login-logo">
-      <div class="logo-icon">📄</div>
+      <div class="logo-icon" aria-hidden="true">📄</div>
       <div><div class="logo-text">Motors Factory</div><div class="logo-sub">Relevés</div></div>
     </div>
-    <div class="login-title">Connexion requise</div>
-    <div class="login-err" id="login-err">Mot de passe incorrect</div>
-    <label class="login-lbl">Mot de passe</label>
-    <input type="password" id="login-pwd" placeholder="Mot de passe" autocomplete="current-password">
-    <button class="login-btn" onclick="seConnecter()">Accéder</button>
+    <h2 class="login-title" id="login-title">Connexion requise</h2>
+    <div class="login-err" id="login-err" role="alert">Mot de passe incorrect</div>
+    <form onsubmit="seConnecter();return false;">
+      <label class="login-lbl" for="login-pwd">Mot de passe</label>
+      <input type="password" id="login-pwd" placeholder="Mot de passe" autocomplete="current-password" aria-describedby="login-err">
+      <button class="login-btn" type="submit">Accéder</button>
+    </form>
   </div>
 </div>
 
 <div class="app">
-  <div class="topbar">
+  <header class="topbar">
     <div class="logo">
-      <div class="logo-icon">📄</div>
-      <div><div class="logo-text">Motors Factory</div><div class="logo-sub">Relevés</div></div>
+      <div class="logo-icon" aria-hidden="true">📄</div>
+      <div><h1 class="logo-text">Motors Factory</h1><div class="logo-sub">Relevés</div></div>
     </div>
     <div class="topbar-actions">
-      <button class="link-back" id="cloud-btn" onclick="ouvrirCloud()">☁︎ <span id="cloud-txt">Cloud</span></button>
-      <a class="link-back" href="index.html">↩ Rappels</a>
+      <button class="link-back" id="cloud-btn" type="button" onclick="ouvrirCloud()" aria-haspopup="dialog"><span aria-hidden="true">☁︎</span> <span id="cloud-txt">Cloud</span></button>
+      <a class="link-back" href="index.html"><span aria-hidden="true">↩</span> Rappels</a>
     </div>
+  </header>
+
+  <main>
+  <div class="tabbar" role="tablist" aria-label="Vues">
+    <button id="tab-releves" class="actif" type="button" role="tab" aria-selected="true" aria-controls="view-releves" onclick="switchTab('releves')"><span aria-hidden="true">📄</span> Relevés</button>
+    <button id="tab-factures" type="button" role="tab" aria-selected="false" aria-controls="view-factures" onclick="switchTab('factures')"><span aria-hidden="true">🧾</span> Factures</button>
   </div>
 
-  <div class="tabbar">
-    <button id="tab-releves" class="actif" onclick="switchTab('releves')">📄 Relevés</button>
-    <button id="tab-factures" onclick="switchTab('factures')">🧾 Factures</button>
-  </div>
+  <div id="view-releves" role="tabpanel" aria-labelledby="tab-releves">
 
-  <div id="view-releves">
-
-  <div class="dropzone" id="dropzone">
+  <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Charger un relevé : touchez ou déposez un fichier PDF, CSV, TXT ou PayPal">
     <input type="file" id="file-input" accept=".pdf,.csv,.txt,.tsv" style="display:none" multiple>
-    <div class="dz-icon">📥</div>
+    <div class="dz-icon" aria-hidden="true">📥</div>
     <div class="dz-title" id="dz-title">Charger un relevé</div>
     <div class="dz-sub">Touchez pour choisir un fichier · les virements sont mis de côté automatiquement</div>
     <div class="dz-formats">PDF · CSV · TXT · PAYPAL</div>
   </div>
 
-  <div id="erreur-zone"></div>
+  <div id="erreur-zone" role="alert" aria-live="assertive"></div>
 
-  <div class="counters">
+  <div class="counters" role="group" aria-label="Totaux des relevés">
     <div class="counter ct"><div class="counter-nb" id="c-nb">—</div><div class="counter-label">Opérations</div></div>
     <div class="counter ce"><div class="counter-nb" id="c-ecarte">—</div><div class="counter-label">Écartés</div></div>
     <div class="counter cr"><div class="counter-nb" id="c-debit">—</div><div class="counter-label">Débits</div></div>
@@ -243,19 +246,19 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 
   <div class="panel">
     <div class="search">
-      <span class="search-ico">🔍</span>
-      <input type="text" id="recherche" placeholder="Chercher un montant ou un libellé…">
+      <span class="search-ico" aria-hidden="true">🔍</span>
+      <input type="search" id="recherche" placeholder="Chercher un montant ou un libellé…" aria-label="Chercher un montant ou un libellé">
     </div>
     <div class="dates">
-      <div class="date-field"><label>Du</label><input type="date" id="date-du"></div>
-      <div class="date-field"><label>Au</label><input type="date" id="date-au"></div>
+      <div class="date-field"><label for="date-du">Du</label><input type="date" id="date-du"></div>
+      <div class="date-field"><label for="date-au">Au</label><input type="date" id="date-au"></div>
     </div>
   </div>
 
   <div class="rowbtns">
-    <span class="grp-label">Période</span>
-    <select id="sel-annee" class="m-select sel-inline" onchange="setAnnee(this.value)"><option value="toutes">Toutes les années</option></select>
-    <select id="sel-mois" class="m-select sel-inline" onchange="setMois(this.value)">
+    <span class="grp-label" id="lbl-periode">Période</span>
+    <select id="sel-annee" class="m-select sel-inline" aria-label="Filtrer par année" onchange="setAnnee(this.value)"><option value="toutes">Toutes les années</option></select>
+    <select id="sel-mois" class="m-select sel-inline" aria-label="Filtrer par mois" onchange="setMois(this.value)">
       <option value="tous">Tous les mois</option>
       <option value="01">Janvier</option>
       <option value="02">Février</option>
@@ -273,34 +276,34 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
   </div>
   <div class="rowbtns">
     <span class="grp-label">Filtres</span>
-    <select id="sel-vue" class="m-select sel-inline" onchange="setVue(this.value)">
+    <select id="sel-vue" class="m-select sel-inline" aria-label="Filtrer par état (actives, écartés, toutes)" onchange="setVue(this.value)">
       <option value="actives">✔ Actives</option>
       <option value="ecartes">⏸ Écartés</option>
       <option value="toutes">Toutes</option>
     </select>
-    <select id="sel-sens" class="m-select sel-inline" onchange="setSens(this.value)">
+    <select id="sel-sens" class="m-select sel-inline" aria-label="Filtrer par sens" onchange="setSens(this.value)">
       <option value="tous">Sens : tous</option>
       <option value="debit">Débits</option>
       <option value="credit">Crédits</option>
     </select>
-    <select id="sel-type" class="m-select sel-inline" onchange="setType(this.value)">
+    <select id="sel-type" class="m-select sel-inline" aria-label="Filtrer par type d'opération" onchange="setType(this.value)">
       <option value="tous">Type : tous</option>
     </select>
-    <select id="sel-pointage" class="m-select sel-inline" onchange="setPointage(this.value)">
+    <select id="sel-pointage" class="m-select sel-inline" aria-label="Filtrer par pointage" onchange="setPointage(this.value)">
       <option value="toutes">Pointage : tous</option>
       <option value="non">À pointer</option>
       <option value="oui">✓ Pointées</option>
     </select>
   </div>
   <div class="rowbtns">
-    <button class="btn vert" onclick="ouvrirAjout()">➕ Ajouter une ligne</button>
-    <button class="btn jaune" onclick="ecarterType('virement')">⏸ Écarter virements</button>
-    <button class="btn jaune" onclick="ecarterType('interne')">⏸ Vir. internes</button>
-    <button class="btn jaune" onclick="ecarterType('rejet')">⏸ Rejets prélèv.</button>
-    <button class="btn" onclick="reintegrerTout()">↩ Réintégrer</button>
-    <button class="btn vert" onclick="exportCSV()">⬇ CSV</button>
-    <button class="btn" onclick="exportExcel()">⬇ Excel</button>
-    <button class="btn rouge" onclick="toutEffacer()">✕ Vider</button>
+    <button class="btn vert" type="button" onclick="ouvrirAjout()">➕ Ajouter une ligne</button>
+    <button class="btn jaune" type="button" onclick="ecarterType('virement')">⏸ Écarter virements</button>
+    <button class="btn jaune" type="button" onclick="ecarterType('interne')">⏸ Vir. internes</button>
+    <button class="btn jaune" type="button" onclick="ecarterType('rejet')">⏸ Rejets prélèv.</button>
+    <button class="btn" type="button" onclick="reintegrerTout()">↩ Réintégrer</button>
+    <button class="btn vert" type="button" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn" type="button" onclick="exportExcel()">⬇ Excel</button>
+    <button class="btn rouge" type="button" onclick="toutEffacer()">✕ Vider</button>
   </div>
 
   <div class="hint">💡 Touchez un <b>montant</b> pour le copier et filtrer · touchez <b>○</b> pour mettre une ligne de côté (elle sort de la recherche des factures).</div>
@@ -312,8 +315,8 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
 
   </div><!-- fin view-releves -->
 
-  <div id="view-factures" style="display:none">
-    <div class="counters">
+  <div id="view-factures" role="tabpanel" aria-labelledby="tab-factures" style="display:none">
+    <div class="counters" role="group" aria-label="Totaux des factures">
       <div class="counter ct"><div class="counter-nb" id="f-c-nb">—</div><div class="counter-label">Factures</div></div>
       <div class="counter cs"><div class="counter-nb" id="f-c-total">—</div><div class="counter-label">Total</div></div>
       <div class="counter cc"><div class="counter-nb" id="f-c-esp">—</div><div class="counter-label">Espèces</div></div>
@@ -322,12 +325,12 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
     </div>
 
     <div class="panel">
-      <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:800;color:var(--champ);margin-bottom:12px;">🧾 Nouvelle facture</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:16px;font-weight:800;color:var(--champ);margin-bottom:12px;"><span aria-hidden="true">🧾</span> Nouvelle facture</h2>
       <div class="fac-form">
-        <div><label>Date</label><input type="date" id="f-date"></div>
-        <div><label>N° de facture</label><input id="f-num" placeholder="Ex : 2025-0142" autocomplete="off"></div>
-        <div><label>Montant (€)</label><input id="f-montant" inputmode="decimal" placeholder="Ex : 1250,00" autocomplete="off"></div>
-        <div><label>Mode de paiement</label>
+        <div><label for="f-date">Date</label><input type="date" id="f-date"></div>
+        <div><label for="f-num">N° de facture</label><input id="f-num" placeholder="Ex : 2025-0142" autocomplete="off"></div>
+        <div><label for="f-montant">Montant (€)</label><input id="f-montant" inputmode="decimal" placeholder="Ex : 1250,00" autocomplete="off"></div>
+        <div><label for="f-mode">Mode de paiement</label>
           <select id="f-mode">
             <option value="especes">Espèces</option>
             <option value="cb">Carte bancaire</option>
@@ -337,22 +340,22 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
             <option value="autre">Autre</option>
           </select>
         </div>
-        <div><label>Statut</label>
+        <div><label for="f-statut">Statut</label>
           <select id="f-statut">
             <option value="payee">Payée</option>
             <option value="attente">En attente</option>
           </select>
         </div>
-        <div style="justify-content:flex-end;"><label>&nbsp;</label>
-          <button class="btn vert" id="f-submit" onclick="ajouterFacture()" style="padding:11px 14px;">✓ Ajouter la facture</button>
+        <div style="justify-content:flex-end;"><label aria-hidden="true">&nbsp;</label>
+          <button class="btn vert" id="f-submit" type="button" onclick="ajouterFacture()" style="padding:11px 14px;">✓ Ajouter la facture</button>
         </div>
       </div>
-      <div class="modal-status" id="f-status"></div>
+      <div class="modal-status" id="f-status" role="status" aria-live="polite"></div>
     </div>
 
     <div class="rowbtns">
       <span class="grp-label">Mode</span>
-      <select id="f-filtre-mode" class="m-select sel-inline" onchange="renderFactures()">
+      <select id="f-filtre-mode" class="m-select sel-inline" aria-label="Filtrer les factures par mode" onchange="renderFactures()">
         <option value="tous">Tous les modes</option>
         <option value="especes">Espèces</option>
         <option value="cb">Carte bancaire</option>
@@ -361,54 +364,55 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
         <option value="paypal">PayPal</option>
         <option value="autre">Autre</option>
       </select>
-      <select id="f-filtre-statut" class="m-select sel-inline" onchange="renderFactures()">
+      <select id="f-filtre-statut" class="m-select sel-inline" aria-label="Filtrer les factures par statut" onchange="renderFactures()">
         <option value="tous">Tous les statuts</option>
         <option value="payee">Payées</option>
         <option value="attente">En attente</option>
       </select>
-      <button class="btn vert" onclick="exportFacturesCSV()">⬇ CSV</button>
+      <button class="btn vert" type="button" onclick="exportFacturesCSV()">⬇ CSV</button>
     </div>
 
     <div class="liste" id="fac-liste">
       <div class="vide">Aucune facture pour l'instant.<br>Ajoutez-en une ci-dessus 🧾</div>
     </div>
   </div><!-- fin view-factures -->
+  </main>
 </div>
 
-<div class="modal-overlay" id="cloud-modal" onclick="if(event.target===this)fermerCloud()">
+<div class="modal-overlay" id="cloud-modal" role="dialog" aria-modal="true" aria-labelledby="cloud-modal-title" onclick="if(event.target===this)fermerCloud()">
   <div class="modal">
-    <div class="modal-title">☁︎ Synchronisation en ligne</div>
+    <h2 class="modal-title" id="cloud-modal-title"><span aria-hidden="true">☁︎</span> Synchronisation en ligne</h2>
     <p class="modal-sub">Enregistrez vos relevés dans votre coffre Google pour les retrouver sur tous vos appareils. À configurer <b>une fois par appareil</b>.</p>
-    <label>Adresse du script (Google Apps Script)</label>
+    <label for="cf-url">Adresse du script (Google Apps Script)</label>
     <input id="cf-url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false">
-    <label>Mot de passe (identique à celui du script)</label>
+    <label for="cf-token">Mot de passe (identique à celui du script)</label>
     <input id="cf-token" type="password" placeholder="Votre mot de passe" autocomplete="off">
     <div class="modal-btns">
-      <button class="btn vert" onclick="connecterCloud()">✓ Connecter &amp; charger</button>
-      <button class="btn jaune" onclick="sauvegarderCloud(true)">⬆ Enregistrer maintenant</button>
-      <button class="btn rouge" onclick="deconnecterCloud()">Déconnecter</button>
+      <button class="btn vert" type="button" onclick="connecterCloud()">✓ Connecter &amp; charger</button>
+      <button class="btn jaune" type="button" onclick="sauvegarderCloud(true)">⬆ Enregistrer maintenant</button>
+      <button class="btn rouge" type="button" onclick="deconnecterCloud()">Déconnecter</button>
     </div>
-    <div class="modal-status" id="cf-status"></div>
-    <button class="modal-close" onclick="fermerCloud()">Fermer</button>
+    <div class="modal-status" id="cf-status" role="status" aria-live="polite"></div>
+    <button class="modal-close" type="button" onclick="fermerCloud()">Fermer</button>
   </div>
 </div>
 
-<div class="modal-overlay" id="ajout-modal" onclick="if(event.target===this)fermerAjout()">
+<div class="modal-overlay" id="ajout-modal" role="dialog" aria-modal="true" aria-labelledby="ajout-title" onclick="if(event.target===this)fermerAjout()">
   <div class="modal">
-    <div class="modal-title" id="ajout-title">➕ Ajouter une opération</div>
+    <h2 class="modal-title" id="ajout-title">➕ Ajouter une opération</h2>
     <p class="modal-sub">Saisissez une ligne à la main (elle sera enregistrée comme les autres).</p>
-    <label>Date</label>
+    <label for="m-date">Date</label>
     <input type="date" id="m-date">
-    <label>Libellé</label>
+    <label for="m-lib">Libellé</label>
     <input id="m-lib" placeholder="Ex : Facture 1234 — Client Dupont" autocomplete="off">
-    <label>Sens</label>
-    <div class="sens-toggle">
-      <button type="button" class="filtre" id="m-sens-deb" onclick="choisirSensManuel('debit')">Débit</button>
-      <button type="button" class="filtre actif" id="m-sens-cred" onclick="choisirSensManuel('credit')">Crédit</button>
+    <label id="m-sens-label">Sens</label>
+    <div class="sens-toggle" role="group" aria-labelledby="m-sens-label">
+      <button type="button" class="filtre" id="m-sens-deb" aria-pressed="false" onclick="choisirSensManuel('debit')">Débit</button>
+      <button type="button" class="filtre actif" id="m-sens-cred" aria-pressed="true" onclick="choisirSensManuel('credit')">Crédit</button>
     </div>
-    <label>Montant (€)</label>
+    <label for="m-montant">Montant (€)</label>
     <input id="m-montant" inputmode="decimal" placeholder="Ex : 1250,00" autocomplete="off">
-    <label>Type</label>
+    <label for="m-type">Type</label>
     <select id="m-type" class="m-select">
       <option value="auto">Détection automatique</option>
       <option value="virement">Virement</option>
@@ -423,14 +427,14 @@ mark{background:rgba(232,205,151,0.32);color:var(--cream);border-radius:3px;padd
       <option value="autre">Autre</option>
     </select>
     <div class="modal-btns">
-      <button class="btn vert" id="ajout-submit" onclick="ajouterManuel()">✓ Ajouter</button>
+      <button class="btn vert" id="ajout-submit" type="button" onclick="ajouterManuel()">✓ Ajouter</button>
     </div>
-    <div class="modal-status" id="m-status"></div>
-    <button class="modal-close" onclick="fermerAjout()">Annuler</button>
+    <div class="modal-status" id="m-status" role="status" aria-live="polite"></div>
+    <button class="modal-close" type="button" onclick="fermerAjout()">Annuler</button>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
@@ -488,6 +492,7 @@ function finaliser(op){op.id=nextId++;op.type=detecterType(op.libelle);op.sens=o
 document.getElementById("file-input").addEventListener("change",e=>{[...e.target.files].forEach(traiterFichier);e.target.value="";});
 const dz=document.getElementById("dropzone");
 dz.addEventListener("click",()=>document.getElementById("file-input").click());
+dz.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();document.getElementById("file-input").click();}});
 dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag");});
 dz.addEventListener("dragleave",()=>dz.classList.remove("drag"));
 dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("drag");[...e.dataTransfer.files].forEach(traiterFichier);});
@@ -760,9 +765,9 @@ function render(){
   document.getElementById("c-solde").textContent=list.length?fmtMontant(deb+cred):"—";
 
   let pills="";
-  if(periodeActive()) pills+='<span class="pill-actif">📅 '+libellePeriode()+' <button onclick="resetPeriode()" title="Retirer le filtre de période">✕</button></span> ';
-  if(montantClique!=null) pills+='<span class="pill-actif">Montant filtré : '+fmtMontant(Math.abs(montantClique))+' <button onclick="clearMontant()">✕</button></span> ';
-  if(dernierSupprime) pills+='<span class="pill-actif">🗑 Transaction supprimée <button onclick="annulerSuppression()" title="Rétablir">↩ Annuler</button></span>';
+  if(periodeActive()) pills+='<span class="pill-actif"><span aria-hidden="true">📅</span> '+libellePeriode()+' <button type="button" onclick="resetPeriode()" title="Retirer le filtre de période" aria-label="Retirer le filtre de période">✕</button></span> ';
+  if(montantClique!=null) pills+='<span class="pill-actif">Montant filtré : '+fmtMontant(Math.abs(montantClique))+' <button type="button" onclick="clearMontant()" aria-label="Retirer le filtre de montant">✕</button></span> ';
+  if(dernierSupprime) pills+='<span class="pill-actif"><span aria-hidden="true">🗑</span> Transaction supprimée <button type="button" onclick="annulerSuppression()" title="Rétablir">↩ Annuler</button></span>';
   document.getElementById("pill-zone").innerHTML=pills;
 
   // Menu « Type » : on ne propose que les types réellement présents
@@ -787,15 +792,16 @@ function render(){
   if(!list.length){el.innerHTML='<div class="vide">Aucun résultat 🔍</div>';return;}
   el.innerHTML=list.map(o=>{
     const am=Math.abs(o.montant);
-    const deb=o.montant<0?'<div class="amt debit"><span class="amt-lbl">Débit</span><span class="amt-val debit" onclick="clicMontant('+o.montant+',this)">'+fmtMontant(am)+'</span></div>':'<div class="amt"><span class="amt-lbl">Débit</span><span class="amt-dash">—</span></div>';
-    const cred=o.montant>0?'<div class="amt credit"><span class="amt-lbl">Crédit</span><span class="amt-val credit" onclick="clicMontant('+o.montant+',this)">'+fmtMontant(am)+'</span></div>':'<div class="amt"><span class="amt-lbl">Crédit</span><span class="amt-dash">—</span></div>';
+    const copyAttrs=v=>'role="button" tabindex="0" aria-label="Copier le montant '+fmtMontant(am)+' et filtrer" onclick="clicMontant('+v+',this)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();clicMontant('+v+',this)}"';
+    const deb=o.montant<0?'<div class="amt debit"><span class="amt-lbl">Débit</span><span class="amt-val debit" '+copyAttrs(o.montant)+'>'+fmtMontant(am)+'</span></div>':'<div class="amt"><span class="amt-lbl">Débit</span><span class="amt-dash" aria-hidden="true">—</span></div>';
+    const cred=o.montant>0?'<div class="amt credit"><span class="amt-lbl">Crédit</span><span class="amt-val credit" '+copyAttrs(o.montant)+'>'+fmtMontant(am)+'</span></div>':'<div class="amt"><span class="amt-lbl">Crédit</span><span class="amt-dash" aria-hidden="true">—</span></div>';
     const tag='<span class="tag '+o.type+'">'+LABEL_TYPE[o.type]+(o.ecarteAuto&&o.type==="virement"?" ✨":"")+'</span>';
     return '<div class="op '+(o.ecarte?"ec ":"")+(o.pointe?"pointe":"")+'">'+
       '<div class="op-top"><span class="op-date">'+surligner(o.date||"—")+'</span>'+tag+
-      '<button class="pointbtn '+(o.pointe?"on":"")+'" onclick="togglePointe('+o.id+')" title="'+(o.pointe?"Retirer le pointage":"Marquer comme pointée")+'">✓</button>'+
-      '<button class="ecbtn '+(o.ecarte?"on":"")+'" onclick="toggleEcarte('+o.id+')" title="'+(o.ecarte?"Réintégrer":"Mettre de côté")+'">'+(o.ecarte?"⏸":"○")+'</button>'+
-      '<button class="editbtn" onclick="ouvrirEdition('+o.id+')" title="Modifier cette opération">✏️</button>'+
-      '<button class="delbtn" onclick="supprimer('+o.id+')" title="Supprimer cette transaction">🗑</button></div>'+
+      '<button class="pointbtn '+(o.pointe?"on":"")+'" type="button" aria-pressed="'+(o.pointe?"true":"false")+'" onclick="togglePointe('+o.id+')" title="'+(o.pointe?"Retirer le pointage":"Marquer comme pointée")+'" aria-label="'+(o.pointe?"Retirer le pointage":"Marquer comme pointée")+'"><span aria-hidden="true">✓</span></button>'+
+      '<button class="ecbtn '+(o.ecarte?"on":"")+'" type="button" aria-pressed="'+(o.ecarte?"true":"false")+'" onclick="toggleEcarte('+o.id+')" title="'+(o.ecarte?"Réintégrer":"Mettre de côté")+'" aria-label="'+(o.ecarte?"Réintégrer":"Mettre de côté")+'"><span aria-hidden="true">'+(o.ecarte?"⏸":"○")+'</span></button>'+
+      '<button class="editbtn" type="button" onclick="ouvrirEdition('+o.id+')" title="Modifier cette opération" aria-label="Modifier cette opération"><span aria-hidden="true">✏️</span></button>'+
+      '<button class="delbtn" type="button" onclick="supprimer('+o.id+')" title="Supprimer cette transaction" aria-label="Supprimer cette transaction"><span aria-hidden="true">🗑</span></button></div>'+
       '<div class="op-lib">'+surligner(o.libelle)+'</div>'+
       '<div class="op-amts">'+deb+cred+'</div></div>';
   }).join("");
@@ -904,12 +910,15 @@ function planifierSauvegarde(){
   clearTimeout(saveTimer);cloudEtat="sync";majCloudBadge();saveTimer=setTimeout(()=>sauvegarderCloud(false),1000);
 }
 
+let modalDeclencheur=null;
 function ouvrirCloud(){
+  modalDeclencheur=document.activeElement;
   document.getElementById("cf-url").value=localStorage.getItem("mf_releves_api")||API_RELEVES_DEFAUT||"";
   document.getElementById("cf-token").value=localStorage.getItem("mf_releves_token")||"";
   cfStatus("","");document.getElementById("cloud-modal").classList.add("show");
+  setTimeout(()=>document.getElementById("cf-url").focus(),50);
 }
-function fermerCloud(){document.getElementById("cloud-modal").classList.remove("show");}
+function fermerCloud(){document.getElementById("cloud-modal").classList.remove("show");if(modalDeclencheur&&modalDeclencheur.focus)modalDeclencheur.focus();modalDeclencheur=null;}
 function cfStatus(msg,cls){const s=document.getElementById("cf-status");if(s){s.textContent=msg;s.className="modal-status "+(cls||"");}}
 async function connecterCloud(){
   const url=document.getElementById("cf-url").value.trim(),tok=document.getElementById("cf-token").value.trim();
@@ -934,6 +943,8 @@ function switchTab(name){
   document.getElementById("view-factures").style.display=(name==="factures")?"":"none";
   document.getElementById("tab-releves").classList.toggle("actif",name==="releves");
   document.getElementById("tab-factures").classList.toggle("actif",name==="factures");
+  document.getElementById("tab-releves").setAttribute("aria-selected",name==="releves");
+  document.getElementById("tab-factures").setAttribute("aria-selected",name==="factures");
   if(name==="factures"){
     const fd=document.getElementById("f-date");
     if(fd&&!fd.value){const d=new Date();fd.value=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -1009,8 +1020,8 @@ function renderFactures(){
       :'<span class="fac-mode" style="color:var(--credit)">✓ Payée</span>';
     return '<div class="fac-item"><div class="op-top">'+
       '<span class="op-date">'+escapeHtml(f.date||"—")+'</span>'+st+
-      '<button class="editbtn" style="margin-left:auto" onclick="editerFacture('+f.id+')" title="Modifier">✏️</button>'+
-      '<button class="delbtn" onclick="supprimerFacture('+f.id+')" title="Supprimer">🗑</button></div>'+
+      '<button class="editbtn" style="margin-left:auto" type="button" onclick="editerFacture('+f.id+')" title="Modifier" aria-label="Modifier la facture n° '+escapeHtml(f.numero)+'"><span aria-hidden="true">✏️</span></button>'+
+      '<button class="delbtn" type="button" onclick="supprimerFacture('+f.id+')" title="Supprimer" aria-label="Supprimer la facture n° '+escapeHtml(f.numero)+'"><span aria-hidden="true">🗑</span></button></div>'+
       '<div class="op-lib">N° '+escapeHtml(f.numero)+'</div>'+
       '<div class="op-amts"><div class="amt credit"><span class="amt-lbl">Montant</span><span class="amt-val credit" style="cursor:default">'+fmtMontant(f.montant)+'</span></div>'+
       '<div class="amt"><span class="amt-lbl">Mode</span><span class="amt-val" style="color:var(--champ);cursor:default">'+MODE_LABEL[f.mode]+'</span></div></div></div>';
@@ -1033,15 +1044,14 @@ async function seConnecter(){
   const pwd=document.getElementById("login-pwd").value;if(!pwd)return;
   const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pwd));
   if(toHexAuth(buf)===AUTH_HASH){sessionStorage.setItem("mf_releves_auth","1");deverrouiller();}
-  else{document.getElementById("login-err").style.display="block";document.getElementById("login-pwd").value="";}
+  else{document.getElementById("login-err").style.display="block";document.getElementById("login-pwd").value="";document.getElementById("login-pwd").focus();}
 }
 function deverrouiller(){document.getElementById("login-overlay").style.display="none";demarrer();}
-document.getElementById("login-pwd").addEventListener("keydown",e=>{if(e.key==="Enter")seConnecter();});
 
 // ── Ajout / modification manuelle d'une opération ──
 let sensManuel="credit", editionId=null;
 function ouvrirAjout(){
-  editionId=null;
+  editionId=null;modalDeclencheur=document.activeElement;
   document.getElementById("ajout-title").textContent="➕ Ajouter une opération";
   document.getElementById("ajout-submit").textContent="✓ Ajouter";
   const d=new Date();const iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -1053,7 +1063,7 @@ function ouvrirAjout(){
 }
 function ouvrirEdition(id){
   const o=operations.find(x=>x.id===id);if(!o)return;
-  editionId=id;
+  editionId=id;modalDeclencheur=document.activeElement;
   document.getElementById("ajout-title").textContent="✏️ Modifier l'opération";
   document.getElementById("ajout-submit").textContent="✓ Enregistrer";
   document.getElementById("m-date").value=o.dateISO||"";
@@ -1064,11 +1074,15 @@ function ouvrirEdition(id){
   document.getElementById("ajout-modal").classList.add("show");
   setTimeout(()=>document.getElementById("m-lib").focus(),50);
 }
-function fermerAjout(){document.getElementById("ajout-modal").classList.remove("show");editionId=null;}
+function fermerAjout(){document.getElementById("ajout-modal").classList.remove("show");editionId=null;if(modalDeclencheur&&modalDeclencheur.focus)modalDeclencheur.focus();modalDeclencheur=null;}
+document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;
+  if(document.getElementById("cloud-modal").classList.contains("show"))fermerCloud();
+  else if(document.getElementById("ajout-modal").classList.contains("show"))fermerAjout();});
 function maStatus(msg,cls){const s=document.getElementById("m-status");if(s){s.textContent=msg;s.className="modal-status "+(cls||"");}}
 function choisirSensManuel(v){sensManuel=v;
-  document.getElementById("m-sens-deb").classList.toggle("actif",v==="debit");
-  document.getElementById("m-sens-cred").classList.toggle("actif",v==="credit");}
+  const bd=document.getElementById("m-sens-deb"),bc=document.getElementById("m-sens-cred");
+  bd.classList.toggle("actif",v==="debit");bd.setAttribute("aria-pressed",v==="debit");
+  bc.classList.toggle("actif",v==="credit");bc.setAttribute("aria-pressed",v==="credit");}
 function ajouterManuel(){
   const dv=document.getElementById("m-date").value;
   const lib=document.getElementById("m-lib").value.trim();
