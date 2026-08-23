@@ -484,8 +484,11 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     </div>
     <div id="r-collection"></div>
     <div id="r-image-actions" style="display:none">
-      <button class="btn or pleine" onclick="partagerPhoto()">&#128269; Continuer sur Google</button>
-      <div class="aide" style="margin-top:2px">
+      <button class="btn or pleine" id="r-direct" style="display:none" onclick="rechercheImageDirecte()">
+        &#9889; Recherche image directe
+      </button>
+      <button class="btn pleine" id="r-partager" onclick="partagerPhoto()">&#128269; Continuer sur Google</button>
+      <div class="aide" id="r-aide-partage-avant" style="margin-top:2px">
         Le menu de partage du t&eacute;l&eacute;phone va s'ouvrir : fais d&eacute;filer vers le bas et choisis
         <b>&laquo;&nbsp;Rechercher sur Google&nbsp;&raquo;</b> (logo <b>G</b>).
       </div>
@@ -1277,6 +1280,8 @@ async function rechPhoto(input){
     $("r-apercu").style.display="block";
     $("r-photo-zone").style.display="none";
     $("r-image-actions").style.display="block";
+    $("r-direct").style.display=apiURL()?"block":"none";
+    $("r-partager").className=apiURL()?"btn pleine":"btn or pleine";
     $("r-ajouter").style.display="inline-block";
 
     const d=chercherDoublons(r,$("r-texte").value,$("r-texte").value,null);
@@ -1322,6 +1327,38 @@ const MARCHE_A_SUIVRE=
   'Ouvre l\'appli <b>Google</b>, appuie sur l\'ic&ocirc;ne appareil photo (<b>Lens</b>) '+
   'dans la barre de recherche, puis choisis la photo dans ta galerie. '+
   'M&ecirc;me r&eacute;sultat.';
+
+/* Recherche par image en une touche : la photo est déposée dans le coffre, ce qui
+   lui donne une adresse, puis Google Lens est ouvert sur cette adresse.
+   L'onglet est ouvert AVANT l'attente réseau, sinon iOS le bloque. */
+async function rechercheImageDirecte(){
+  if(!rechPhotoCourante){toast("Prends d'abord une photo");return;}
+  if(!apiURL()){
+    aidePartage("Coffre non configur&eacute;",
+      "Cette recherche en une touche a besoin du coffre Google. Bouton &#9729; en haut de l'appli.","");
+    return;
+  }
+  const onglet=window.open("","_blank");
+  try{
+    const pid="rech_"+uid();
+    const env=await fetch(apiURL(),{method:"POST",body:JSON.stringify({
+      token:apiToken(),montres:[],photos:(function(o){o[pid]=rechPhotoCourante.dataUrl;return o;})({})
+    })});
+    const d1=await env.json();
+    if(!d1||d1.error) throw new Error(d1&&d1.error?d1.error:"envoi refus&eacute;");
+    const rep=await fetch(apiURL()+"?token="+encodeURIComponent(apiToken())+"&lien="+encodeURIComponent(pid));
+    const d2=await rep.json();
+    if(!d2||!d2.url) throw new Error("adresse de la photo introuvable");
+    const lens="https://lens.google.com/uploadbyurl?url="+encodeURIComponent(d2.url);
+    if(onglet) onglet.location.href=lens; else location.href=lens;
+    $("r-partage-aide").style.display="none";
+  }catch(e){
+    if(onglet){try{onglet.close();}catch(x){}}
+    aidePartage("La recherche directe n'a pas abouti",
+      "Utilise le bouton <b>Continuer sur Google</b> juste en dessous : "+MARCHE_A_SUIVRE,
+      (e&&e.message)||"erreur");
+  }
+}
 
 async function partagerPhoto(){
   if(!rechPhotoCourante){toast("Prends d'abord une photo");return;}

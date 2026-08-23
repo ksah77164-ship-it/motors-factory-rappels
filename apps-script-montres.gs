@@ -268,6 +268,29 @@ function enregistrerPhotos_(photos) {
   return nouvelles.length;
 }
 
+/**
+ * Rend une photo accessible par adresse publique, le temps que Google Lens
+ * aille la chercher. Sans cela, impossible d'ouvrir une recherche par image :
+ * un site web n'a pas le droit d'envoyer un fichier local à Google.
+ * ⚠️ La photo devient visible par quiconque possède le lien (lien imprévisible).
+ */
+function lienPhoto_(photoId) {
+  const idx = indexPhotos_();
+  const fileId = idx[texte_(photoId)];
+  if (!fileId) return null;
+  try {
+    const f = DriveApp.getFileById(fileId);
+    f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return {
+      id: fileId,
+      url: "https://lh3.googleusercontent.com/d/" + fileId,
+      secours: "https://drive.google.com/uc?export=view&id=" + fileId
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
 function lirePhoto_(photoId) {
   const idx = indexPhotos_();
   const fileId = idx[texte_(photoId)];
@@ -286,6 +309,7 @@ function lirePhoto_(photoId) {
  * GET ?token=…                  → état du coffre (vérification rapide au navigateur)
  * GET ?token=…&depuis=ISO       → montres modifiées depuis cet horodatage
  * GET ?token=…&photo=<photoId>  → la photo, en base64
+ * GET ?token=…&lien=<photoId>   → adresse publique de la photo (recherche par image)
  */
 function doGet(e) {
   const p = (e && e.parameter) ? e.parameter : {};
@@ -294,6 +318,12 @@ function doGet(e) {
   if (p.photo) {
     const data = lirePhoto_(p.photo);
     return json_(data ? { ok: true, id: p.photo, data: data } : { ok: false, id: p.photo });
+  }
+
+  if (p.lien) {
+    const l = lienPhoto_(p.lien);
+    return json_(l ? { ok: true, id: p.lien, url: l.url, secours: l.secours }
+                   : { ok: false, id: p.lien });
   }
 
   const sh = feuille_();

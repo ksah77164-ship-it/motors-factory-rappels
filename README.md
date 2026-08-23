@@ -32,6 +32,9 @@ Suivi complet du projet Albert :
   **« Rechercher sur Google »** (la touche Entrée marche aussi).
   Un repli « Voir les prix ailleurs » donne accès aux **ventes conclues sur eBay** (les prix
   réels de revente), Chrono24, Google Shopping, Vinted, Leboncoin, Yahoo Auctions Japon, Amazon.
+  **Quand le coffre est branché**, un bouton « ⚡ Recherche image directe » dépose la photo dans
+  le Drive, ce qui lui donne une adresse, et ouvre Google Lens dessus : les résultats arrivent
+  sans passer par le menu de partage. La photo est alors accessible à qui possède ce lien.
   Chaque fiche a aussi un bouton « Chercher son prix » pré-rempli avec sa référence.
 
   *Limite assumée* : aucun moteur de reconnaissance d'image (Lens, Amazon) n'est ouvert à un
