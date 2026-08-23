@@ -4,6 +4,9 @@ PENSE-BÊTE — MOTS DE PASSE
 Outil RELEVÉS (releves.html)
   Mot de passe : Motors92390
 
+Appli MONTRES D'ALBERT (montres.html)
+  Mot de passe : Motors92390   (le même que l'outil Relevés)
+
 Appli RAPPELS (login.html)
   Mot de passe : (inchangé — non noté ici volontairement)
 

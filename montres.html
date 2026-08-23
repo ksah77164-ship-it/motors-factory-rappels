@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0c0b0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Montres d'Albert">
+<title>Les Montres d'Albert — Motors Factory</title>
+<link rel="apple-touch-icon" href="icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0b0a; --bg2:#131110; --card:#17140f; --card2:#1e1a13;
+  --line:rgba(201,161,90,0.16); --line-strong:rgba(201,161,90,0.34);
+  --champ:#E7D3A8; --gold:#C9A15A; --gold2:#E8CD97; --cream:#F2E8D5;
+  --muted:#928871; --debit:#E58F8F; --credit:#AECB90; --bleu:#8FB6E5;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Nunito',sans-serif;color:var(--cream);
+  background:radial-gradient(1200px 600px at 50% -10%,#1a1611 0%,var(--bg) 55%) fixed;
+  min-height:100vh;padding:16px 14px calc(90px + env(safe-area-inset-bottom));}
+.app{max-width:720px;margin:0 auto;}
+
+/* En-tête */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;box-shadow:0 6px 20px rgba(201,161,90,0.28);}
+.logo-text{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;color:var(--champ);letter-spacing:0.3px;line-height:1;}
+.logo-sub{font-size:11px;color:var(--muted);margin-top:3px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+.link-back{background:var(--card2);border:1px solid var(--line);padding:9px 14px;border-radius:22px;font-size:12px;font-weight:800;
+  color:var(--champ);cursor:pointer;font-family:'Nunito',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+.link-back:active{background:var(--card);}
+
+/* Compteurs */
+.counters{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:16px;}
+.counter{border-radius:16px;padding:13px 12px;border:1px solid var(--line);background:linear-gradient(160deg,var(--card2),var(--card));}
+.counter-nb{font-size:20px;font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums;}
+.counter-label{font-size:9.5px;font-weight:800;margin-top:4px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);}
+.ct .counter-nb{color:var(--cream);}
+.cr .counter-nb{color:var(--debit);}
+.cc .counter-nb{color:var(--credit);}
+.cs .counter-nb{color:var(--gold2);}
+.cb .counter-nb{color:var(--bleu);}
+@media(min-width:560px){.counters{grid-template-columns:repeat(3,1fr);}}
+
+/* Actions principales */
+.actions-top{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;}
+.big-btn{border-radius:16px;padding:15px 12px;border:1.5px solid var(--line-strong);cursor:pointer;font-family:'Nunito',sans-serif;
+  background:linear-gradient(160deg,var(--card2),var(--card));color:var(--cream);font-size:13px;font-weight:800;text-align:center;line-height:1.35;}
+.big-btn .bb-ico{font-size:22px;display:block;margin-bottom:5px;}
+.big-btn:active{border-color:var(--gold);}
+.big-btn.or{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border-color:transparent;}
+
+/* Onglets projet */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:8px 14px;border-radius:22px;border:1px solid var(--line);background:var(--card);color:var(--muted);
+  font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:flex;align-items:center;gap:6px;}
+.tab.actif{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border-color:transparent;}
+.tab-count{font-size:10px;font-weight:900;opacity:0.75;}
+
+/* Recherche / filtres */
+.barre{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.champ-rech{flex:1;min-width:150px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:11px 14px;
+  font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--cream);}
+.champ-rech:focus{outline:none;border-color:var(--gold);}
+select.mini{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-size:12.5px;
+  font-family:'Nunito',sans-serif;font-weight:800;color:var(--champ);}
+select.mini:focus{outline:none;border-color:var(--gold);}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.chip{padding:6px 13px;border-radius:22px;border:1px solid var(--line);background:var(--card);color:var(--muted);
+  font-size:11.5px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;}
+.chip.actif{background:var(--card2);border-color:var(--gold);color:var(--champ);}
+
+/* Cartes montres */
+.liste{display:flex;flex-direction:column;gap:9px;}
+.mcard{border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,var(--card2),var(--card));overflow:hidden;}
+.mhead{display:flex;gap:12px;padding:12px;cursor:pointer;align-items:center;}
+.mphoto{width:62px;height:62px;border-radius:14px;flex-shrink:0;object-fit:cover;background:var(--bg2);border:1px solid var(--line);}
+.mphoto-vide{width:62px;height:62px;border-radius:14px;flex-shrink:0;background:var(--bg2);border:1px dashed var(--line-strong);
+  display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0.5;}
+.minfo{flex:1;min-width:0;}
+.mnom{font-size:14.5px;font-weight:900;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mref{font-size:11.5px;color:var(--gold);font-weight:800;letter-spacing:0.6px;margin-top:2px;}
+.mmeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;}
+.badge{font-size:9.5px;font-weight:900;padding:3px 9px;border-radius:20px;letter-spacing:0.6px;text-transform:uppercase;white-space:nowrap;}
+.b-transit{background:rgba(143,182,229,0.14);color:var(--bleu);}
+.b-vendre{background:rgba(232,205,151,0.14);color:var(--gold2);}
+.b-collec{background:rgba(174,203,144,0.14);color:var(--credit);}
+.b-vendue{background:rgba(201,161,90,0.2);color:var(--champ);}
+.b-pays{background:rgba(255,255,255,0.05);color:var(--muted);}
+.mprix{text-align:right;flex-shrink:0;}
+.mprix-a{font-size:14px;font-weight:900;color:var(--cream);font-variant-numeric:tabular-nums;}
+.mprix-pv{font-size:11px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;}
+.pv-pos{color:var(--credit);}.pv-neg{color:var(--debit);}.pv-neutre{color:var(--muted);}
+
+.mdetail{display:none;padding:0 12px 12px;border-top:1px solid var(--line);margin-top:2px;}
+.mdetail.open{display:block;}
+.dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px;}
+.dcase{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:9px 11px;}
+.dcase-lbl{font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.dcase-val{font-size:13px;font-weight:800;color:var(--cream);word-break:break-word;}
+.dcase.large{grid-column:span 2;}
+.dnote{background:var(--bg2);border-left:2px solid var(--gold);border-radius:8px;padding:9px 11px;font-size:12.5px;
+  color:var(--champ);font-weight:600;line-height:1.6;margin-top:8px;white-space:pre-wrap;}
+.dactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+.btn{padding:8px 14px;border-radius:22px;border:1px solid var(--line);font-size:12px;font-weight:800;cursor:pointer;
+  font-family:'Nunito',sans-serif;background:var(--card);color:var(--champ);}
+.btn.or{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border-color:transparent;}
+.btn.vert{background:rgba(174,203,144,0.14);color:var(--credit);border-color:rgba(174,203,144,0.3);}
+.btn.rouge{background:rgba(229,143,143,0.12);color:var(--debit);border-color:rgba(229,143,143,0.3);}
+.photo-grande{width:100%;max-height:340px;object-fit:contain;border-radius:14px;background:var(--bg2);border:1px solid var(--line);margin-top:12px;}
+
+.vide{text-align:center;padding:46px 20px;color:var(--muted);font-size:14px;font-weight:700;line-height:1.7;}
+.vide-ico{font-size:44px;margin-bottom:12px;opacity:0.5;}
+
+/* Modale */
+.modal-wrap{display:none;position:fixed;inset:0;background:rgba(6,5,4,0.82);z-index:200;padding:14px;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;}
+.modal-wrap.open{display:block;}
+.modal{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line-strong);border-radius:22px;
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:520px;margin:10px auto 30px;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
+.modal h3{font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--champ);margin-bottom:4px;}
+.modal .sous{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:16px;}
+.sect{font-size:10px;font-weight:900;color:var(--gold);letter-spacing:1.4px;text-transform:uppercase;
+  margin:18px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+.sect:first-of-type{margin-top:6px;}
+label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+.modal input[type=text],.modal input[type=number],.modal input[type=date],.modal textarea,.modal select{
+  width:100%;background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font-size:14px;
+  font-family:'Nunito',sans-serif;font-weight:700;color:var(--cream);margin-bottom:11px;}
+.modal input:focus,.modal textarea:focus,.modal select:focus{outline:none;border-color:var(--gold);}
+.modal textarea{min-height:70px;resize:vertical;font-weight:600;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.seg{display:flex;gap:6px;margin-bottom:11px;}
+.seg button{flex:1;padding:10px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg2);color:var(--muted);
+  font-size:12.5px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;}
+.seg button.on{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border-color:transparent;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
+
+/* Photo dans la modale */
+.photo-zone{border:1.5px dashed var(--line-strong);border-radius:16px;padding:18px;text-align:center;cursor:pointer;
+  background:var(--bg2);margin-bottom:12px;}
+.photo-zone:active{border-color:var(--gold);}
+.pz-ico{font-size:30px;margin-bottom:6px;}
+.pz-txt{font-size:13px;font-weight:800;color:var(--cream);}
+.pz-sub{font-size:11px;color:var(--muted);font-weight:600;margin-top:4px;}
+.photo-apercu{position:relative;margin-bottom:12px;}
+.photo-apercu img{width:100%;max-height:230px;object-fit:contain;border-radius:14px;background:var(--bg2);border:1px solid var(--line);}
+.photo-suppr{position:absolute;top:8px;right:8px;background:rgba(6,5,4,0.8);border:1px solid var(--line-strong);
+  border-radius:20px;padding:5px 11px;font-size:11px;font-weight:800;color:var(--debit);cursor:pointer;font-family:'Nunito',sans-serif;}
+
+/* Alerte doublon */
+.alerte{border-radius:14px;padding:12px;margin-bottom:12px;font-size:12.5px;font-weight:700;line-height:1.55;}
+.alerte.warn{background:rgba(232,205,151,0.1);border:1px solid var(--line-strong);color:var(--champ);}
+.alerte.ok{background:rgba(174,203,144,0.1);border:1px solid rgba(174,203,144,0.3);color:var(--credit);}
+.alerte.load{background:var(--bg2);border:1px solid var(--line);color:var(--muted);}
+.alerte-titre{font-size:13px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+.match{display:flex;gap:10px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:12px;
+  padding:8px;margin-top:7px;cursor:pointer;}
+.match img{width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--card);}
+.match-info{flex:1;min-width:0;}
+.match-nom{font-size:12.5px;font-weight:900;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.match-sub{font-size:10.5px;color:var(--muted);font-weight:700;margin-top:2px;}
+.match-vide{width:46px;height:46px;border-radius:10px;flex-shrink:0;background:var(--card);display:flex;
+  align-items:center;justify-content:center;font-size:20px;opacity:0.6;}
+.match-score{font-size:14px;font-weight:900;color:var(--gold2);flex-shrink:0;font-variant-numeric:tabular-nums;}
+
+/* Toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom));z-index:500;
+  background:var(--card2);border:1px solid var(--line-strong);color:var(--cream);padding:12px 20px;border-radius:26px;
+  font-size:13px;font-weight:800;box-shadow:0 12px 34px rgba(0,0,0,0.55);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:90%;text-align:center;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+/* Bouton flottant */
+.fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:120;width:58px;height:58px;border-radius:50%;
+  border:none;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;font-size:28px;font-weight:900;
+  cursor:pointer;box-shadow:0 10px 30px rgba(201,161,90,0.4);font-family:'Nunito',sans-serif;line-height:1;}
+
+/* Connexion */
+.login-overlay{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:18px;
+  background:radial-gradient(1200px 600px at 50% -10%,#1a1611 0%,var(--bg) 55%);}
+.login-box{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line-strong);border-radius:22px;
+  padding:26px 22px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.login-logo{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:20px;}
+.login-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:var(--champ);text-align:center;margin-bottom:18px;}
+.login-overlay input{width:100%;background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;
+  font-size:15px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--cream);margin-bottom:14px;}
+.login-overlay input:focus{outline:none;border-color:var(--gold);}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border:none;padding:13px;
+  border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;}
+.login-err{display:none;background:rgba(229,143,143,0.12);border:1px solid rgba(229,143,143,0.4);border-radius:10px;
+  padding:9px 12px;font-size:13px;color:var(--debit);font-weight:700;text-align:center;margin-bottom:14px;}
+.login-lbl{display:block;font-size:10px;font-weight:800;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-icon">&#8986;</div>
+      <div><div class="logo-text">Montres d'Albert</div><div class="logo-sub">Motors Factory</div></div>
+    </div>
+    <div class="login-title">Connexion requise</div>
+    <div class="login-err" id="login-err">Mot de passe incorrect</div>
+    <label class="login-lbl">Mot de passe</label>
+    <input type="password" id="login-pwd" placeholder="Mot de passe" autocomplete="current-password">
+    <button class="login-btn" onclick="seConnecter()">Acc&eacute;der</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-icon">&#8986;</div>
+      <div>
+        <div class="logo-text">Montres d'Albert</div>
+        <div class="logo-sub">Projet Albert</div>
+      </div>
+    </div>
+    <a class="link-back" href="index.html">&#8592; Accueil</a>
+  </div>
+
+  <div class="counters" id="counters"></div>
+
+  <div class="actions-top">
+    <button class="big-btn or" onclick="ouvrirScan()">
+      <span class="bb-ico">&#128247;</span>
+      Je l'ai d&eacute;j&agrave; ?<br><span style="font-size:10.5px;opacity:.75;font-weight:700">Scanner une montre</span>
+    </button>
+    <button class="big-btn" onclick="ouvrirAjout()">
+      <span class="bb-ico">&#10133;</span>
+      Ajouter une montre<br><span style="font-size:10.5px;opacity:.6;font-weight:700">Achat, livraison, revente</span>
+    </button>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="barre">
+    <input class="champ-rech" id="rech" placeholder="Rechercher : nom, r&eacute;f., vendeur, pays..." oninput="rendre()">
+    <select class="mini" id="tri" onchange="rendre()">
+      <option value="recent">Plus r&eacute;centes</option>
+      <option value="ancien">Plus anciennes</option>
+      <option value="cher">Prix d&eacute;croissant</option>
+      <option value="pascher">Prix croissant</option>
+      <option value="nom">Nom A-Z</option>
+    </select>
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="liste" id="liste"></div>
+
+  <div style="margin-top:24px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+    <button class="btn" onclick="exporterCSV()">&#128202; Export CSV</button>
+    <button class="btn" onclick="exporterJSON()">&#128190; Sauvegarde</button>
+    <button class="btn" onclick="document.getElementById('import-file').click()">&#128229; Restaurer</button>
+    <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importerJSON(this)">
+  </div>
+  <div style="text-align:center;font-size:10.5px;color:var(--muted);font-weight:700;margin-top:12px;line-height:1.6">
+    Donn&eacute;es enregistr&eacute;es sur cet appareil (hors ligne).<br>Pense &agrave; faire une sauvegarde de temps en temps.
+  </div>
+</div>
+
+<button class="fab" onclick="ouvrirAjout()">+</button>
+
+<!-- ══ MODALE AJOUT / MODIFICATION ══ -->
+<div class="modal-wrap" id="modal-fiche">
+  <div class="modal">
+    <h3 id="fiche-titre">Nouvelle montre</h3>
+    <div class="sous" id="fiche-sous">Projet Albert</div>
+
+    <div class="sect">&#128248; Photo &amp; identit&eacute;</div>
+
+    <div id="f-photo-zone" class="photo-zone" onclick="document.getElementById('f-photo-input').click()">
+      <div class="pz-ico">&#128247;</div>
+      <div class="pz-txt">Ajouter une photo</div>
+      <div class="pz-sub">V&eacute;rification automatique des doublons</div>
+    </div>
+    <div id="f-photo-apercu" class="photo-apercu" style="display:none">
+      <img id="f-photo-img" alt="">
+      <button class="photo-suppr" onclick="retirerPhoto()">&#10006; Retirer</button>
+    </div>
+    <input type="file" id="f-photo-input" accept="image/*" style="display:none" onchange="photoChoisie(this)">
+    <div id="f-doublon"></div>
+
+    <label class="lbl">Nom de la montre *</label>
+    <input type="text" id="f-nom" placeholder="Casio G-Shock GA-2100" autocomplete="off">
+
+    <div class="row2">
+      <div>
+        <label class="lbl">R&eacute;f&eacute;rence / mod&egrave;le</label>
+        <input type="text" id="f-ref" placeholder="GA-2100-1A1" autocomplete="off">
+      </div>
+      <div>
+        <label class="lbl">Projet</label>
+        <input type="text" id="f-projet" list="projets-list" placeholder="Albert" autocomplete="off">
+        <datalist id="projets-list"></datalist>
+      </div>
+    </div>
+
+    <label class="lbl">D&eacute;tails (&eacute;tat, bo&icirc;te, papiers, particularit&eacute;s...)</label>
+    <textarea id="f-details" placeholder="Neuve sous blister, bo&icirc;te + notice, bracelet d'origine..."></textarea>
+
+    <div class="sect">&#128179; Achat</div>
+    <div class="row2">
+      <div>
+        <label class="lbl">Date d'achat</label>
+        <input type="date" id="f-date-achat">
+      </div>
+      <div>
+        <label class="lbl">Prix d'achat (&euro;)</label>
+        <input type="number" id="f-prix-achat" step="0.01" min="0" placeholder="0,00" inputmode="decimal">
+      </div>
+    </div>
+    <div class="row2">
+      <div>
+        <label class="lbl">Frais (port, douane)</label>
+        <input type="number" id="f-frais" step="0.01" min="0" placeholder="0,00" inputmode="decimal">
+      </div>
+      <div>
+        <label class="lbl">Pays d'achat</label>
+        <input type="text" id="f-pays-achat" list="pays-list" placeholder="Japon" autocomplete="off">
+      </div>
+    </div>
+    <label class="lbl">Vendeur / plateforme</label>
+    <input type="text" id="f-vendeur" placeholder="Yahoo Japan, eBay, Chrono24, Amazon..." autocomplete="off">
+
+    <div class="sect">&#128666; Livraison</div>
+    <label class="lbl">Lieu de livraison</label>
+    <input type="text" id="f-lieu" placeholder="Domicile, point relais, bureau..." autocomplete="off">
+    <div class="row2">
+      <div>
+        <label class="lbl">Pays de livraison</label>
+        <input type="text" id="f-pays-liv" list="pays-list" placeholder="France" autocomplete="off">
+      </div>
+      <div>
+        <label class="lbl">Livraison pr&eacute;vue le</label>
+        <input type="date" id="f-date-prevue">
+      </div>
+    </div>
+    <label class="lbl">Num&eacute;ro de suivi</label>
+    <input type="text" id="f-suivi" placeholder="Optionnel" autocomplete="off">
+    <label class="lbl">Statut de r&eacute;ception</label>
+    <div class="seg">
+      <button type="button" id="seg-transit" onclick="setRecu(false)">&#128336; En transit</button>
+      <button type="button" id="seg-recu" onclick="setRecu(true)">&#9989; Re&ccedil;ue</button>
+    </div>
+    <div id="bloc-recu" style="display:none">
+      <label class="lbl">Date de r&eacute;ception</label>
+      <input type="date" id="f-date-recu">
+    </div>
+
+    <div class="sect">&#128176; Destination &amp; revente</div>
+    <div class="seg">
+      <button type="button" id="seg-garder" onclick="setDestination('garder')">&#128142; Je garde</button>
+      <button type="button" id="seg-vendre" onclick="setDestination('vendre')">&#127991; &Agrave; revendre</button>
+    </div>
+    <div class="row2">
+      <div>
+        <label class="lbl">Prix de revente vis&eacute; (&euro;)</label>
+        <input type="number" id="f-prix-vise" step="0.01" min="0" placeholder="0,00" inputmode="decimal">
+      </div>
+      <div>
+        <label class="lbl">Vendue ?</label>
+        <select id="f-vendue" onchange="majBlocVente()">
+          <option value="0">Non, toujours en stock</option>
+          <option value="1">Oui, vendue</option>
+        </select>
+      </div>
+    </div>
+    <div id="bloc-vente" style="display:none">
+      <div class="row2">
+        <div>
+          <label class="lbl">Prix de vente (&euro;)</label>
+          <input type="number" id="f-prix-vente" step="0.01" min="0" placeholder="0,00" inputmode="decimal">
+        </div>
+        <div>
+          <label class="lbl">Date de vente</label>
+          <input type="date" id="f-date-vente">
+        </div>
+      </div>
+      <label class="lbl">Acheteur / plateforme de vente</label>
+      <input type="text" id="f-acheteur" placeholder="Vinted, Leboncoin, main propre..." autocomplete="off">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="fermerFiche()">Annuler</button>
+      <button class="btn or" id="fiche-valider" onclick="enregistrerFiche()">&#10003; Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODALE SCAN ══ -->
+<div class="modal-wrap" id="modal-scan">
+  <div class="modal">
+    <h3>Je l'ai d&eacute;j&agrave; ?</h3>
+    <div class="sous">Photographie la montre : je la compare &agrave; toute ta collection.</div>
+
+    <div id="s-photo-zone" class="photo-zone" onclick="document.getElementById('s-photo-input').click()">
+      <div class="pz-ico">&#128247;</div>
+      <div class="pz-txt">Prendre / choisir une photo</div>
+      <div class="pz-sub">Cadre la montre de face, bien &eacute;clair&eacute;e</div>
+    </div>
+    <input type="file" id="s-photo-input" accept="image/*" capture="environment" style="display:none" onchange="scanPhoto(this)">
+    <div id="s-apercu" class="photo-apercu" style="display:none"><img id="s-img" alt=""></div>
+
+    <label class="lbl">Ou cherche par r&eacute;f&eacute;rence / nom</label>
+    <input type="text" id="s-texte" placeholder="GA-2100..." oninput="scanTexte()" autocomplete="off">
+
+    <div id="s-resultat"></div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="fermerScan()">Fermer</button>
+      <button class="btn or" id="s-ajouter" style="display:none" onclick="scanVersAjout()">&#10133; L'ajouter quand m&ecirc;me</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="pays-list">
+  <option value="France"></option><option value="Japon"></option><option value="Chine"></option>
+  <option value="Hong Kong"></option><option value="&Eacute;tats-Unis"></option><option value="Royaume-Uni"></option>
+  <option value="Allemagne"></option><option value="Italie"></option><option value="Espagne"></option>
+  <option value="Belgique"></option><option value="Pays-Bas"></option><option value="Suisse"></option>
+  <option value="Pologne"></option><option value="Cor&eacute;e du Sud"></option><option value="Singapour"></option>
+  <option value="Tha&iuml;lande"></option><option value="Ta&iuml;wan"></option><option value="Inde"></option>
+</datalist>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   LES MONTRES D'ALBERT — suivi d'achat / livraison / revente
+   Tout est stocké localement : localStorage (fiches) + IndexedDB (photos).
+   ═══════════════════════════════════════════════════════════ */
+
+const CLE="mf_montres_v1";
+const PROJET_DEFAUT="Albert";
+
+let montres=[];
+let PHOTOS={};              // id photo -> dataURL (cache mémoire)
+let projetActif="__tous__";
+let filtreStatut="tous";
+let ficheEditionId=null;
+let ficheRecu=false, ficheDestination="vendre";
+let fichePhoto=null;        // {dataUrl, dhash, ahash} en cours de saisie
+let scanCourant=null;
+
+/* ── Utilitaires ─────────────────────────────────────────── */
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+function nb(v){const n=parseFloat(String(v==null?"":v).replace(",","."));return isNaN(n)?0:n;}
+function eur(n){return (Math.round(n*100)/100).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";}
+function eurCourt(n){
+  const a=Math.abs(n);
+  if(a>=10000) return Math.round(n).toLocaleString("fr-FR")+" €";
+  return eur(n);
+}
+function auj(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function dateFR(iso){
+  if(!iso) return "—";
+  const p=String(iso).split("-");
+  if(p.length!==3) return iso;
+  return p[2]+"/"+p[1]+"/"+p[0];
+}
+let toastTimer=null;
+function toast(msg){
+  const t=$("toast");t.textContent=msg;t.classList.add("on");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("on"),2600);
+}
+
+/* ── Stockage des photos (IndexedDB) ─────────────────────── */
+let _db=null;
+function ouvrirDB(){
+  return new Promise((res,rej)=>{
+    if(_db) return res(_db);
+    if(!window.indexedDB) return rej(new Error("IndexedDB indisponible"));
+    const rq=indexedDB.open("mf-montres",1);
+    rq.onupgradeneeded=()=>{const d=rq.result;if(!d.objectStoreNames.contains("photos"))d.createObjectStore("photos");};
+    rq.onsuccess=()=>{_db=rq.result;res(_db);};
+    rq.onerror=()=>rej(rq.error);
+  });
+}
+function photoEcrire(id,dataUrl){
+  return ouvrirDB().then(d=>new Promise((res,rej)=>{
+    const t=d.transaction("photos","readwrite");
+    t.objectStore("photos").put(dataUrl,id);
+    t.oncomplete=()=>res();t.onerror=()=>rej(t.error);
+  }));
+}
+function photoEffacer(id){
+  return ouvrirDB().then(d=>new Promise((res)=>{
+    const t=d.transaction("photos","readwrite");
+    t.objectStore("photos").delete(id);
+    t.oncomplete=()=>res();t.onerror=()=>res();
+  })).catch(()=>{});
+}
+function photosCharger(){
+  return ouvrirDB().then(d=>new Promise((res,rej)=>{
+    const t=d.transaction("photos","readonly");
+    const st=t.objectStore("photos");
+    const rk=st.getAllKeys(), rv=st.getAll();
+    t.oncomplete=()=>{
+      const out={};const ks=rk.result||[],vs=rv.result||[];
+      for(let i=0;i<ks.length;i++) out[ks[i]]=vs[i];
+      res(out);
+    };
+    t.onerror=()=>rej(t.error);
+  })).catch(()=>({}));
+}
+
+/* ── Fiches (localStorage) ───────────────────────────────── */
+function charger(){
+  try{montres=JSON.parse(localStorage.getItem(CLE)||"[]");}catch(e){montres=[];}
+  if(!Array.isArray(montres)) montres=[];
+}
+function sauver(){
+  try{localStorage.setItem(CLE,JSON.stringify(montres));}
+  catch(e){toast("⚠ Espace de stockage plein");}
+}
+
+/* ── Empreinte visuelle (dHash + aHash) ──────────────────────
+   Deux photos de la même montre donnent des empreintes proches.
+   La distance de Hamming (nb de bits différents sur 64) mesure l'écart. */
+function grisDepuisImage(img,l,h){
+  const c=document.createElement("canvas");c.width=l;c.height=h;
+  const ctx=c.getContext("2d");
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,l,h);
+  ctx.drawImage(img,0,0,l,h);
+  const d=ctx.getImageData(0,0,l,h).data;
+  const g=new Array(l*h);
+  for(let i=0;i<l*h;i++) g[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
+  return g;
+}
+function bitsVersHex(bits){
+  let s="";
+  for(let i=0;i<bits.length;i+=4){
+    s+=((bits[i]<<3)|(bits[i+1]<<2)|(bits[i+2]<<1)|bits[i+3]).toString(16);
+  }
+  return s;
+}
+function empreintes(img){
+  // dHash : compare chaque pixel à son voisin de droite (9x8)
+  const gd=grisDepuisImage(img,9,8), bd=[];
+  for(let y=0;y<8;y++) for(let x=0;x<8;x++) bd.push(gd[y*9+x]>gd[y*9+x+1]?1:0);
+  // aHash : compare chaque pixel à la moyenne (8x8)
+  const ga=grisDepuisImage(img,8,8);
+  let moy=0;for(let i=0;i<64;i++) moy+=ga[i];moy/=64;
+  const ba=[];for(let i=0;i<64;i++) ba.push(ga[i]>moy?1:0);
+  return {dhash:bitsVersHex(bd),ahash:bitsVersHex(ba)};
+}
+function hamming(a,b){
+  if(!a||!b||a.length!==b.length) return 64;
+  let d=0;
+  for(let i=0;i<a.length;i++){
+    let x=(parseInt(a[i],16)^parseInt(b[i],16));
+    while(x){d+=x&1;x>>=1;}
+  }
+  return d;
+}
+function normRef(s){return String(s==null?"":s).toUpperCase().replace(/[^A-Z0-9]/g,"");}
+
+/* Score de ressemblance 0-100 entre une empreinte et une fiche */
+function ressemblance(emp,m){
+  const dd=hamming(emp.dhash,m.dhash), da=hamming(emp.ahash,m.ahash);
+  const d=Math.min(dd,da);
+  return Math.max(0,Math.round(100*(1-d/32)));   // 0 bit d'écart = 100 %, 32 bits = 0 %
+}
+
+/* Recherche de doublons : photo + référence + nom */
+function chercherDoublons(emp,ref,nom,exclureId){
+  const res=[];
+  const r=normRef(ref), n=String(nom||"").toLowerCase().trim();
+  montres.forEach(m=>{
+    if(exclureId && m.id===exclureId) return;
+    let score=0, raison="";
+    if(emp && m.dhash){
+      score=ressemblance(emp,m);
+      raison="photo";
+    }
+    const mr=normRef(m.ref);
+    if(r && mr && r===mr){ if(score<99){score=99;raison="référence identique";} }
+    else if(r && mr && r.length>=5 && (mr.indexOf(r)===0||r.indexOf(mr)===0)){ if(score<88){score=88;raison="référence proche";} }
+    else if(n && n.length>=6 && String(m.nom||"").toLowerCase().indexOf(n)>=0){ if(score<80){score=80;raison="nom identique";} }
+    if(score>=62) res.push({m:m,score:score,raison:raison});
+  });
+  res.sort((a,b)=>b.score-a.score);
+  return res.slice(0,5);
+}
+
+/* ── Lecture + compression d'une photo ───────────────────── */
+function lireImage(file){
+  return new Promise((res,rej)=>{
+    if(!file) return rej(new Error("aucun fichier"));
+    if(window.createImageBitmap){
+      createImageBitmap(file,{imageOrientation:"from-image"}).then(res).catch(()=>lireImageFallback(file).then(res,rej));
+    } else lireImageFallback(file).then(res,rej);
+  });
+}
+function lireImageFallback(file){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=fr.result;};
+    fr.onerror=rej;fr.readAsDataURL(file);
+  });
+}
+function compresser(img,maxCote){
+  const l=img.width||img.naturalWidth, h=img.height||img.naturalHeight;
+  const r=Math.min(1,maxCote/Math.max(l,h));
+  const c=document.createElement("canvas");
+  c.width=Math.max(1,Math.round(l*r));c.height=Math.max(1,Math.round(h*r));
+  const ctx=c.getContext("2d");
+  ctx.fillStyle="#111";ctx.fillRect(0,0,c.width,c.height);
+  ctx.drawImage(img,0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg",0.82);
+}
+async function traiterFichierPhoto(file){
+  const img=await lireImage(file);
+  const emp=empreintes(img);
+  const dataUrl=compresser(img,1000);
+  if(img.close) img.close();
+  return {dataUrl:dataUrl,dhash:emp.dhash,ahash:emp.ahash};
+}
+
+/* ── Calculs sur une fiche ───────────────────────────────── */
+function coutTotal(m){return nb(m.prixAchat)+nb(m.frais);}
+function plusValue(m){return m.vendue?nb(m.prixVente)-coutTotal(m):0;}
+function statut(m){
+  if(m.vendue) return "vendue";
+  if(!m.recu) return "transit";
+  return m.destination==="garder"?"collection":"avendre";
+}
+const STATUT_LIB={transit:"En transit",avendre:"À vendre",collection:"Collection",vendue:"Vendue"};
+const STATUT_CLS={transit:"b-transit",avendre:"b-vendre",collection:"b-collec",vendue:"b-vendue"};
+
+/* ── Rendu ───────────────────────────────────────────────── */
+function projets(){
+  const s=[];
+  montres.forEach(m=>{const p=(m.projet||PROJET_DEFAUT);if(s.indexOf(p)<0)s.push(p);});
+  if(!s.length) s.push(PROJET_DEFAUT);
+  s.sort((a,b)=>a===PROJET_DEFAUT?-1:b===PROJET_DEFAUT?1:a.localeCompare(b,"fr"));
+  return s;
+}
+function duProjet(){
+  return projetActif==="__tous__"?montres.slice():montres.filter(m=>(m.projet||PROJET_DEFAUT)===projetActif);
+}
+function filtrees(){
+  let l=duProjet();
+  if(filtreStatut!=="tous") l=l.filter(m=>statut(m)===filtreStatut);
+  const q=$("rech").value.toLowerCase().trim();
+  if(q){
+    l=l.filter(m=>[m.nom,m.ref,m.vendeur,m.paysAchat,m.paysLivraison,m.lieu,m.details,m.acheteur,m.suivi]
+      .some(v=>String(v==null?"":v).toLowerCase().indexOf(q)>=0));
+  }
+  const tri=$("tri").value;
+  l.sort((a,b)=>{
+    if(tri==="nom") return String(a.nom||"").localeCompare(String(b.nom||""),"fr");
+    if(tri==="cher") return coutTotal(b)-coutTotal(a);
+    if(tri==="pascher") return coutTotal(a)-coutTotal(b);
+    const da=a.dateAchat||a.creeLe||"", db=b.dateAchat||b.creeLe||"";
+    return tri==="ancien"?String(da).localeCompare(String(db)):String(db).localeCompare(String(da));
+  });
+  return l;
+}
+function rendreCompteurs(){
+  const l=duProjet();
+  let investi=0, transit=0, transitEur=0, aVendre=0, collection=0, vendues=0, encaisse=0, pv=0;
+  l.forEach(m=>{
+    const c=coutTotal(m);
+    investi+=c;
+    const s=statut(m);
+    if(s==="transit"){transit++;transitEur+=c;}
+    if(s==="avendre") aVendre++;
+    if(s==="collection") collection++;
+    if(s==="vendue"){vendues++;encaisse+=nb(m.prixVente);pv+=plusValue(m);}
+  });
+  const cls=pv>0?"cc":pv<0?"cr":"ct";
+  $("counters").innerHTML=
+    tuile("ct",l.length,"Montres")+
+    tuile("cs",eurCourt(investi),"Investi (achat+frais)")+
+    tuile("cb",transit+(transitEur?" · "+eurCourt(transitEur):""),"En transit")+
+    tuile("ct",aVendre+" / "+collection,"À vendre / gardées")+
+    tuile("cs",vendues+(encaisse?" · "+eurCourt(encaisse):""),"Vendues")+
+    tuile(cls,(pv>0?"+":"")+eurCourt(pv),"Plus-value réalisée");
+}
+function tuile(cls,nbv,lbl){
+  return '<div class="counter '+cls+'"><div class="counter-nb">'+esc(nbv)+'</div><div class="counter-label">'+lbl+'</div></div>';
+}
+function rendreOnglets(){
+  const ps=projets();
+  let h='<button class="tab'+(projetActif==="__tous__"?" actif":"")+'" onclick="choisirProjet(\'__tous__\')">Tous <span class="tab-count">'+montres.length+'</span></button>';
+  ps.forEach(p=>{
+    const n=montres.filter(m=>(m.projet||PROJET_DEFAUT)===p).length;
+    h+='<button class="tab'+(projetActif===p?" actif":"")+'" onclick="choisirProjet('+JSON.stringify(p).replace(/"/g,"&quot;")+')">'+esc(p)+' <span class="tab-count">'+n+'</span></button>';
+  });
+  $("tabs").innerHTML=h;
+  $("projets-list").innerHTML=ps.map(p=>'<option value="'+esc(p)+'"></option>').join("");
+}
+function rendreChips(){
+  const l=duProjet();
+  const compte=s=>l.filter(m=>statut(m)===s).length;
+  const defs=[["tous","Toutes",l.length],["transit","🕒 En transit",compte("transit")],
+    ["avendre","🏷 À vendre",compte("avendre")],["collection","💎 Collection",compte("collection")],
+    ["vendue","💰 Vendues",compte("vendue")]];
+  $("chips").innerHTML=defs.map(d=>
+    '<button class="chip'+(filtreStatut===d[0]?" actif":"")+'" onclick="choisirStatut(\''+d[0]+'\')">'+d[1]+' ('+d[2]+')</button>').join("");
+}
+function rendreListe(){
+  const l=filtrees();
+  if(!l.length){
+    $("liste").innerHTML='<div class="vide"><div class="vide-ico">⌚</div>'+
+      (montres.length?"Aucune montre ne correspond à ce filtre.":"Aucune montre pour l'instant.<br>Appuie sur <b>+</b> pour ajouter ton premier achat.")+'</div>';
+    return;
+  }
+  $("liste").innerHTML=l.map(carte).join("");
+}
+function carte(m){
+  const s=statut(m), c=coutTotal(m), pv=plusValue(m);
+  const photo=m.photoId&&PHOTOS[m.photoId];
+  let droite='<div class="mprix-a">'+eur(c)+'</div>';
+  if(m.vendue){
+    droite+='<div class="mprix-pv '+(pv>0?"pv-pos":pv<0?"pv-neg":"pv-neutre")+'">'+(pv>0?"+":"")+eur(pv)+'</div>';
+  } else if(nb(m.prixVise)>0){
+    droite+='<div class="mprix-pv pv-neutre">visé '+eur(nb(m.prixVise))+'</div>';
+  }
+  return '<div class="mcard" id="card-'+m.id+'">'+
+    '<div class="mhead" onclick="basculer(\''+m.id+'\')">'+
+      (photo?'<img class="mphoto" src="'+photo+'" alt="">':'<div class="mphoto-vide">⌚</div>')+
+      '<div class="minfo">'+
+        '<div class="mnom">'+esc(m.nom||"Sans nom")+'</div>'+
+        (m.ref?'<div class="mref">'+esc(m.ref)+'</div>':'')+
+        '<div class="mmeta">'+
+          '<span class="badge '+STATUT_CLS[s]+'">'+STATUT_LIB[s]+'</span>'+
+          (m.paysAchat?'<span class="badge b-pays">'+esc(m.paysAchat)+'</span>':'')+
+        '</div>'+
+      '</div>'+
+      '<div class="mprix">'+droite+'</div>'+
+    '</div>'+
+    '<div class="mdetail" id="det-'+m.id+'">'+detail(m)+'</div>'+
+  '</div>';
+}
+function detail(m){
+  const photo=m.photoId&&PHOTOS[m.photoId];
+  const c=coutTotal(m), pv=plusValue(m);
+  let h="";
+  if(photo) h+='<img class="photo-grande" src="'+photo+'" alt="">';
+  h+='<div class="dgrid">';
+  h+=cas("Achat",dateFR(m.dateAchat));
+  h+=cas("Prix d'achat",eur(nb(m.prixAchat)));
+  h+=cas("Frais (port/douane)",nb(m.frais)?eur(nb(m.frais)):"—");
+  h+=cas("Coût total",eur(c));
+  h+=cas("Pays d'achat",m.paysAchat||"—");
+  h+=cas("Vendeur",m.vendeur||"—");
+  h+=cas("Livraison prévue",dateFR(m.datePrevue));
+  h+=cas("Reçue le",m.recu?dateFR(m.dateRecu):"Pas encore");
+  h+=casL("Lieu de livraison",(m.lieu||"—")+(m.paysLivraison?" · "+m.paysLivraison:""));
+  if(m.suivi) h+=casL("Suivi",m.suivi);
+  h+=cas("Destination",m.destination==="garder"?"💎 Je garde":"🏷 À revendre");
+  h+=cas("Prix visé",nb(m.prixVise)?eur(nb(m.prixVise)):"—");
+  if(m.vendue){
+    h+=cas("Vendue le",dateFR(m.dateVente));
+    h+=cas("Prix de vente",eur(nb(m.prixVente)));
+    h+=casL("Plus-value","<span class=\""+(pv>0?"pv-pos":pv<0?"pv-neg":"pv-neutre")+"\">"+(pv>0?"+":"")+eur(pv)+
+      (c>0?" ("+(pv>0?"+":"")+Math.round(pv/c*100)+" %)":"")+"</span>");
+    if(m.acheteur) h+=casL("Acheteur",m.acheteur);
+  }
+  h+=cas("Projet",m.projet||PROJET_DEFAUT);
+  h+='</div>';
+  if(m.details) h+='<div class="dnote">'+esc(m.details)+'</div>';
+  h+='<div class="dactions">';
+  if(!m.recu) h+='<button class="btn vert" onclick="marquerRecue(\''+m.id+'\')">✅ Marquer reçue</button>';
+  if(m.recu&&!m.vendue) h+='<button class="btn or" onclick="marquerVendue(\''+m.id+'\')">💰 Marquer vendue</button>';
+  h+='<button class="btn" onclick="ouvrirEdition(\''+m.id+'\')">✏️ Modifier</button>';
+  h+='<button class="btn rouge" onclick="supprimer(\''+m.id+'\')">🗑 Supprimer</button>';
+  h+='</div>';
+  return h;
+}
+function cas(l,v){return '<div class="dcase"><div class="dcase-lbl">'+l+'</div><div class="dcase-val">'+v+'</div></div>';}
+function casL(l,v){return '<div class="dcase large"><div class="dcase-lbl">'+l+'</div><div class="dcase-val">'+v+'</div></div>';}
+
+function rendre(){rendreCompteurs();rendreOnglets();rendreChips();rendreListe();}
+function choisirProjet(p){projetActif=p;filtreStatut="tous";rendre();}
+function choisirStatut(s){filtreStatut=s;rendre();}
+function basculer(id){
+  const d=$("det-"+id);if(!d)return;
+  d.classList.toggle("open");
+}
+
+/* ── Actions rapides ─────────────────────────────────────── */
+function marquerRecue(id){
+  const m=montres.find(x=>x.id===id);if(!m)return;
+  m.recu=true;m.dateRecu=m.dateRecu||auj();m.majLe=new Date().toISOString();
+  sauver();rendre();$("det-"+id)&&$("det-"+id).classList.add("open");
+  toast("✅ "+(m.nom||"Montre")+" marquée reçue");
+}
+function marquerVendue(id){
+  const m=montres.find(x=>x.id===id);if(!m)return;
+  const def=nb(m.prixVise)||"";
+  const p=prompt("Prix de vente en € pour « "+(m.nom||"cette montre")+" » ?",def);
+  if(p===null) return;
+  m.vendue=true;m.prixVente=nb(p);m.dateVente=m.dateVente||auj();
+  if(!m.recu){m.recu=true;m.dateRecu=m.dateRecu||auj();}
+  m.majLe=new Date().toISOString();
+  sauver();rendre();
+  const pv=plusValue(m);
+  toast(pv>=0?"💰 Vendue, +"+eur(pv):"Vendue, "+eur(pv));
+}
+function supprimer(id){
+  const m=montres.find(x=>x.id===id);if(!m)return;
+  if(!confirm("Supprimer définitivement « "+(m.nom||"cette montre")+" » ?")) return;
+  if(m.photoId){photoEffacer(m.photoId);delete PHOTOS[m.photoId];}
+  montres=montres.filter(x=>x.id!==id);
+  sauver();rendre();toast("Montre supprimée");
+}
+
+/* ── Modale fiche ────────────────────────────────────────── */
+function setRecu(v){
+  ficheRecu=v;
+  $("seg-recu").classList.toggle("on",v);
+  $("seg-transit").classList.toggle("on",!v);
+  $("bloc-recu").style.display=v?"block":"none";
+  if(v&&!$("f-date-recu").value) $("f-date-recu").value=auj();
+}
+function setDestination(d){
+  ficheDestination=d;
+  $("seg-garder").classList.toggle("on",d==="garder");
+  $("seg-vendre").classList.toggle("on",d==="vendre");
+}
+function majBlocVente(){
+  $("bloc-vente").style.display=$("f-vendue").value==="1"?"block":"none";
+  if($("f-vendue").value==="1"&&!$("f-date-vente").value) $("f-date-vente").value=auj();
+}
+function viderFiche(){
+  ["f-nom","f-ref","f-details","f-vendeur","f-lieu","f-suivi","f-acheteur",
+   "f-prix-achat","f-frais","f-prix-vise","f-prix-vente","f-pays-achat","f-pays-liv",
+   "f-date-achat","f-date-prevue","f-date-recu","f-date-vente"].forEach(i=>$(i).value="");
+  $("f-projet").value=projetActif==="__tous__"?PROJET_DEFAUT:projetActif;
+  $("f-vendue").value="0";
+  $("f-doublon").innerHTML="";
+  retirerPhoto();
+  setRecu(false);setDestination("vendre");majBlocVente();
+}
+function ouvrirAjout(){
+  ficheEditionId=null;
+  $("fiche-titre").textContent="Nouvelle montre";
+  $("fiche-sous").textContent="Achat, livraison, revente — tout au même endroit";
+  $("fiche-valider").innerHTML="✓ Enregistrer";
+  viderFiche();
+  $("f-date-achat").value=auj();
+  $("f-pays-liv").value="France";
+  $("modal-fiche").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function ouvrirEdition(id){
+  const m=montres.find(x=>x.id===id);if(!m)return;
+  ficheEditionId=id;
+  viderFiche();
+  $("fiche-titre").textContent="Modifier la montre";
+  $("fiche-sous").textContent=m.nom||"";
+  $("fiche-valider").innerHTML="✓ Enregistrer";
+  $("f-nom").value=m.nom||"";$("f-ref").value=m.ref||"";$("f-projet").value=m.projet||PROJET_DEFAUT;
+  $("f-details").value=m.details||"";
+  $("f-date-achat").value=m.dateAchat||"";$("f-prix-achat").value=m.prixAchat||"";
+  $("f-frais").value=m.frais||"";$("f-pays-achat").value=m.paysAchat||"";$("f-vendeur").value=m.vendeur||"";
+  $("f-lieu").value=m.lieu||"";$("f-pays-liv").value=m.paysLivraison||"";$("f-date-prevue").value=m.datePrevue||"";
+  $("f-suivi").value=m.suivi||"";$("f-date-recu").value=m.dateRecu||"";
+  $("f-prix-vise").value=m.prixVise||"";$("f-vendue").value=m.vendue?"1":"0";
+  $("f-prix-vente").value=m.prixVente||"";$("f-date-vente").value=m.dateVente||"";$("f-acheteur").value=m.acheteur||"";
+  setRecu(!!m.recu);setDestination(m.destination||"vendre");majBlocVente();
+  if(m.photoId&&PHOTOS[m.photoId]){
+    fichePhoto={dataUrl:PHOTOS[m.photoId],dhash:m.dhash,ahash:m.ahash,existante:true};
+    afficherApercuPhoto(PHOTOS[m.photoId]);
+  }
+  $("modal-fiche").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function fermerFiche(){
+  $("modal-fiche").classList.remove("open");
+  document.body.style.overflow="";
+}
+function afficherApercuPhoto(url){
+  $("f-photo-img").src=url;
+  $("f-photo-apercu").style.display="block";
+  $("f-photo-zone").style.display="none";
+}
+function retirerPhoto(){
+  fichePhoto=null;
+  $("f-photo-img").src="";
+  $("f-photo-apercu").style.display="none";
+  $("f-photo-zone").style.display="block";
+  $("f-photo-input").value="";
+  $("f-doublon").innerHTML="";
+}
+async function photoChoisie(input){
+  const f=input.files&&input.files[0];if(!f)return;
+  $("f-doublon").innerHTML='<div class="alerte load">⏳ Analyse de la photo…</div>';
+  try{
+    const r=await traiterFichierPhoto(f);
+    fichePhoto=r;
+    afficherApercuPhoto(r.dataUrl);
+    afficherDoublons(r);
+  }catch(e){
+    $("f-doublon").innerHTML='<div class="alerte warn">⚠ Impossible de lire cette image.</div>';
+  }
+  input.value="";
+}
+function afficherDoublons(emp){
+  const d=chercherDoublons(emp,$("f-ref").value,$("f-nom").value,ficheEditionId);
+  if(!d.length){
+    $("f-doublon").innerHTML='<div class="alerte ok"><div class="alerte-titre">✅ Aucune correspondance</div>'+
+      "Cette montre n'a pas d'équivalent dans ta collection.</div>";
+    return;
+  }
+  const fort=d[0].score>=85;
+  let h='<div class="alerte warn"><div class="alerte-titre">'+(fort?"⚠ Tu l'as probablement déjà !":"🔎 Ressemblances trouvées")+'</div>'+
+    (fort?"Une montre très proche est déjà enregistrée.":"Rien de certain, vérifie avant d'ajouter.");
+  d.forEach(x=>{h+=ligneMatch(x);});
+  h+='</div>';
+  $("f-doublon").innerHTML=h;
+}
+function ligneMatch(x){
+  const m=x.m, ph=m.photoId&&PHOTOS[m.photoId];
+  const s=statut(m);
+  return '<div class="match" onclick="allerVers(\''+m.id+'\')">'+
+    (ph?'<img src="'+ph+'" alt="">':'<div class="match-vide">⌚</div>')+
+    '<div class="match-info"><div class="match-nom">'+esc(m.nom||"Sans nom")+'</div>'+
+    '<div class="match-sub">'+esc(m.ref||"")+(m.ref?" · ":"")+STATUT_LIB[s]+" · "+eur(coutTotal(m))+" · "+esc(x.raison)+'</div></div>'+
+    '<div class="match-score">'+x.score+'%</div></div>';
+}
+function allerVers(id){
+  fermerFiche();fermerScan();
+  const m=montres.find(x=>x.id===id);if(!m)return;
+  projetActif="__tous__";filtreStatut="tous";$("rech").value="";
+  rendre();
+  const d=$("det-"+id);
+  if(d){d.classList.add("open");$("card-"+id).scrollIntoView({behavior:"smooth",block:"center"});}
+}
+function enregistrerFiche(){
+  const nom=$("f-nom").value.trim();
+  if(!nom){toast("⚠ Donne au moins un nom à la montre");$("f-nom").focus();return;}
+  const vendue=$("f-vendue").value==="1";
+  const base={
+    nom:nom,
+    ref:$("f-ref").value.trim(),
+    projet:$("f-projet").value.trim()||PROJET_DEFAUT,
+    details:$("f-details").value.trim(),
+    dateAchat:$("f-date-achat").value,
+    prixAchat:nb($("f-prix-achat").value),
+    frais:nb($("f-frais").value),
+    paysAchat:$("f-pays-achat").value.trim(),
+    vendeur:$("f-vendeur").value.trim(),
+    lieu:$("f-lieu").value.trim(),
+    paysLivraison:$("f-pays-liv").value.trim(),
+    datePrevue:$("f-date-prevue").value,
+    suivi:$("f-suivi").value.trim(),
+    recu:ficheRecu,
+    dateRecu:ficheRecu?($("f-date-recu").value||auj()):"",
+    destination:ficheDestination,
+    prixVise:nb($("f-prix-vise").value),
+    vendue:vendue,
+    prixVente:vendue?nb($("f-prix-vente").value):0,
+    dateVente:vendue?($("f-date-vente").value||auj()):"",
+    acheteur:vendue?$("f-acheteur").value.trim():"",
+    majLe:new Date().toISOString()
+  };
+  let m;
+  if(ficheEditionId){
+    m=montres.find(x=>x.id===ficheEditionId);
+    if(!m){toast("Fiche introuvable");return;}
+    Object.assign(m,base);
+  }else{
+    m=Object.assign({id:uid(),creeLe:new Date().toISOString()},base);
+    montres.unshift(m);
+  }
+  // Photo
+  if(fichePhoto){
+    if(!fichePhoto.existante){
+      const pid=m.photoId||("p_"+m.id);
+      m.photoId=pid;m.dhash=fichePhoto.dhash;m.ahash=fichePhoto.ahash;
+      PHOTOS[pid]=fichePhoto.dataUrl;
+      photoEcrire(pid,fichePhoto.dataUrl).catch(()=>toast("⚠ Photo non sauvegardée"));
+    }
+  }else if(m.photoId){
+    photoEffacer(m.photoId);delete PHOTOS[m.photoId];
+    m.photoId=null;m.dhash=null;m.ahash=null;
+  }
+  sauver();
+  if(projetActif!=="__tous__"&&projetActif!==m.projet) projetActif=m.projet;
+  fermerFiche();rendre();
+  toast(ficheEditionId?"✓ Fiche mise à jour":"✓ "+nom+" ajoutée");
+  ficheEditionId=null;
+}
+
+/* ── Modale scan ─────────────────────────────────────────── */
+function ouvrirScan(){
+  scanCourant=null;
+  $("s-resultat").innerHTML="";
+  $("s-texte").value="";
+  $("s-apercu").style.display="none";
+  $("s-photo-zone").style.display="block";
+  $("s-ajouter").style.display="none";
+  $("modal-scan").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function fermerScan(){
+  $("modal-scan").classList.remove("open");
+  document.body.style.overflow="";
+}
+async function scanPhoto(input){
+  const f=input.files&&input.files[0];if(!f)return;
+  $("s-resultat").innerHTML='<div class="alerte load">⏳ Analyse de la photo…</div>';
+  try{
+    const r=await traiterFichierPhoto(f);
+    scanCourant=r;
+    $("s-img").src=r.dataUrl;
+    $("s-apercu").style.display="block";
+    $("s-photo-zone").style.display="none";
+    $("s-ajouter").style.display="inline-block";
+    afficherScanResultat(r,$("s-texte").value);
+  }catch(e){
+    $("s-resultat").innerHTML='<div class="alerte warn">⚠ Impossible de lire cette image.</div>';
+  }
+  input.value="";
+}
+function scanTexte(){
+  const t=$("s-texte").value.trim();
+  if(!scanCourant&&t.length<3){$("s-resultat").innerHTML="";return;}
+  afficherScanResultat(scanCourant,t);
+  $("s-ajouter").style.display=(scanCourant||t.length>=3)?"inline-block":"none";
+}
+function afficherScanResultat(emp,texte){
+  if(!montres.length){
+    $("s-resultat").innerHTML='<div class="alerte ok"><div class="alerte-titre">Collection vide</div>Tu n\'as encore rien enregistré.</div>';
+    return;
+  }
+  const d=chercherDoublons(emp,texte,texte,null);
+  if(!d.length){
+    $("s-resultat").innerHTML='<div class="alerte ok"><div class="alerte-titre">✅ Tu ne l\'as pas</div>'+
+      "Aucune montre de ta collection ne correspond.</div>";
+    return;
+  }
+  const fort=d[0].score>=85;
+  let h='<div class="alerte warn"><div class="alerte-titre">'+
+    (fort?"✅ Oui, tu l'as déjà":"🤔 Peut-être — à vérifier")+'</div>'+
+    (fort?"Correspondance forte avec :":"Ces montres ressemblent à celle-ci :");
+  d.forEach(x=>{h+=ligneMatch(x);});
+  h+='</div>';
+  $("s-resultat").innerHTML=h;
+}
+function scanVersAjout(){
+  const t=$("s-texte").value.trim();
+  const p=scanCourant;
+  fermerScan();
+  ouvrirAjout();
+  if(t) $("f-nom").value=t;
+  if(p){
+    fichePhoto=p;
+    afficherApercuPhoto(p.dataUrl);
+    afficherDoublons(p);
+  }
+  $("modal-scan").classList.remove("open");
+  $("modal-fiche").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+
+/* ── Export / sauvegarde ─────────────────────────────────── */
+function telecharger(contenu,nomFichier,type){
+  const b=new Blob([contenu],{type:type});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement("a");
+  a.href=u;a.download=nomFichier;document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},400);
+}
+function csvChamp(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"';}
+function exporterCSV(){
+  const l=filtrees();
+  if(!l.length){toast("Rien à exporter");return;}
+  let csv="﻿Nom;Référence;Projet;Statut;Date achat;Prix achat;Frais;Coût total;Pays achat;Vendeur;"+
+    "Lieu livraison;Pays livraison;Livraison prévue;Reçue;Date réception;Suivi;Destination;Prix visé;"+
+    "Vendue;Prix vente;Date vente;Acheteur;Plus-value;Détails\n";
+  l.forEach(m=>{
+    csv+=[csvChamp(m.nom),csvChamp(m.ref),csvChamp(m.projet||PROJET_DEFAUT),csvChamp(STATUT_LIB[statut(m)]),
+      m.dateAchat||"",nb(m.prixAchat).toFixed(2),nb(m.frais).toFixed(2),coutTotal(m).toFixed(2),
+      csvChamp(m.paysAchat),csvChamp(m.vendeur),csvChamp(m.lieu),csvChamp(m.paysLivraison),m.datePrevue||"",
+      m.recu?"Oui":"Non",m.dateRecu||"",csvChamp(m.suivi),m.destination==="garder"?"Garder":"Revendre",
+      nb(m.prixVise).toFixed(2),m.vendue?"Oui":"Non",m.vendue?nb(m.prixVente).toFixed(2):"",m.dateVente||"",
+      csvChamp(m.acheteur),m.vendue?plusValue(m).toFixed(2):"",csvChamp(m.details)].join(";")+"\n";
+  });
+  telecharger(csv,"montres-albert.csv","text/csv;charset=utf-8;");
+  toast("✓ CSV exporté");
+}
+function exporterJSON(){
+  const paquet={version:1,type:"montres-albert",date:new Date().toISOString(),montres:montres,photos:PHOTOS};
+  telecharger(JSON.stringify(paquet),"sauvegarde-montres-albert.json","application/json");
+  toast("✓ Sauvegarde téléchargée");
+}
+function importerJSON(input){
+  const f=input.files&&input.files[0];if(!f)return;
+  const fr=new FileReader();
+  fr.onload=async()=>{
+    try{
+      const p=JSON.parse(fr.result);
+      if(!p||!Array.isArray(p.montres)) throw new Error("format");
+      if(!confirm("Restaurer "+p.montres.length+" montre(s) ? Cela remplace les données actuelles de cet appareil.")) return;
+      montres=p.montres;
+      PHOTOS=p.photos||{};
+      sauver();
+      for(const k in PHOTOS){ try{await photoEcrire(k,PHOTOS[k]);}catch(e){} }
+      rendre();toast("✓ Sauvegarde restaurée");
+    }catch(e){toast("⚠ Fichier de sauvegarde invalide");}
+  };
+  fr.readAsText(f);
+  input.value="";
+}
+
+/* ── Connexion ───────────────────────────────────────────── */
+const AUTH_HASH="fde83057674ff5ece52819657d42fb1771cf0e1765a6e36d3225ee4be1085361";
+function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
+async function seConnecter(){
+  const pwd=$("login-pwd").value;if(!pwd)return;
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pwd));
+  if(toHexAuth(buf)===AUTH_HASH){sessionStorage.setItem("mf_montres_auth","1");deverrouiller();}
+  else{$("login-err").style.display="block";$("login-pwd").value="";}
+}
+function deverrouiller(){$("login-overlay").style.display="none";demarrer();}
+$("login-pwd").addEventListener("keydown",e=>{if(e.key==="Enter")seConnecter();});
+
+/* ── Démarrage ───────────────────────────────────────────── */
+let demarre=false;
+async function demarrer(){
+  if(demarre)return;demarre=true;
+  charger();
+  PHOTOS=await photosCharger();
+  rendre();
+}
+// Fermer les modales en cliquant sur le fond
+$("modal-fiche").addEventListener("click",e=>{if(e.target===$("modal-fiche"))fermerFiche();});
+$("modal-scan").addEventListener("click",e=>{if(e.target===$("modal-scan"))fermerScan();});
+// Recalcul des doublons quand on tape la référence
+["f-ref","f-nom"].forEach(i=>$(i).addEventListener("blur",()=>{
+  if($("modal-fiche").classList.contains("open")&&(fichePhoto||$("f-ref").value.trim().length>=4)){
+    afficherDoublons(fichePhoto||null);
+  }
+}));
+
+if(sessionStorage.getItem("mf_montres_auth")==="1"){$("login-overlay").style.display="none";demarrer();}
+</script>
+</body>
+</html>

@@ -93,6 +93,10 @@ body{font-family:'Nunito',sans-serif;background:#f0f4ff;min-height:100vh;padding
 
 .ajout-btn{width:100%;padding:10px;border-radius:12px;border:2px dashed #c7d2fe;font-size:13px;font-weight:800;cursor:pointer;background:transparent;color:#c7d2fe;font-family:'Nunito',sans-serif;margin-top:4px;}
 .ajout-btn:hover{border-color:#6366f1;color:#6366f1;background:#f0f4ff;}
+.outils-liens{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
+.outil-lien{flex:1;min-width:130px;text-align:center;background:#fff;border-radius:14px;padding:11px 10px;font-size:13px;
+  font-weight:800;color:#6366f1;text-decoration:none;box-shadow:0 2px 8px rgba(99,102,241,0.12);border:1.5px solid #e0e7ff;}
+.outil-lien:active{background:#f0f4ff;}
 .vide{text-align:center;padding:2rem;color:#c7d2fe;font-size:14px;font-weight:700;}
 .erreur{background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:10px;font-size:13px;color:#dc2626;margin-bottom:10px;font-weight:700;}
 .modal-wrap{display:none;position:fixed;inset:0;background:rgba(30,27,75,0.5);z-index:100;align-items:center;justify-content:center;}
@@ -116,6 +120,11 @@ body{font-family:'Nunito',sans-serif;background:#f0f4ff;min-height:100vh;padding
       <span class="badge-live"><span class="dot-live"></span>Live</span>
       <button class="sync-btn" id="sync-btn" onclick="charger()">↻ Sync</button>
     </div>
+  </div>
+
+  <div class="outils-liens">
+    <a class="outil-lien" href="montres.html">&#8986; Les Montres d'Albert</a>
+    <a class="outil-lien" href="releves.html">&#128196; Relev&eacute;s</a>
   </div>
 
   <div class="counters">
