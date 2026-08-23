@@ -618,8 +618,12 @@ function ouvrirDB(){
   return new Promise((res,rej)=>{
     if(_db) return res(_db);
     if(!window.indexedDB) return rej(new Error("IndexedDB indisponible"));
-    const rq=indexedDB.open("mf-montres",1);
-    rq.onupgradeneeded=()=>{const d=rq.result;if(!d.objectStoreNames.contains("photos"))d.createObjectStore("photos");};
+    const rq=indexedDB.open("mf-montres",2);
+    rq.onupgradeneeded=()=>{
+      const d=rq.result;
+      if(!d.objectStoreNames.contains("photos")) d.createObjectStore("photos");
+      if(!d.objectStoreNames.contains("fiches")) d.createObjectStore("fiches");
+    };
     rq.onsuccess=()=>{_db=rq.result;res(_db);};
     rq.onerror=()=>rej(rq.error);
   });
@@ -637,6 +641,27 @@ function photoEffacer(id){
     t.objectStore("photos").delete(id);
     t.oncomplete=()=>res();t.onerror=()=>res();
   })).catch(()=>{});
+}
+/* Les fiches sont écrites à DEUX endroits : localStorage (rapide, synchrone) et
+   IndexedDB (plus robuste). Si l'un des deux est vidé par le navigateur, l'autre
+   permet de tout retrouver au démarrage. */
+function fichesEcrire(liste){
+  return ouvrirDB().then(d=>new Promise((res,rej)=>{
+    const t=d.transaction("fiches","readwrite");
+    t.objectStore("fiches").put(JSON.stringify(liste),"montres");
+    t.oncomplete=()=>res();t.onerror=()=>rej(t.error);
+  })).catch(()=>{});
+}
+function fichesLire(){
+  return ouvrirDB().then(d=>new Promise((res)=>{
+    const t=d.transaction("fiches","readonly");
+    const rq=t.objectStore("fiches").get("montres");
+    t.oncomplete=()=>{
+      try{const v=JSON.parse(rq.result||"[]");res(Array.isArray(v)?v:[]);}
+      catch(e){res([]);}
+    };
+    t.onerror=()=>res([]);
+  })).catch(()=>[]);
 }
 function photosCharger(){
   return ouvrirDB().then(d=>new Promise((res,rej)=>{
@@ -660,6 +685,7 @@ function charger(){
 function sauver(){
   try{localStorage.setItem(CLE,JSON.stringify(montres));}
   catch(e){toast("⚠ Espace de stockage plein");}
+  fichesEcrire(montres);          // double de sécurité, en arrière-plan
 }
 /* Les montres supprimées restent dans le tableau (marquées « supprime ») le temps
    que l'autre appareil soit prévenu ; elles n'apparaissent jamais à l'écran. */
@@ -1767,6 +1793,16 @@ async function demarrer(){
   chargerReglages();
   const partage=lireLienPartage();
   charger();
+  const secours=await fichesLire();
+  if(secours.length>montres.length){
+    // localStorage a été vidé (navigation privée, nettoyage du navigateur…) :
+    // on repart du double conservé dans IndexedDB.
+    montres=secours;
+    sauver();
+    if(secours.length) setTimeout(()=>toast("↺ "+secours.length+" montre(s) récupérée(s)"),900);
+  }else if(montres.length&&!secours.length){
+    fichesEcrire(montres);        // premier lancement après la mise à jour
+  }
   PHOTOS=await photosCharger();
   await remettreEmpreintesAJour();
   rendre();
