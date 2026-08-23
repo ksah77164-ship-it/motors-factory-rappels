@@ -25,7 +25,16 @@ Suivi complet du projet Albert :
   comparés. La vérification se déclenche automatiquement à l'ajout d'une photo.
 - **Projets** : chaque montre est rattachée à un projet (« Albert » par défaut), avec des onglets
   pour basculer de l'un à l'autre.
-- **Export CSV**, **sauvegarde JSON** (fiches + photos) et **restauration**.
+- **Export CSV**, **sauvegarde JSON** (fiches + photos) et **import** qui ajoute sans effacer.
+- **Recherche internet** : bouton 🔎. Photographier la montre vérifie d'abord la collection,
+  puis passe la photo à Google Lens via le partage du téléphone. La référence ouvre en une
+  touche les pages qui donnent des prix — en tête, les **ventes conclues sur eBay**, puis
+  Chrono24, Google Shopping, Vinted, Leboncoin, Yahoo Auctions Japon, Amazon.
+  Chaque fiche a aussi un bouton « Chercher son prix » pré-rempli avec sa référence.
+
+  *Limite assumée* : aucun moteur de reconnaissance d'image (Lens, Amazon) n'est ouvert à un
+  site tiers. L'appli ne peut donc pas identifier la montre elle-même à partir d'une photo ;
+  elle passe la main à Lens, qui le fait très bien.
 
 ### Partage à deux, en temps réel
 

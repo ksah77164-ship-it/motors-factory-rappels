@@ -67,7 +67,16 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 @media(min-width:560px){.counters{grid-template-columns:repeat(3,1fr);}}
 
 /* Actions principales */
-.actions-top{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;}
+.actions-top{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.liens{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:4px;}
+.lien{display:flex;align-items:center;gap:7px;padding:11px 12px;border-radius:13px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--cream);font-size:12.5px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;
+  text-align:left;text-decoration:none;}
+.lien:active{border-color:var(--gold);background:var(--card2);}
+.lien .ic{font-size:15px;flex-shrink:0;}
+.lien small{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-top:1px;}
+.lien.phare{grid-column:span 2;background:linear-gradient(160deg,var(--card2),var(--card));border-color:var(--line-strong);}
+.btn.pleine{width:100%;padding:13px;font-size:13.5px;justify-content:center;display:block;margin-bottom:4px;}
 .big-btn{border-radius:16px;padding:15px 12px;border:1.5px solid var(--line-strong);cursor:pointer;font-family:'Nunito',sans-serif;
   background:linear-gradient(160deg,var(--card2),var(--card));color:var(--cream);font-size:13px;font-weight:800;text-align:center;line-height:1.35;}
 .big-btn .bb-ico{font-size:22px;display:block;margin-bottom:5px;}
@@ -248,9 +257,13 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
       <span class="bb-ico">&#128247;</span>
       Je l'ai d&eacute;j&agrave; ?<br><span style="font-size:10.5px;opacity:.75;font-weight:700">Scanner une montre</span>
     </button>
+    <button class="big-btn" onclick="ouvrirRecherche()">
+      <span class="bb-ico">&#128269;</span>
+      Rechercher<br><span style="font-size:10.5px;opacity:.6;font-weight:700">Prix, cote, annonces</span>
+    </button>
     <button class="big-btn" onclick="ouvrirAjout()">
       <span class="bb-ico">&#10133;</span>
-      Ajouter une montre<br><span style="font-size:10.5px;opacity:.6;font-weight:700">Achat, livraison, revente</span>
+      Ajouter<br><span style="font-size:10.5px;opacity:.6;font-weight:700">Achat, livraison</span>
     </button>
   </div>
 
@@ -422,6 +435,44 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <div class="modal-actions">
       <button class="btn" onclick="fermerScan()">Fermer</button>
       <button class="btn or" id="s-ajouter" style="display:none" onclick="scanVersAjout()">&#10133; L'ajouter quand m&ecirc;me</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODALE RECHERCHE INTERNET ══ -->
+<div class="modal-wrap" id="modal-rech">
+  <div class="modal">
+    <h3>Rechercher une montre</h3>
+    <div class="sous">Ce qu'elle vaut, o&ugrave; elle se vend, &agrave; quel prix.</div>
+
+    <div class="sect">&#128248; Avec une photo</div>
+    <div id="r-photo-zone" class="photo-zone" onclick="document.getElementById('r-photo-input').click()">
+      <div class="pz-ico">&#128247;</div>
+      <div class="pz-txt">Photographier la montre</div>
+      <div class="pz-sub">Je v&eacute;rifie d'abord ta collection, puis je passe la main &agrave; Google</div>
+    </div>
+    <input type="file" id="r-photo-input" accept="image/*" capture="environment" style="display:none" onchange="rechPhoto(this)">
+    <div id="r-apercu" class="photo-apercu" style="display:none">
+      <img id="r-img" alt="">
+      <button class="photo-suppr" onclick="rechRetirerPhoto()">&#10006; Retirer</button>
+    </div>
+    <div id="r-collection"></div>
+    <div id="r-image-actions" style="display:none">
+      <button class="btn or pleine" onclick="partagerPhoto()">&#128228; Envoyer la photo &agrave; Google Lens</button>
+      <div class="aide" id="r-partage-aide" style="display:none">
+        Ce navigateur ne sait pas passer la photo &agrave; une autre application.
+        Ouvre l'appli <b>Google</b>, appuie sur l'ic&ocirc;ne <b>Lens</b> (l'appareil photo dans la barre de
+        recherche) et vise la montre : c'est le m&ecirc;me r&eacute;sultat.
+      </div>
+    </div>
+
+    <div class="sect">&#9000; Par r&eacute;f&eacute;rence ou mod&egrave;le</div>
+    <input type="text" id="r-texte" placeholder="Casio F-91W, GA-2100-1A1..." autocomplete="off" oninput="majLiens()">
+    <div class="liens" id="r-liens"></div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="fermerRecherche()">Fermer</button>
+      <button class="btn or" id="r-ajouter" style="display:none" onclick="rechVersAjout()">&#10133; L'ajouter &agrave; ma collection</button>
     </div>
   </div>
 </div>
@@ -826,6 +877,7 @@ function detail(m){
   h+='<div class="dactions">';
   if(!m.recu) h+='<button class="btn vert" onclick="marquerRecue(\''+m.id+'\')">✅ Marquer reçue</button>';
   if(m.recu&&!m.vendue) h+='<button class="btn or" onclick="marquerVendue(\''+m.id+'\')">💰 Marquer vendue</button>';
+  h+='<button class="btn" onclick="rechercherMontre(\''+m.id+'\')">🔎 Chercher son prix</button>';
   h+='<button class="btn" onclick="ouvrirEdition(\''+m.id+'\')">✏️ Modifier</button>';
   h+='<button class="btn rouge" onclick="supprimer(\''+m.id+'\')">🗑 Supprimer</button>';
   h+='</div>';
@@ -1122,6 +1174,152 @@ function scanVersAjout(){
   $("modal-scan").classList.remove("open");
   $("modal-fiche").classList.add("open");
   document.body.style.overflow="hidden";
+}
+
+/* ── Recherche internet ──────────────────────────────────────
+   Un navigateur ne peut pas interroger Google Lens lui-même : aucune de ces
+   maisons n'ouvre son moteur de reconnaissance d'image à un site tiers.
+   Ce qui marche vraiment, et qui est fait ici :
+     - la photo est passée à Lens (ou à l'appli de ton choix) par le partage
+       du téléphone, en une touche ;
+     - la référence, elle, ouvre directement les pages qui donnent des PRIX :
+       ventes conclues sur eBay, cote Chrono24, annonces d'occasion. */
+let rechPhotoCourante=null;
+
+const MARCHANDS=[
+  {cle:"ebay",   ico:"💰", nom:"eBay — ventes conclues", sous:"les vrais prix de revente",
+   url:q=>"https://www.ebay.fr/sch/i.html?_nkw="+q+"&LH_Sold=1&LH_Complete=1&_sop=13", phare:true},
+  {cle:"chrono", ico:"⌚", nom:"Chrono24", sous:"cote du marché",
+   url:q=>"https://www.chrono24.fr/search/index.htm?query="+q},
+  {cle:"google", ico:"🔎", nom:"Google", sous:"fiche et avis",
+   url:q=>"https://www.google.com/search?q="+q+"+montre"},
+  {cle:"images", ico:"🖼", nom:"Google Images", sous:"vérifier le modèle",
+   url:q=>"https://www.google.com/search?tbm=isch&q="+q},
+  {cle:"shop",   ico:"🏷", nom:"Google Shopping", sous:"prix neufs",
+   url:q=>"https://www.google.com/search?tbm=shop&q="+q},
+  {cle:"vinted", ico:"👕", nom:"Vinted", sous:"occasion France",
+   url:q=>"https://www.vinted.fr/catalog?search_text="+q},
+  {cle:"lbc",    ico:"📍", nom:"Leboncoin", sous:"occasion France",
+   url:q=>"https://www.leboncoin.fr/recherche?text="+q},
+  {cle:"yahoo",  ico:"🇯🇵", nom:"Yahoo Auctions Japon", sous:"où tu achètes",
+   url:q=>"https://auctions.yahoo.co.jp/search/search?p="+q},
+  {cle:"amazon", ico:"📦", nom:"Amazon", sous:"prix neuf",
+   url:q=>"https://www.amazon.fr/s?k="+q}
+];
+
+function ouvrirRecherche(texte){
+  rechRetirerPhoto();
+  $("r-texte").value=texte||"";
+  $("r-ajouter").style.display="none";
+  majLiens();
+  $("modal-rech").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function fermerRecherche(){
+  $("modal-rech").classList.remove("open");
+  document.body.style.overflow="";
+}
+function rechercherMontre(id){
+  const m=montres.find(x=>x.id===id);if(!m)return;
+  ouvrirRecherche((m.ref||m.nom||"").trim());
+}
+function rechRetirerPhoto(){
+  rechPhotoCourante=null;
+  $("r-img").src="";
+  $("r-apercu").style.display="none";
+  $("r-photo-zone").style.display="block";
+  $("r-photo-input").value="";
+  $("r-collection").innerHTML="";
+  $("r-image-actions").style.display="none";
+  $("r-partage-aide").style.display="none";
+}
+async function rechPhoto(input){
+  const f=input.files&&input.files[0];if(!f)return;
+  $("r-collection").innerHTML='<div class="alerte load">⏳ Analyse de la photo…</div>';
+  try{
+    const r=await traiterFichierPhoto(f);
+    rechPhotoCourante=r;
+    $("r-img").src=r.dataUrl;
+    $("r-apercu").style.display="block";
+    $("r-photo-zone").style.display="none";
+    $("r-image-actions").style.display="block";
+    $("r-ajouter").style.display="inline-block";
+
+    const d=chercherDoublons(r,$("r-texte").value,$("r-texte").value,null);
+    if(d.length){
+      const fort=d[0].score>=85;
+      let h='<div class="alerte warn"><div class="alerte-titre">'+
+        (fort?"✅ Tu l'as déjà dans ta collection":"🤔 Ressemble à ce que tu as")+'</div>'+
+        (fort?"Inutile de la racheter :":"À vérifier avant d'acheter :");
+      d.forEach(x=>{h+=ligneMatch(x);});
+      h+='</div>';
+      $("r-collection").innerHTML=h;
+      if(fort&&!$("r-texte").value.trim()){
+        $("r-texte").value=(d[0].m.ref||d[0].m.nom||"").trim();
+        majLiens();
+      }
+    }else{
+      $("r-collection").innerHTML='<div class="alerte ok"><div class="alerte-titre">✅ Nouvelle pour toi</div>'+
+        "Tu ne l'as pas encore.</div>";
+    }
+  }catch(e){
+    $("r-collection").innerHTML='<div class="alerte warn">⚠ Impossible de lire cette image.</div>';
+  }
+  input.value="";
+}
+
+function dataUrlVersFichier(url,nom){
+  const virgule=url.indexOf(",");
+  const type=(url.substring(0,virgule).match(/:(.*?);/)||[,"image/jpeg"])[1];
+  const bin=atob(url.substring(virgule+1));
+  const u8=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+  return new File([u8],nom,{type:type});
+}
+async function partagerPhoto(){
+  if(!rechPhotoCourante){toast("Prends d'abord une photo");return;}
+  let fichier;
+  try{ fichier=dataUrlVersFichier(rechPhotoCourante.dataUrl,"montre.jpg"); }
+  catch(e){ toast("⚠ Photo illisible"); return; }
+  if(!(navigator.share&&navigator.canShare&&navigator.canShare({files:[fichier]}))){
+    $("r-partage-aide").style.display="block";
+    toast("Partage d'image indisponible ici");
+    return;
+  }
+  try{
+    await navigator.share({files:[fichier],title:"Quelle est cette montre ?"});
+  }catch(e){
+    if(e&&e.name!=="AbortError"){
+      $("r-partage-aide").style.display="block";
+      toast("Partage impossible");
+    }
+  }
+}
+
+function majLiens(){
+  const t=$("r-texte").value.trim();
+  if(!t){
+    $("r-liens").innerHTML='<div class="aide" style="grid-column:span 2;margin:0">'+
+      "Tape une référence (elle est écrite sur le cadran ou au dos du boîtier) "+
+      "pour ouvrir les pages qui donnent les prix.</div>";
+    return;
+  }
+  const q=encodeURIComponent(t);
+  $("r-liens").innerHTML=MARCHANDS.map(m=>
+    '<a class="lien'+(m.phare?" phare":"")+'" target="_blank" rel="noopener noreferrer" href="'+esc(m.url(q))+'">'+
+    '<span class="ic">'+m.ico+'</span><span>'+esc(m.nom)+'<small>'+esc(m.sous)+'</small></span></a>').join("");
+}
+function rechVersAjout(){
+  const t=$("r-texte").value.trim();
+  const ph=rechPhotoCourante;
+  fermerRecherche();
+  ouvrirAjout();
+  if(t) $("f-nom").value=t;
+  if(ph){
+    fichePhoto=ph;
+    afficherApercuPhoto(ph.dataUrl);
+    afficherDoublons(ph);
+  }
 }
 
 /* ── Export / sauvegarde ─────────────────────────────────── */
@@ -1488,6 +1686,7 @@ document.addEventListener("visibilitychange",()=>{
 $("modal-fiche").addEventListener("click",e=>{if(e.target===$("modal-fiche"))fermerFiche();});
 $("modal-scan").addEventListener("click",e=>{if(e.target===$("modal-scan"))fermerScan();});
 $("modal-cloud").addEventListener("click",e=>{if(e.target===$("modal-cloud"))fermerCloud();});
+$("modal-rech").addEventListener("click",e=>{if(e.target===$("modal-rech"))fermerRecherche();});
 // Recalcul des doublons quand on tape la référence
 ["f-ref","f-nom"].forEach(i=>$(i).addEventListener("blur",()=>{
   if($("modal-fiche").classList.contains("open")&&(fichePhoto||$("f-ref").value.trim().length>=4)){
