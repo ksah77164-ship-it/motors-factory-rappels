@@ -71,14 +71,6 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .big-btn:active{border-color:var(--gold);}
 .big-btn.or{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border-color:transparent;}
 
-/* Onglets projet */
-.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:none;}
-.tabs::-webkit-scrollbar{display:none;}
-.tab{flex-shrink:0;padding:8px 14px;border-radius:22px;border:1px solid var(--line);background:var(--card);color:var(--muted);
-  font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:flex;align-items:center;gap:6px;}
-.tab.actif{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border-color:transparent;}
-.tab-count{font-size:10px;font-weight:900;opacity:0.75;}
-
 /* Recherche / filtres */
 .barre{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
 .champ-rech{flex:1;min-width:150px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:11px 14px;
@@ -259,8 +251,6 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     </button>
   </div>
 
-  <div class="tabs" id="tabs"></div>
-
   <div class="barre">
     <input class="champ-rech" id="rech" placeholder="Rechercher : nom, r&eacute;f., vendeur, pays..." oninput="rendre()">
     <select class="mini" id="tri" onchange="rendre()">
@@ -312,17 +302,8 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <label class="lbl">Nom de la montre *</label>
     <input type="text" id="f-nom" placeholder="Casio G-Shock GA-2100" autocomplete="off">
 
-    <div class="row2">
-      <div>
-        <label class="lbl">R&eacute;f&eacute;rence / mod&egrave;le</label>
-        <input type="text" id="f-ref" placeholder="GA-2100-1A1" autocomplete="off">
-      </div>
-      <div>
-        <label class="lbl">Projet</label>
-        <input type="text" id="f-projet" list="projets-list" placeholder="Albert" autocomplete="off">
-        <datalist id="projets-list"></datalist>
-      </div>
-    </div>
+    <label class="lbl">R&eacute;f&eacute;rence / mod&egrave;le</label>
+    <input type="text" id="f-ref" placeholder="GA-2100-1A1" autocomplete="off">
 
     <label class="lbl">D&eacute;tails (&eacute;tat, bo&icirc;te, papiers, particularit&eacute;s...)</label>
     <textarea id="f-details" placeholder="Neuve sous blister, bo&icirc;te + notice, bracelet d'origine..."></textarea>
@@ -500,7 +481,6 @@ const PROJET_DEFAUT="Albert";
 
 let montres=[];
 let PHOTOS={};              // id photo -> dataURL (cache mémoire)
-let projetActif="__tous__";
 let filtreStatut="tous";
 let ficheEditionId=null;
 let ficheRecu=false, ficheDestination="vendre";
@@ -709,19 +689,8 @@ const STATUT_LIB={transit:"En transit",avendre:"À vendre",collection:"Collectio
 const STATUT_CLS={transit:"b-transit",avendre:"b-vendre",collection:"b-collec",vendue:"b-vendue"};
 
 /* ── Rendu ───────────────────────────────────────────────── */
-function projets(){
-  const s=[];
-  actives().forEach(m=>{const p=(m.projet||PROJET_DEFAUT);if(s.indexOf(p)<0)s.push(p);});
-  if(!s.length) s.push(PROJET_DEFAUT);
-  s.sort((a,b)=>a===PROJET_DEFAUT?-1:b===PROJET_DEFAUT?1:a.localeCompare(b,"fr"));
-  return s;
-}
-function duProjet(){
-  const a=actives();
-  return projetActif==="__tous__"?a:a.filter(m=>(m.projet||PROJET_DEFAUT)===projetActif);
-}
 function filtrees(){
-  let l=duProjet();
+  let l=actives();
   if(filtreStatut!=="tous") l=l.filter(m=>statut(m)===filtreStatut);
   const q=$("rech").value.toLowerCase().trim();
   if(q){
@@ -739,7 +708,7 @@ function filtrees(){
   return l;
 }
 function rendreCompteurs(){
-  const l=duProjet();
+  const l=actives();
   let investi=0, transit=0, transitEur=0, aVendre=0, collection=0, vendues=0, encaisse=0, pv=0;
   l.forEach(m=>{
     const c=coutTotal(m);
@@ -762,18 +731,8 @@ function rendreCompteurs(){
 function tuile(cls,nbv,lbl){
   return '<div class="counter '+cls+'"><div class="counter-nb">'+esc(nbv)+'</div><div class="counter-label">'+lbl+'</div></div>';
 }
-function rendreOnglets(){
-  const ps=projets(), act=actives();
-  let h='<button class="tab'+(projetActif==="__tous__"?" actif":"")+'" onclick="choisirProjet(\'__tous__\')">Tous <span class="tab-count">'+act.length+'</span></button>';
-  ps.forEach(p=>{
-    const n=act.filter(m=>(m.projet||PROJET_DEFAUT)===p).length;
-    h+='<button class="tab'+(projetActif===p?" actif":"")+'" onclick="choisirProjet('+JSON.stringify(p).replace(/"/g,"&quot;")+')">'+esc(p)+' <span class="tab-count">'+n+'</span></button>';
-  });
-  $("tabs").innerHTML=h;
-  $("projets-list").innerHTML=ps.map(p=>'<option value="'+esc(p)+'"></option>').join("");
-}
 function rendreChips(){
-  const l=duProjet();
+  const l=actives();
   const compte=s=>l.filter(m=>statut(m)===s).length;
   const defs=[["tous","Toutes",l.length],["transit","🕒 En transit",compte("transit")],
     ["avendre","🏷 À vendre",compte("avendre")],["collection","💎 Collection",compte("collection")],
@@ -840,7 +799,6 @@ function detail(m){
       (c>0?" ("+(pv>0?"+":"")+Math.round(pv/c*100)+" %)":"")+"</span>");
     if(m.acheteur) h+=casL("Acheteur",m.acheteur);
   }
-  h+=cas("Projet",m.projet||PROJET_DEFAUT);
   if(m.modifiePar) h+=cas("Dernière saisie",esc(m.modifiePar));
   h+='</div>';
   if(m.details) h+='<div class="dnote">'+esc(m.details)+'</div>';
@@ -855,8 +813,7 @@ function detail(m){
 function cas(l,v){return '<div class="dcase"><div class="dcase-lbl">'+l+'</div><div class="dcase-val">'+v+'</div></div>';}
 function casL(l,v){return '<div class="dcase large"><div class="dcase-lbl">'+l+'</div><div class="dcase-val">'+v+'</div></div>';}
 
-function rendre(){rendreCompteurs();rendreOnglets();rendreChips();rendreListe();}
-function choisirProjet(p){projetActif=p;filtreStatut="tous";rendre();}
+function rendre(){rendreCompteurs();rendreChips();rendreListe();}
 function choisirStatut(s){filtreStatut=s;rendre();}
 function basculer(id){
   const d=$("det-"+id);if(!d)return;
@@ -915,7 +872,6 @@ function viderFiche(){
   ["f-nom","f-ref","f-details","f-vendeur","f-lieu","f-suivi","f-acheteur",
    "f-prix-achat","f-frais","f-prix-vise","f-prix-vente","f-pays-achat","f-pays-liv",
    "f-date-achat","f-date-prevue","f-date-recu","f-date-vente"].forEach(i=>$(i).value="");
-  $("f-projet").value=projetActif==="__tous__"?PROJET_DEFAUT:projetActif;
   $("f-vendue").value="0";
   $("f-doublon").innerHTML="";
   retirerPhoto();
@@ -939,7 +895,7 @@ function ouvrirEdition(id){
   $("fiche-titre").textContent="Modifier la montre";
   $("fiche-sous").textContent=m.nom||"";
   $("fiche-valider").innerHTML="✓ Enregistrer";
-  $("f-nom").value=m.nom||"";$("f-ref").value=m.ref||"";$("f-projet").value=m.projet||PROJET_DEFAUT;
+  $("f-nom").value=m.nom||"";$("f-ref").value=m.ref||"";
   $("f-details").value=m.details||"";
   $("f-date-achat").value=m.dateAchat||"";$("f-prix-achat").value=m.prixAchat||"";
   $("f-frais").value=m.frais||"";$("f-pays-achat").value=m.paysAchat||"";$("f-vendeur").value=m.vendeur||"";
@@ -1011,7 +967,7 @@ function ligneMatch(x){
 function allerVers(id){
   fermerFiche();fermerScan();
   const m=montres.find(x=>x.id===id);if(!m)return;
-  projetActif="__tous__";filtreStatut="tous";$("rech").value="";
+  filtreStatut="tous";$("rech").value="";
   rendre();
   const d=$("det-"+id);
   if(d){d.classList.add("open");$("card-"+id).scrollIntoView({behavior:"smooth",block:"center"});}
@@ -1023,7 +979,6 @@ function enregistrerFiche(){
   const base={
     nom:nom,
     ref:$("f-ref").value.trim(),
-    projet:$("f-projet").value.trim()||PROJET_DEFAUT,
     details:$("f-details").value.trim(),
     dateAchat:$("f-date-achat").value,
     prixAchat:nb($("f-prix-achat").value),
@@ -1053,6 +1008,7 @@ function enregistrerFiche(){
     m=Object.assign({id:uid(),creeLe:new Date().toISOString()},base);
     montres.unshift(m);
   }
+  if(!m.projet) m.projet=PROJET_DEFAUT;
   // Photo
   if(fichePhoto){
     if(!fichePhoto.existante){
@@ -1070,7 +1026,6 @@ function enregistrerFiche(){
   }
   marquerModif(m);
   sauver();
-  if(projetActif!=="__tous__"&&projetActif!==m.projet) projetActif=m.projet;
   fermerFiche();rendre();synchro();
   toast(ficheEditionId?"✓ Fiche mise à jour":"✓ "+nom+" ajoutée");
   ficheEditionId=null;
@@ -1160,11 +1115,11 @@ function csvChamp(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"';}
 function exporterCSV(){
   const l=filtrees();
   if(!l.length){toast("Rien à exporter");return;}
-  let csv="﻿Nom;Référence;Projet;Statut;Date achat;Prix achat;Frais;Coût total;Pays achat;Vendeur;"+
+  let csv="﻿Nom;Référence;Statut;Date achat;Prix achat;Frais;Coût total;Pays achat;Vendeur;"+
     "Lieu livraison;Pays livraison;Livraison prévue;Reçue;Date réception;Suivi;Destination;Prix visé;"+
     "Vendue;Prix vente;Date vente;Acheteur;Plus-value;Détails\n";
   l.forEach(m=>{
-    csv+=[csvChamp(m.nom),csvChamp(m.ref),csvChamp(m.projet||PROJET_DEFAUT),csvChamp(STATUT_LIB[statut(m)]),
+    csv+=[csvChamp(m.nom),csvChamp(m.ref),csvChamp(STATUT_LIB[statut(m)]),
       m.dateAchat||"",nb(m.prixAchat).toFixed(2),nb(m.frais).toFixed(2),coutTotal(m).toFixed(2),
       csvChamp(m.paysAchat),csvChamp(m.vendeur),csvChamp(m.lieu),csvChamp(m.paysLivraison),m.datePrevue||"",
       m.recu?"Oui":"Non",m.dateRecu||"",csvChamp(m.suivi),m.destination==="garder"?"Garder":"Revendre",
