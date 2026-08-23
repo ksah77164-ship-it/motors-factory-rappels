@@ -1697,11 +1697,23 @@ async function synchro(manuel){
     else if(nb2) toast("↻ "+nb2+" mise(s) à jour reçue(s)");
     recupererPhotos();
   }catch(e){
-    derniereErreur=String(e&&e.message?e.message:e);
+    derniereErreur=expliquerErreur(String(e&&e.message?e.message:e));
     majPastille("erreur");
     if(manuel) toast("⚠ Synchro impossible : "+derniereErreur);
   }
   syncEnCours=false;
+}
+
+/* Traduit les messages techniques en une phrase qui dit quoi corriger. */
+function expliquerErreur(m){
+  const b=(m||"").toLowerCase();
+  if(b.indexOf("failed to fetch")>=0||b.indexOf("load failed")>=0||b.indexOf("networkerror")>=0)
+    return "Le coffre ne répond pas. Vérifie dans Apps Script : Déployer ▸ Gérer les déploiements ▸ ✎ ▸ « Qui a accès » doit être « Tout le monde », puis Version : Nouvelle version ▸ Déployer. Recolle ensuite l'adresse en /exec.";
+  if(b.indexOf("token")>=0||b.indexOf("interdit")>=0||b.indexOf("401")>=0||b.indexOf("403")>=0)
+    return "Mot de passe du coffre refusé : il doit être exactement celui écrit dans TOKEN, en haut du fichier Apps Script.";
+  if(b.indexOf("réponse illisible")>=0||b.indexOf("json")>=0||b.indexOf("unexpected token")>=0)
+    return "Le coffre a répondu une page Google au lieu de données : le déploiement n'est pas ouvert à tout le monde, ou l'adresse se termine par /dev au lieu de /exec.";
+  return m;
 }
 
 async function recupererPhotos(){
@@ -1764,6 +1776,7 @@ function majEtatCloud(){
 async function connecterCloud(){
   const u=$("c-url").value.trim(), t=$("c-token").value.trim(), n=$("c-nom").value.trim();
   if(!u){toast("⚠ Colle l'adresse du coffre (/exec)");return;}
+  if(/\/dev\/?$/.test(u)){toast("⚠ Adresse en /dev : reprends celle qui finit par /exec");return;}
   localStorage.setItem(CLE_API,u);localStorage.setItem(CLE_TOKEN,t);localStorage.setItem(CLE_NOM,n);
   monNom=n;derniereErreur="";
   montres.forEach(m=>{aEnvoyer[m.id]=1;});          // on pousse tout ce qui est déjà là
