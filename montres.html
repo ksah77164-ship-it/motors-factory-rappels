@@ -172,6 +172,13 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
 
 /* Photo dans la modale */
+.photo-choix{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+.pchoix{border:1.5px dashed var(--line-strong);border-radius:16px;padding:17px 10px;background:var(--bg2);
+  color:var(--cream);font-size:12.5px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;
+  text-align:center;line-height:1.35;}
+.pchoix:active{border-color:var(--gold);background:var(--card2);}
+.pc-ico{display:block;font-size:25px;margin-bottom:6px;}
+.pc-sub{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-top:3px;}
 .photo-zone{border:1.5px dashed var(--line-strong);border-radius:16px;padding:18px;text-align:center;cursor:pointer;
   background:var(--bg2);margin-bottom:12px;}
 .photo-zone:active{border-color:var(--gold);}
@@ -311,16 +318,20 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 
     <div class="sect">&#128248; Photo &amp; identit&eacute;</div>
 
-    <div id="f-photo-zone" class="photo-zone" onclick="document.getElementById('f-photo-input').click()">
-      <div class="pz-ico">&#128247;</div>
-      <div class="pz-txt">Ajouter une photo</div>
-      <div class="pz-sub">V&eacute;rification automatique des doublons</div>
+    <div id="f-photo-zone" class="photo-choix">
+      <button type="button" class="pchoix" onclick="document.getElementById('f-photo-cam').click()">
+        <span class="pc-ico">&#128247;</span>Prendre une photo<span class="pc-sub">appareil photo</span>
+      </button>
+      <button type="button" class="pchoix" onclick="document.getElementById('f-photo-gal').click()">
+        <span class="pc-ico">&#128444;</span>Depuis la galerie<span class="pc-sub">photos enregistr&eacute;es</span>
+      </button>
     </div>
+    <input type="file" id="f-photo-cam" accept="image/*" capture="environment" style="display:none" onchange="photoChoisie(this)">
+    <input type="file" id="f-photo-gal" accept="image/*" style="display:none" onchange="photoChoisie(this)">
     <div id="f-photo-apercu" class="photo-apercu" style="display:none">
       <img id="f-photo-img" alt="">
       <button class="photo-suppr" onclick="retirerPhoto()">&#10006; Retirer</button>
     </div>
-    <input type="file" id="f-photo-input" accept="image/*" style="display:none" onchange="photoChoisie(this)">
     <div id="f-doublon"></div>
 
     <label class="lbl">Nom de la montre *</label>
@@ -427,12 +438,16 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <h3>Je l'ai d&eacute;j&agrave; ?</h3>
     <div class="sous">Photographie la montre : je la compare &agrave; toute ta collection.</div>
 
-    <div id="s-photo-zone" class="photo-zone" onclick="document.getElementById('s-photo-input').click()">
-      <div class="pz-ico">&#128247;</div>
-      <div class="pz-txt">Prendre / choisir une photo</div>
-      <div class="pz-sub">Cadre la montre de face, bien &eacute;clair&eacute;e</div>
+    <div id="s-photo-zone" class="photo-choix">
+      <button type="button" class="pchoix" onclick="document.getElementById('s-photo-cam').click()">
+        <span class="pc-ico">&#128247;</span>Prendre une photo<span class="pc-sub">cadre la montre de face</span>
+      </button>
+      <button type="button" class="pchoix" onclick="document.getElementById('s-photo-gal').click()">
+        <span class="pc-ico">&#128444;</span>Depuis la galerie<span class="pc-sub">photos enregistr&eacute;es</span>
+      </button>
     </div>
-    <input type="file" id="s-photo-input" accept="image/*" capture="environment" style="display:none" onchange="scanPhoto(this)">
+    <input type="file" id="s-photo-cam" accept="image/*" capture="environment" style="display:none" onchange="scanPhoto(this)">
+    <input type="file" id="s-photo-gal" accept="image/*" style="display:none" onchange="scanPhoto(this)">
     <div id="s-apercu" class="photo-apercu" style="display:none"><img id="s-img" alt=""></div>
 
     <label class="lbl">Ou cherche par r&eacute;f&eacute;rence / nom</label>
@@ -453,12 +468,16 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <h3>Rechercher une montre</h3>
     <div class="sous">Ce qu'elle vaut, o&ugrave; elle se vend, &agrave; quel prix.</div>
 
-    <div id="r-photo-zone" class="photo-zone" onclick="document.getElementById('r-photo-input').click()">
-      <div class="pz-ico">&#128247;</div>
-      <div class="pz-txt">Photographier la montre</div>
-      <div class="pz-sub">puis je bascule sur Google</div>
+    <div id="r-photo-zone" class="photo-choix">
+      <button type="button" class="pchoix" onclick="document.getElementById('r-photo-cam').click()">
+        <span class="pc-ico">&#128247;</span>Prendre une photo<span class="pc-sub">puis Google</span>
+      </button>
+      <button type="button" class="pchoix" onclick="document.getElementById('r-photo-gal').click()">
+        <span class="pc-ico">&#128444;</span>Depuis la galerie<span class="pc-sub">une capture, une annonce&hellip;</span>
+      </button>
     </div>
-    <input type="file" id="r-photo-input" accept="image/*" capture="environment" style="display:none" onchange="rechPhoto(this)">
+    <input type="file" id="r-photo-cam" accept="image/*" capture="environment" style="display:none" onchange="rechPhoto(this)">
+    <input type="file" id="r-photo-gal" accept="image/*" style="display:none" onchange="rechPhoto(this)">
     <div id="r-apercu" class="photo-apercu" style="display:none">
       <img id="r-img" alt="">
       <button class="photo-suppr" onclick="rechRetirerPhoto()">&#10006; Retirer</button>
@@ -1012,8 +1031,8 @@ function retirerPhoto(){
   fichePhoto=null;
   $("f-photo-img").src="";
   $("f-photo-apercu").style.display="none";
-  $("f-photo-zone").style.display="block";
-  $("f-photo-input").value="";
+  $("f-photo-zone").style.display="grid";
+  $("f-photo-cam").value="";$("f-photo-gal").value="";
   $("f-doublon").innerHTML="";
 }
 async function photoChoisie(input){
@@ -1125,7 +1144,8 @@ function ouvrirScan(){
   $("s-resultat").innerHTML="";
   $("s-texte").value="";
   $("s-apercu").style.display="none";
-  $("s-photo-zone").style.display="block";
+  $("s-photo-zone").style.display="grid";
+  $("s-photo-cam").value="";$("s-photo-gal").value="";
   $("s-ajouter").style.display="none";
   $("modal-scan").classList.add("open");
   document.body.style.overflow="hidden";
@@ -1241,8 +1261,8 @@ function rechRetirerPhoto(){
   rechPhotoCourante=null;
   $("r-img").src="";
   $("r-apercu").style.display="none";
-  $("r-photo-zone").style.display="block";
-  $("r-photo-input").value="";
+  $("r-photo-zone").style.display="grid";
+  $("r-photo-cam").value="";$("r-photo-gal").value="";
   $("r-collection").innerHTML="";
   $("r-image-actions").style.display="none";
   $("r-partage-aide").style.display="none";
