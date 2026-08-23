@@ -269,7 +269,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
   <div style="margin-top:24px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
     <button class="btn" onclick="exporterCSV()">&#128202; Export CSV</button>
     <button class="btn" onclick="exporterJSON()">&#128190; Sauvegarde</button>
-    <button class="btn" onclick="document.getElementById('import-file').click()">&#128229; Restaurer</button>
+    <button class="btn" onclick="document.getElementById('import-file').click()">&#128229; Importer une fiche</button>
     <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importerJSON(this)">
   </div>
   <div style="text-align:center;font-size:10.5px;color:var(--muted);font-weight:700;margin-top:12px;line-height:1.6">
@@ -577,15 +577,30 @@ function actives(){return montres.filter(m=>!m.supprime);}
 /* ── Empreinte visuelle (dHash + aHash) ──────────────────────
    Deux photos de la même montre donnent des empreintes proches.
    La distance de Hamming (nb de bits différents sur 64) mesure l'écart. */
-function grisDepuisImage(img,l,h){
-  const c=document.createElement("canvas");c.width=l;c.height=h;
+/* Réduction en 72x64 (72 = 9x8, 64 = 8x8) puis moyennes de blocs calculées en
+   JavaScript. Les navigateurs ne réduisent pas tous une image de la même façon :
+   en passant par cette étape intermédiaire et des moyennes exactes, la même photo
+   donne toujours la même empreinte, quel que soit le chemin emprunté. */
+const EMP_L=72, EMP_H=64;
+function grisNormalise(img){
+  const c=document.createElement("canvas");c.width=EMP_L;c.height=EMP_H;
   const ctx=c.getContext("2d");
-  ctx.fillStyle="#fff";ctx.fillRect(0,0,l,h);
-  ctx.drawImage(img,0,0,l,h);
-  const d=ctx.getImageData(0,0,l,h).data;
-  const g=new Array(l*h);
-  for(let i=0;i<l*h;i++) g[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,EMP_L,EMP_H);
+  ctx.drawImage(img,0,0,EMP_L,EMP_H);
+  const d=ctx.getImageData(0,0,EMP_L,EMP_H).data;
+  const g=new Float64Array(EMP_L*EMP_H);
+  for(let i=0;i<EMP_L*EMP_H;i++) g[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
   return g;
+}
+function grille(g,cols,rows){
+  const bl=EMP_L/cols, bh=EMP_H/rows;
+  const out=new Array(cols*rows);
+  for(let ry=0;ry<rows;ry++) for(let rx=0;rx<cols;rx++){
+    let somme=0,n=0;
+    for(let y=ry*bh;y<(ry+1)*bh;y++) for(let x=rx*bl;x<(rx+1)*bl;x++){somme+=g[y*EMP_L+x];n++;}
+    out[ry*cols+rx]=somme/n;
+  }
+  return out;
 }
 function bitsVersHex(bits){
   let s="";
@@ -594,12 +609,14 @@ function bitsVersHex(bits){
   }
   return s;
 }
+const EMP_VERSION=2;
 function empreintes(img){
-  // dHash : compare chaque pixel à son voisin de droite (9x8)
-  const gd=grisDepuisImage(img,9,8), bd=[];
+  const g=grisNormalise(img);
+  // dHash : chaque case comparée à sa voisine de droite (grille 9x8)
+  const gd=grille(g,9,8), bd=[];
   for(let y=0;y<8;y++) for(let x=0;x<8;x++) bd.push(gd[y*9+x]>gd[y*9+x+1]?1:0);
-  // aHash : compare chaque pixel à la moyenne (8x8)
-  const ga=grisDepuisImage(img,8,8);
+  // aHash : chaque case comparée à la moyenne générale (grille 8x8)
+  const ga=grille(g,8,8);
   let moy=0;for(let i=0;i<64;i++) moy+=ga[i];moy/=64;
   const ba=[];for(let i=0;i<64;i++) ba.push(ga[i]>moy?1:0);
   return {dhash:bitsVersHex(bd),ahash:bitsVersHex(ba)};
@@ -671,9 +688,10 @@ function compresser(img,maxCote){
 }
 async function traiterFichierPhoto(file){
   const img=await lireImage(file);
-  const emp=empreintes(img);
   const dataUrl=compresser(img,1000);
   if(img.close) img.close();
+  const stockee=await imageDepuisURL(dataUrl);
+  const emp=empreintes(stockee);
   return {dataUrl:dataUrl,dhash:emp.dhash,ahash:emp.ahash};
 }
 
@@ -1014,7 +1032,7 @@ function enregistrerFiche(){
     if(!fichePhoto.existante){
       const ancienne=m.photoId;
       const pid="p_"+m.id+"_"+uid();
-      m.photoId=pid;m.dhash=fichePhoto.dhash;m.ahash=fichePhoto.ahash;
+      m.photoId=pid;m.dhash=fichePhoto.dhash;m.ahash=fichePhoto.ahash;m.hv=EMP_VERSION;
       PHOTOS[pid]=fichePhoto.dataUrl;
       aEnvoyerPhotos[pid]=1;
       photoEcrire(pid,fichePhoto.dataUrl).catch(()=>toast("⚠ Photo non sauvegardée"));
@@ -1134,25 +1152,75 @@ function exporterJSON(){
   telecharger(JSON.stringify(paquet),"sauvegarde-montres-albert.json","application/json");
   toast("✓ Sauvegarde téléchargée");
 }
+/* Import : AJOUTE les fiches du fichier sans jamais effacer celles déjà là.
+   Accepte une sauvegarde complète, une seule fiche, ou une liste de fiches.
+   La photo peut être fournie dans « photos » (par identifiant) ou directement
+   dans la fiche via « photoData » : dans ce cas l'empreinte visuelle est
+   recalculée ici, pour que l'anti-doublon fonctionne aussi sur ces montres. */
 function importerJSON(input){
   const f=input.files&&input.files[0];if(!f)return;
   const fr=new FileReader();
   fr.onload=async()=>{
     try{
       const p=JSON.parse(fr.result);
-      if(!p||!Array.isArray(p.montres)) throw new Error("format");
-      if(!confirm("Restaurer "+p.montres.length+" montre(s) ? Cela remplace les données actuelles de cet appareil.")) return;
-      montres=p.montres;
-      PHOTOS=p.photos||{};
-      montres.forEach(m=>{if(!m.majLe)m.majLe=new Date().toISOString();aEnvoyer[m.id]=1;});
-      for(const k in PHOTOS){ aEnvoyerPhotos[k]=1; }
-      sauverFile();sauver();
-      for(const k in PHOTOS){ try{await photoEcrire(k,PHOTOS[k]);}catch(e){} }
-      rendre();synchro();toast("✓ Sauvegarde restaurée");
-    }catch(e){toast("⚠ Fichier de sauvegarde invalide");}
+      const liste=Array.isArray(p)?p:(Array.isArray(p.montres)?p.montres:(p&&p.nom?[p]:null));
+      if(!liste||!liste.length) throw new Error("format");
+      const photos=(p&&p.photos)||{};
+
+      let ajouts=0,majs=0;
+      liste.forEach(r=>{(r.id&&montres.find(m=>m.id===r.id))?majs++:ajouts++;});
+      const question=(ajouts?ajouts+" montre(s) à ajouter":"")+
+        (ajouts&&majs?" et ":"")+(majs?majs+" à mettre à jour":"")+
+        ".\n\nRien ne sera effacé. On continue ?";
+      if(!confirm(question)) return;
+
+      for(const r of liste){
+        const o=normaliser(r);
+        if(!o.id) o.id=uid();
+        if(!o.majLe) o.majLe=new Date().toISOString();
+        if(!o.creeLe) o.creeLe=o.majLe;
+        if(!o.projet) o.projet=PROJET_DEFAUT;
+
+        // Photo fournie directement dans la fiche
+        const brute=r.photoData||(o.photoId&&photos[o.photoId]);
+        delete o.photoData;
+        if(brute){
+          const pid=o.photoId||("p_"+o.id+"_"+uid());
+          o.photoId=pid;
+          PHOTOS[pid]=brute;
+          aEnvoyerPhotos[pid]=1;
+          try{await photoEcrire(pid,brute);}catch(e){}
+          if(!o.dhash){
+            try{
+              const img=await imageDepuisURL(brute);
+              const emp=empreintes(img);
+              o.dhash=emp.dhash;o.ahash=emp.ahash;o.hv=EMP_VERSION;
+            }catch(e){ /* empreinte impossible : la fiche reste valable */ }
+          }
+        }
+        const l=montres.find(m=>m.id===o.id);
+        if(l) Object.assign(l,o); else montres.unshift(o);
+        aEnvoyer[o.id]=1;
+      }
+      // Photos supplémentaires du paquet (sauvegarde complète)
+      for(const k in photos){
+        if(PHOTOS[k]) continue;
+        PHOTOS[k]=photos[k];aEnvoyerPhotos[k]=1;
+        try{await photoEcrire(k,photos[k]);}catch(e){}
+      }
+      sauverFile();sauver();rendre();synchro();
+      toast("✓ "+ajouts+" ajoutée(s)"+(majs?", "+majs+" mise(s) à jour":""));
+    }catch(e){toast("⚠ Fichier illisible ou format inattendu");}
   };
   fr.readAsText(f);
   input.value="";
+}
+function imageDepuisURL(url){
+  return new Promise((res,rej)=>{
+    const i=new Image();
+    i.onload=()=>res(i);i.onerror=()=>rej(new Error("image illisible"));
+    i.src=url;
+  });
 }
 
 /* ── Partage temps réel (coffre Google Apps Script) ──────
@@ -1278,7 +1346,7 @@ async function recupererPhotos(){
       else photosRatees[pid]=1;
     }catch(e){break;}
   }
-  if(recues) rendre();
+  if(recues){await remettreEmpreintesAJour();rendre();}
 }
 
 function planifier(){
@@ -1370,12 +1438,30 @@ $("login-pwd").addEventListener("keydown",e=>{if(e.key==="Enter")seConnecter();}
 
 /* ── Démarrage ───────────────────────────────────────────── */
 let demarre=false;
+/* Les fiches créées avec l'ancienne méthode de calcul sont réévaluées une fois,
+   à partir de la photo déjà stockée : sinon elles ne se reconnaîtraient plus. */
+async function remettreEmpreintesAJour(){
+  let n=0;
+  for(const m of actives()){
+    if(m.hv===EMP_VERSION||!m.photoId||!PHOTOS[m.photoId]) continue;
+    try{
+      const emp=empreintes(await imageDepuisURL(PHOTOS[m.photoId]));
+      m.dhash=emp.dhash;m.ahash=emp.ahash;
+    }catch(e){ /* photo illisible : on n'y revient pas */ }
+    m.hv=EMP_VERSION;
+    aEnvoyer[m.id]=1;      // la correction part au coffre sans toucher à la date de modification
+    n++;
+  }
+  if(n){sauver();sauverFile();}
+  return n;
+}
 async function demarrer(){
   if(demarre)return;demarre=true;
   chargerReglages();
   const partage=lireLienPartage();
   charger();
   PHOTOS=await photosCharger();
+  await remettreEmpreintesAJour();
   rendre();
   majPastille("");
   if(apiURL()){
