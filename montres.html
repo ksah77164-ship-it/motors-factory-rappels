@@ -485,6 +485,10 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <div id="r-collection"></div>
     <div id="r-image-actions" style="display:none">
       <button class="btn or pleine" onclick="partagerPhoto()">&#128269; Continuer sur Google</button>
+      <div class="aide" style="margin-top:2px">
+        Le menu de partage du t&eacute;l&eacute;phone va s'ouvrir : fais d&eacute;filer vers le bas et choisis
+        <b>&laquo;&nbsp;Rechercher sur Google&nbsp;&raquo;</b> (logo <b>G</b>).
+      </div>
       <div class="aide" id="r-partage-aide" style="display:none"></div>
     </div>
 
@@ -1315,10 +1319,9 @@ function aidePartage(titre,corps,raison){
   $("r-partage-aide").style.display="block";
 }
 const MARCHE_A_SUIVRE=
-  'Ouvre l\'appli <b>Google</b> sur ton t&eacute;l&eacute;phone, appuie sur l\'ic&ocirc;ne '+
-  'appareil photo (<b>Lens</b>) dans la barre de recherche, puis choisis la photo '+
-  'dans ta galerie. C\'est exactement le m&ecirc;me r&eacute;sultat.<br>'+
-  'Si tu n\'as pas l\'appli Google, installe-la : c\'est elle qui fournit Lens.';
+  'Ouvre l\'appli <b>Google</b>, appuie sur l\'ic&ocirc;ne appareil photo (<b>Lens</b>) '+
+  'dans la barre de recherche, puis choisis la photo dans ta galerie. '+
+  'M&ecirc;me r&eacute;sultat.';
 
 async function partagerPhoto(){
   if(!rechPhotoCourante){toast("Prends d'abord une photo");return;}
@@ -1338,10 +1341,9 @@ async function partagerPhoto(){
   }
   try{
     await navigator.share({files:[fichier],title:"Quelle est cette montre ?"});
-    $("r-partage-aide").style.display="none";
-    aidePartage("Menu de partage ouvert",
-      "Choisis l'appli <b>Google</b> pour lancer Lens. Si elle n'appara&icirc;t pas dans la liste, "+
-      "c'est qu'elle n'est pas install&eacute;e sur le t&eacute;l&eacute;phone.","");
+    aidePartage("Dans le menu qui s'ouvre",
+      "Fais d&eacute;filer vers le bas et appuie sur <b>&laquo;&nbsp;Rechercher sur Google&nbsp;&raquo;</b> "+
+      "(le logo <b>G</b>). C'est cette ligne qui envoie la photo &agrave; Google.","");
   }catch(e){
     const nom=(e&&e.name)||"erreur";
     if(nom==="AbortError") return;               // partage simplement annulé
