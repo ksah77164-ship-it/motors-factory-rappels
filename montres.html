@@ -34,6 +34,22 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .link-back{background:var(--card2);border:1px solid var(--line);padding:9px 14px;border-radius:22px;font-size:12px;font-weight:800;
   color:var(--champ);cursor:pointer;font-family:'Nunito',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
 .link-back:active{background:var(--card);}
+.pastille{background:var(--card2);border:1px solid var(--line);padding:9px 13px;border-radius:22px;font-size:11.5px;
+  font-weight:800;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.pastille .pt{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.pastille.ok{color:var(--credit);border-color:rgba(174,203,144,0.35);}
+.pastille.ok .pt{background:var(--credit);}
+.pastille.envoi{color:var(--gold2);border-color:var(--line-strong);}
+.pastille.envoi .pt{background:var(--gold2);animation:clign 1s infinite;}
+.pastille.erreur{color:var(--debit);border-color:rgba(229,143,143,0.35);}
+.pastille.erreur .pt{background:var(--debit);}
+@keyframes clign{0%,100%{opacity:1}50%{opacity:0.25}}
+.topbar-droite{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+.aide{font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.65;background:var(--bg2);border:1px solid var(--line);
+  border-radius:12px;padding:11px 13px;margin-bottom:14px;}
+.aide b{color:var(--champ);}
+.aide ol{margin:7px 0 0 16px;}
+.aide li{margin-bottom:4px;}
 
 /* Compteurs */
 .counters{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:16px;}
@@ -96,6 +112,7 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .mprix{text-align:right;flex-shrink:0;}
 .mprix-a{font-size:14px;font-weight:900;color:var(--cream);font-variant-numeric:tabular-nums;}
 .mprix-pv{font-size:11px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;}
+.b-qui{background:rgba(232,205,151,0.1);color:var(--gold);}
 .pv-pos{color:var(--credit);}.pv-neg{color:var(--debit);}.pv-neutre{color:var(--muted);}
 
 .mdetail{display:none;padding:0 12px 12px;border-top:1px solid var(--line);margin-top:2px;}
@@ -223,7 +240,10 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
         <div class="logo-sub">Projet Albert</div>
       </div>
     </div>
-    <a class="link-back" href="index.html">&#8592; Accueil</a>
+    <div class="topbar-droite">
+      <button class="pastille" id="pastille" onclick="ouvrirCloud()"><span class="pt"></span><span id="pastille-txt">Hors ligne</span></button>
+      <a class="link-back" href="index.html">&#8592;</a>
+    </div>
   </div>
 
   <div class="counters" id="counters"></div>
@@ -422,6 +442,42 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
   </div>
 </div>
 
+<!-- ══ MODALE PARTAGE / CLOUD ══ -->
+<div class="modal-wrap" id="modal-cloud">
+  <div class="modal">
+    <h3>Partage &agrave; deux</h3>
+    <div class="sous">Les montres se synchronisent automatiquement entre vos appareils.</div>
+
+    <div class="aide" id="cloud-aide">
+      <b>Premi&egrave;re fois ?</b> Il faut cr&eacute;er le coffre une seule fois, sur un seul compte Google :
+      <ol>
+        <li>Nouveau Google Sheet &#9656; menu <b>Extensions</b> &#9656; <b>Apps Script</b></li>
+        <li>Collez le fichier <b>apps-script-montres.gs</b> du d&eacute;p&ocirc;t, choisissez un mot de passe dans <b>TOKEN</b></li>
+        <li><b>D&eacute;ployer</b> &#9656; Application Web &#9656; ex&eacute;cuter <b>en tant que moi</b>, acc&egrave;s <b>tout le monde</b></li>
+        <li>Copiez l'adresse en <b>/exec</b> et collez-la ci-dessous</li>
+      </ol>
+      Ensuite, bouton <b>Lien de partage</b> : l'autre personne n'a plus qu'&agrave; ouvrir le lien.
+    </div>
+
+    <label class="lbl">Adresse du coffre (/exec)</label>
+    <input type="text" id="c-url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" spellcheck="false">
+    <label class="lbl">Mot de passe du coffre</label>
+    <input type="text" id="c-token" placeholder="Celui d&eacute;fini dans TOKEN" autocomplete="off" spellcheck="false">
+    <label class="lbl">Ton pr&eacute;nom (pour savoir qui a saisi quoi)</label>
+    <input type="text" id="c-nom" placeholder="Karim" autocomplete="off">
+
+    <div id="c-etat"></div>
+
+    <div class="modal-actions">
+      <button class="btn rouge" id="c-deconnecter" onclick="deconnecterCloud()">D&eacute;connecter</button>
+      <button class="btn" id="c-partager" onclick="copierLienPartage()">&#128279; Lien de partage</button>
+      <button class="btn" id="c-sync" onclick="synchro(true).then(majEtatCloud)">&#8635; Synchroniser</button>
+      <button class="btn" onclick="fermerCloud()">Fermer</button>
+      <button class="btn or" onclick="connecterCloud()">&#10003; Connecter</button>
+    </div>
+  </div>
+</div>
+
 <datalist id="pays-list">
   <option value="France"></option><option value="Japon"></option><option value="Chine"></option>
   <option value="Hong Kong"></option><option value="&Eacute;tats-Unis"></option><option value="Royaume-Uni"></option>
@@ -450,6 +506,16 @@ let ficheEditionId=null;
 let ficheRecu=false, ficheDestination="vendre";
 let fichePhoto=null;        // {dataUrl, dhash, ahash} en cours de saisie
 let scanCourant=null;
+
+/* ── Partage temps réel ── */
+const CLE_API="mf_montres_api", CLE_TOKEN="mf_montres_token", CLE_NOM="mf_montres_nom";
+const CLE_SYNC="mf_montres_sync", CLE_FILE="mf_montres_file", CLE_FILEP="mf_montres_filep";
+let monNom="";
+let dernierSync="";          // horodatage serveur du dernier échange réussi
+let aEnvoyer={};             // {idMontre:1} modifications locales pas encore parties
+let aEnvoyerPhotos={};       // {photoId:1} photos pas encore envoyées
+let photosRatees={};         // photos introuvables côté coffre : on n'insiste pas
+let syncEnCours=false, syncTimer=null, derniereActivite=Date.now(), derniereErreur="";
 
 /* ── Utilitaires ─────────────────────────────────────────── */
 function $(id){return document.getElementById(id);}
@@ -524,6 +590,9 @@ function sauver(){
   try{localStorage.setItem(CLE,JSON.stringify(montres));}
   catch(e){toast("⚠ Espace de stockage plein");}
 }
+/* Les montres supprimées restent dans le tableau (marquées « supprime ») le temps
+   que l'autre appareil soit prévenu ; elles n'apparaissent jamais à l'écran. */
+function actives(){return montres.filter(m=>!m.supprime);}
 
 /* ── Empreinte visuelle (dHash + aHash) ──────────────────────
    Deux photos de la même montre donnent des empreintes proches.
@@ -577,7 +646,7 @@ function ressemblance(emp,m){
 function chercherDoublons(emp,ref,nom,exclureId){
   const res=[];
   const r=normRef(ref), n=String(nom||"").toLowerCase().trim();
-  montres.forEach(m=>{
+  actives().forEach(m=>{
     if(exclureId && m.id===exclureId) return;
     let score=0, raison="";
     if(emp && m.dhash){
@@ -642,13 +711,14 @@ const STATUT_CLS={transit:"b-transit",avendre:"b-vendre",collection:"b-collec",v
 /* ── Rendu ───────────────────────────────────────────────── */
 function projets(){
   const s=[];
-  montres.forEach(m=>{const p=(m.projet||PROJET_DEFAUT);if(s.indexOf(p)<0)s.push(p);});
+  actives().forEach(m=>{const p=(m.projet||PROJET_DEFAUT);if(s.indexOf(p)<0)s.push(p);});
   if(!s.length) s.push(PROJET_DEFAUT);
   s.sort((a,b)=>a===PROJET_DEFAUT?-1:b===PROJET_DEFAUT?1:a.localeCompare(b,"fr"));
   return s;
 }
 function duProjet(){
-  return projetActif==="__tous__"?montres.slice():montres.filter(m=>(m.projet||PROJET_DEFAUT)===projetActif);
+  const a=actives();
+  return projetActif==="__tous__"?a:a.filter(m=>(m.projet||PROJET_DEFAUT)===projetActif);
 }
 function filtrees(){
   let l=duProjet();
@@ -693,10 +763,10 @@ function tuile(cls,nbv,lbl){
   return '<div class="counter '+cls+'"><div class="counter-nb">'+esc(nbv)+'</div><div class="counter-label">'+lbl+'</div></div>';
 }
 function rendreOnglets(){
-  const ps=projets();
-  let h='<button class="tab'+(projetActif==="__tous__"?" actif":"")+'" onclick="choisirProjet(\'__tous__\')">Tous <span class="tab-count">'+montres.length+'</span></button>';
+  const ps=projets(), act=actives();
+  let h='<button class="tab'+(projetActif==="__tous__"?" actif":"")+'" onclick="choisirProjet(\'__tous__\')">Tous <span class="tab-count">'+act.length+'</span></button>';
   ps.forEach(p=>{
-    const n=montres.filter(m=>(m.projet||PROJET_DEFAUT)===p).length;
+    const n=act.filter(m=>(m.projet||PROJET_DEFAUT)===p).length;
     h+='<button class="tab'+(projetActif===p?" actif":"")+'" onclick="choisirProjet('+JSON.stringify(p).replace(/"/g,"&quot;")+')">'+esc(p)+' <span class="tab-count">'+n+'</span></button>';
   });
   $("tabs").innerHTML=h;
@@ -715,7 +785,7 @@ function rendreListe(){
   const l=filtrees();
   if(!l.length){
     $("liste").innerHTML='<div class="vide"><div class="vide-ico">⌚</div>'+
-      (montres.length?"Aucune montre ne correspond à ce filtre.":"Aucune montre pour l'instant.<br>Appuie sur <b>+</b> pour ajouter ton premier achat.")+'</div>';
+      (actives().length?"Aucune montre ne correspond à ce filtre.":"Aucune montre pour l'instant.<br>Appuie sur <b>+</b> pour ajouter ton premier achat.")+'</div>';
     return;
   }
   $("liste").innerHTML=l.map(carte).join("");
@@ -771,6 +841,7 @@ function detail(m){
     if(m.acheteur) h+=casL("Acheteur",m.acheteur);
   }
   h+=cas("Projet",m.projet||PROJET_DEFAUT);
+  if(m.modifiePar) h+=cas("Dernière saisie",esc(m.modifiePar));
   h+='</div>';
   if(m.details) h+='<div class="dnote">'+esc(m.details)+'</div>';
   h+='<div class="dactions">';
@@ -795,8 +866,8 @@ function basculer(id){
 /* ── Actions rapides ─────────────────────────────────────── */
 function marquerRecue(id){
   const m=montres.find(x=>x.id===id);if(!m)return;
-  m.recu=true;m.dateRecu=m.dateRecu||auj();m.majLe=new Date().toISOString();
-  sauver();rendre();$("det-"+id)&&$("det-"+id).classList.add("open");
+  m.recu=true;m.dateRecu=m.dateRecu||auj();
+  marquerModif(m);sauver();rendre();$("det-"+id)&&$("det-"+id).classList.add("open");synchro();
   toast("✅ "+(m.nom||"Montre")+" marquée reçue");
 }
 function marquerVendue(id){
@@ -806,8 +877,7 @@ function marquerVendue(id){
   if(p===null) return;
   m.vendue=true;m.prixVente=nb(p);m.dateVente=m.dateVente||auj();
   if(!m.recu){m.recu=true;m.dateRecu=m.dateRecu||auj();}
-  m.majLe=new Date().toISOString();
-  sauver();rendre();
+  marquerModif(m);sauver();rendre();synchro();
   const pv=plusValue(m);
   toast(pv>=0?"💰 Vendue, +"+eur(pv):"Vendue, "+eur(pv));
 }
@@ -815,8 +885,13 @@ function supprimer(id){
   const m=montres.find(x=>x.id===id);if(!m)return;
   if(!confirm("Supprimer définitivement « "+(m.nom||"cette montre")+" » ?")) return;
   if(m.photoId){photoEffacer(m.photoId);delete PHOTOS[m.photoId];}
-  montres=montres.filter(x=>x.id!==id);
-  sauver();rendre();toast("Montre supprimée");
+  if(apiURL()){
+    m.supprime=true;                       // conservée en sourdine jusqu'à la synchro
+    marquerModif(m);
+  }else{
+    montres=montres.filter(x=>x.id!==id);
+  }
+  sauver();rendre();synchro();toast("Montre supprimée");
 }
 
 /* ── Modale fiche ────────────────────────────────────────── */
@@ -981,18 +1056,22 @@ function enregistrerFiche(){
   // Photo
   if(fichePhoto){
     if(!fichePhoto.existante){
-      const pid=m.photoId||("p_"+m.id);
+      const ancienne=m.photoId;
+      const pid="p_"+m.id+"_"+uid();
       m.photoId=pid;m.dhash=fichePhoto.dhash;m.ahash=fichePhoto.ahash;
       PHOTOS[pid]=fichePhoto.dataUrl;
+      aEnvoyerPhotos[pid]=1;
       photoEcrire(pid,fichePhoto.dataUrl).catch(()=>toast("⚠ Photo non sauvegardée"));
+      if(ancienne&&ancienne!==pid){photoEffacer(ancienne);delete PHOTOS[ancienne];delete aEnvoyerPhotos[ancienne];}
     }
   }else if(m.photoId){
-    photoEffacer(m.photoId);delete PHOTOS[m.photoId];
+    photoEffacer(m.photoId);delete PHOTOS[m.photoId];delete aEnvoyerPhotos[m.photoId];
     m.photoId=null;m.dhash=null;m.ahash=null;
   }
+  marquerModif(m);
   sauver();
   if(projetActif!=="__tous__"&&projetActif!==m.projet) projetActif=m.projet;
-  fermerFiche();rendre();
+  fermerFiche();rendre();synchro();
   toast(ficheEditionId?"✓ Fiche mise à jour":"✓ "+nom+" ajoutée");
   ficheEditionId=null;
 }
@@ -1035,7 +1114,7 @@ function scanTexte(){
   $("s-ajouter").style.display=(scanCourant||t.length>=3)?"inline-block":"none";
 }
 function afficherScanResultat(emp,texte){
-  if(!montres.length){
+  if(!actives().length){
     $("s-resultat").innerHTML='<div class="alerte ok"><div class="alerte-titre">Collection vide</div>Tu n\'as encore rien enregistré.</div>';
     return;
   }
@@ -1096,7 +1175,7 @@ function exporterCSV(){
   toast("✓ CSV exporté");
 }
 function exporterJSON(){
-  const paquet={version:1,type:"montres-albert",date:new Date().toISOString(),montres:montres,photos:PHOTOS};
+  const paquet={version:1,type:"montres-albert",date:new Date().toISOString(),montres:actives(),photos:PHOTOS};
   telecharger(JSON.stringify(paquet),"sauvegarde-montres-albert.json","application/json");
   toast("✓ Sauvegarde téléchargée");
 }
@@ -1110,13 +1189,216 @@ function importerJSON(input){
       if(!confirm("Restaurer "+p.montres.length+" montre(s) ? Cela remplace les données actuelles de cet appareil.")) return;
       montres=p.montres;
       PHOTOS=p.photos||{};
-      sauver();
+      montres.forEach(m=>{if(!m.majLe)m.majLe=new Date().toISOString();aEnvoyer[m.id]=1;});
+      for(const k in PHOTOS){ aEnvoyerPhotos[k]=1; }
+      sauverFile();sauver();
       for(const k in PHOTOS){ try{await photoEcrire(k,PHOTOS[k]);}catch(e){} }
-      rendre();toast("✓ Sauvegarde restaurée");
+      rendre();synchro();toast("✓ Sauvegarde restaurée");
     }catch(e){toast("⚠ Fichier de sauvegarde invalide");}
   };
   fr.readAsText(f);
   input.value="";
+}
+
+/* ── Partage temps réel (coffre Google Apps Script) ──────
+   Chaque appareil envoie ses modifications et récupère celles de l'autre.
+   Fusion montre par montre : la saisie la plus récente l'emporte, et deux
+   montres différentes ne se gênent jamais. */
+function apiURL(){return (localStorage.getItem(CLE_API)||"").trim();}
+function apiToken(){return (localStorage.getItem(CLE_TOKEN)||"").trim();}
+
+function chargerReglages(){
+  monNom=localStorage.getItem(CLE_NOM)||"";
+  dernierSync=localStorage.getItem(CLE_SYNC)||"";
+  try{aEnvoyer=JSON.parse(localStorage.getItem(CLE_FILE)||"{}");}catch(e){aEnvoyer={};}
+  try{aEnvoyerPhotos=JSON.parse(localStorage.getItem(CLE_FILEP)||"{}");}catch(e){aEnvoyerPhotos={};}
+}
+function sauverFile(){
+  try{
+    localStorage.setItem(CLE_FILE,JSON.stringify(aEnvoyer));
+    localStorage.setItem(CLE_FILEP,JSON.stringify(aEnvoyerPhotos));
+    localStorage.setItem(CLE_SYNC,dernierSync);
+  }catch(e){}
+}
+function marquerModif(m){
+  m.majLe=new Date().toISOString();
+  if(monNom) m.modifiePar=monNom;
+  aEnvoyer[m.id]=1;
+  derniereActivite=Date.now();
+  sauverFile();
+  majPastille("");
+}
+function heureCourte(){
+  const d=new Date();
+  return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+}
+function majPastille(etat){
+  const p=$("pastille"), t=$("pastille-txt");
+  if(!p) return;
+  p.classList.remove("ok","envoi","erreur");
+  if(!apiURL()){t.textContent="Partager";return;}
+  if(etat==="envoi"){p.classList.add("envoi");t.textContent="Synchro…";return;}
+  if(etat==="erreur"){p.classList.add("erreur");t.textContent="Hors ligne";return;}
+  const n=Object.keys(aEnvoyer).length;
+  if(n){p.classList.add("envoi");t.textContent="À envoyer ("+n+")";}
+  else{p.classList.add("ok");t.textContent="À jour "+heureCourte();}
+}
+
+function normaliser(r){
+  const o=Object.assign({},r);
+  delete o.sync;delete o._ligne;
+  o.prixAchat=nb(o.prixAchat);o.frais=nb(o.frais);
+  o.prixVise=nb(o.prixVise);o.prixVente=nb(o.prixVente);
+  o.recu=!!o.recu;o.vendue=!!o.vendue;o.supprime=!!o.supprime;
+  return o;
+}
+function fusionner(distantes){
+  if(!distantes||!distantes.length) return 0;
+  let change=0;
+  distantes.forEach(r=>{
+    if(!r||!r.id) return;
+    const l=montres.find(m=>m.id===r.id);
+    if(!l){montres.push(normaliser(r));change++;return;}
+    if(String(r.majLe||"")>String(l.majLe||"")){Object.assign(l,normaliser(r));change++;}
+  });
+  if(change){sauver();rendre();}
+  return change;
+}
+
+async function synchro(manuel){
+  if(!apiURL()){if(manuel)toast("Aucun coffre configuré");return;}
+  if(syncEnCours) return;
+  syncEnCours=true;majPastille("envoi");
+  try{
+    const envoi=Object.keys(aEnvoyer).map(id=>montres.find(m=>m.id===id)).filter(Boolean);
+    const instantane=envoi.map(m=>({id:m.id,majLe:m.majLe}));
+    const photos={};let n=0;
+    for(const pid in aEnvoyerPhotos){
+      if(n>=2) break;
+      if(PHOTOS[pid]){photos[pid]=PHOTOS[pid];n++;}
+      else delete aEnvoyerPhotos[pid];
+    }
+    const rep=await fetch(apiURL(),{method:"POST",body:JSON.stringify({
+      token:apiToken(),depuis:dernierSync,nom:monNom,montres:envoi,photos:photos
+    })});
+    const d=await rep.json();
+    if(!d||d.error) throw new Error(d&&d.error?d.error:"réponse illisible");
+    // On ne vide la file que pour ce qui est réellement parti sans avoir rebougé entre-temps
+    instantane.forEach(x=>{
+      const m=montres.find(y=>y.id===x.id);
+      if(!m||m.majLe===x.majLe) delete aEnvoyer[x.id];
+    });
+    Object.keys(photos).forEach(pid=>{delete aEnvoyerPhotos[pid];});
+    if(d.serveur) dernierSync=d.serveur;
+    derniereErreur="";
+    sauverFile();
+    const nb2=fusionner(d.montres||[]);
+    majPastille("ok");
+    if(manuel) toast("✓ Synchronisé"+(nb2?" · "+nb2+" mise(s) à jour reçue(s)":""));
+    else if(nb2) toast("↻ "+nb2+" mise(s) à jour reçue(s)");
+    recupererPhotos();
+  }catch(e){
+    derniereErreur=String(e&&e.message?e.message:e);
+    majPastille("erreur");
+    if(manuel) toast("⚠ Synchro impossible : "+derniereErreur);
+  }
+  syncEnCours=false;
+}
+
+async function recupererPhotos(){
+  if(!apiURL()) return;
+  const manque=[];
+  actives().forEach(m=>{
+    if(m.photoId&&!PHOTOS[m.photoId]&&!photosRatees[m.photoId]&&!aEnvoyerPhotos[m.photoId]&&manque.indexOf(m.photoId)<0)
+      manque.push(m.photoId);
+  });
+  if(!manque.length) return;
+  let recues=0;
+  for(let i=0;i<Math.min(3,manque.length);i++){
+    const pid=manque[i];
+    try{
+      const rep=await fetch(apiURL()+"?token="+encodeURIComponent(apiToken())+"&photo="+encodeURIComponent(pid));
+      const d=await rep.json();
+      if(d&&d.data){PHOTOS[pid]=d.data;recues++;await photoEcrire(pid,d.data);}
+      else photosRatees[pid]=1;
+    }catch(e){break;}
+  }
+  if(recues) rendre();
+}
+
+function planifier(){
+  clearTimeout(syncTimer);
+  if(!apiURL()) return;
+  const actif=(Date.now()-derniereActivite)<180000;
+  const delai=document.hidden?60000:(actif?9000:35000);
+  syncTimer=setTimeout(()=>{synchro().then(planifier);},delai);
+}
+
+/* ── Écran de partage ────────────────────────────────────── */
+function ouvrirCloud(){
+  $("c-url").value=apiURL();
+  $("c-token").value=apiToken();
+  $("c-nom").value=monNom;
+  majEtatCloud();
+  $("modal-cloud").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function fermerCloud(){$("modal-cloud").classList.remove("open");document.body.style.overflow="";}
+function majEtatCloud(){
+  const e=$("c-etat");
+  if(!apiURL()){
+    e.innerHTML='<div class="alerte load">Pas encore connecté : les montres restent sur cet appareil uniquement.</div>';
+    $("c-deconnecter").style.display="none";$("c-partager").style.display="none";
+    $("c-sync").style.display="none";$("cloud-aide").style.display="block";
+    return;
+  }
+  $("c-deconnecter").style.display="inline-block";
+  $("c-partager").style.display="inline-block";
+  $("c-sync").style.display="inline-block";
+  $("cloud-aide").style.display="none";
+  const n=Object.keys(aEnvoyer).length;
+  e.innerHTML='<div class="alerte '+(derniereErreur?"warn":"ok")+'"><div class="alerte-titre">'+
+    (derniereErreur?"⚠ Dernier échange en échec":"✅ Coffre connecté")+'</div>'+
+    (derniereErreur?esc(derniereErreur):"Les montres se partagent automatiquement, toutes les 9 secondes.")+
+    (n?"<br>"+n+" modification(s) en attente d'envoi.":"")+'</div>';
+}
+async function connecterCloud(){
+  const u=$("c-url").value.trim(), t=$("c-token").value.trim(), n=$("c-nom").value.trim();
+  if(!u){toast("⚠ Colle l'adresse du coffre (/exec)");return;}
+  localStorage.setItem(CLE_API,u);localStorage.setItem(CLE_TOKEN,t);localStorage.setItem(CLE_NOM,n);
+  monNom=n;derniereErreur="";
+  montres.forEach(m=>{aEnvoyer[m.id]=1;});          // on pousse tout ce qui est déjà là
+  for(const pid in PHOTOS){aEnvoyerPhotos[pid]=1;}
+  sauverFile();
+  await synchro(true);
+  majEtatCloud();planifier();
+}
+function deconnecterCloud(){
+  if(!confirm("Se déconnecter du coffre partagé ? Les montres restent sur cet appareil.")) return;
+  localStorage.removeItem(CLE_API);localStorage.removeItem(CLE_TOKEN);
+  clearTimeout(syncTimer);derniereErreur="";
+  majPastille("");majEtatCloud();toast("Déconnecté du coffre");
+}
+function copierLienPartage(){
+  const lien=location.origin+location.pathname+"#c="+btoa(encodeURIComponent(apiURL()+"|"+apiToken()));
+  const secours=()=>{prompt("Envoie ce lien à l'autre personne :",lien);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(lien).then(
+      ()=>toast("🔗 Lien copié — envoie-le à l'autre personne"), secours);
+  } else secours();
+}
+function lireLienPartage(){
+  const h=location.hash||"";
+  const i=h.indexOf("#c=");
+  if(i<0) return false;
+  try{
+    const parts=decodeURIComponent(atob(h.slice(i+3))).split("|");
+    history.replaceState(null,"",location.pathname);
+    if(!parts[0]) return false;
+    localStorage.setItem(CLE_API,parts[0]);
+    localStorage.setItem(CLE_TOKEN,parts[1]||"");
+    return true;
+  }catch(e){return false;}
 }
 
 /* ── Connexion ───────────────────────────────────────────── */
@@ -1135,13 +1417,33 @@ $("login-pwd").addEventListener("keydown",e=>{if(e.key==="Enter")seConnecter();}
 let demarre=false;
 async function demarrer(){
   if(demarre)return;demarre=true;
+  chargerReglages();
+  const partage=lireLienPartage();
   charger();
   PHOTOS=await photosCharger();
   rendre();
+  majPastille("");
+  if(apiURL()){
+    if(partage){
+      toast("🔗 Coffre partagé connecté");
+      montres.forEach(m=>{aEnvoyer[m.id]=1;});
+      for(const pid in PHOTOS){aEnvoyerPhotos[pid]=1;}
+      sauverFile();
+    }
+    await synchro();
+    planifier();
+    if(partage&&!monNom) ouvrirCloud();
+  }
 }
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden){derniereActivite=Date.now();synchro();planifier();}
+});
+["click","keydown","touchstart"].forEach(ev=>
+  document.addEventListener(ev,()=>{derniereActivite=Date.now();},{passive:true}));
 // Fermer les modales en cliquant sur le fond
 $("modal-fiche").addEventListener("click",e=>{if(e.target===$("modal-fiche"))fermerFiche();});
 $("modal-scan").addEventListener("click",e=>{if(e.target===$("modal-scan"))fermerScan();});
+$("modal-cloud").addEventListener("click",e=>{if(e.target===$("modal-cloud"))fermerCloud();});
 // Recalcul des doublons quand on tape la référence
 ["f-ref","f-nom"].forEach(i=>$(i).addEventListener("blur",()=>{
   if($("modal-fiche").classList.contains("open")&&(fichePhoto||$("f-ref").value.trim().length>=4)){

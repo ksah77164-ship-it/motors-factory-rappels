@@ -27,5 +27,28 @@ Suivi complet du projet Albert :
   pour basculer de l'un à l'autre.
 - **Export CSV**, **sauvegarde JSON** (fiches + photos) et **restauration**.
 
-Stockage 100 % local : les fiches dans `localStorage`, les photos dans `IndexedDB`.
-Rien n'est envoyé sur un serveur — pense à faire une sauvegarde régulièrement.
+### Partage à deux, en temps réel
+
+Le bouton ☁︎ en haut de la page relie l'appli à un coffre partagé
+(Google Sheet + Google Apps Script) : voir `apps-script-montres.gs`, qui contient
+la marche à suivre complète (~5 minutes, une seule fois, sur un seul compte Google).
+
+Une fois le coffre créé, le bouton **« Lien de partage »** produit un lien : la deuxième
+personne n'a qu'à l'ouvrir, tout se configure tout seul.
+
+Fonctionnement :
+
+- Échange automatique toutes les **9 secondes** quand la page est ouverte et utilisée
+  (35 s au repos, 60 s en arrière-plan, rien du tout quand l'onglet est fermé — pour rester
+  très largement dans les quotas gratuits de Google).
+- **Fusion montre par montre** : chacun saisit de son côté sans rien écraser. Si deux personnes
+  modifient *la même* montre, la saisie la plus récente l'emporte.
+- Les **photos** transitent par un dossier Google Drive et sont mises en cache sur chaque appareil
+  (téléchargées une seule fois).
+- Chaque fiche indique **qui a fait la dernière saisie**.
+- **Hors ligne** : la saisie continue de fonctionner, la pastille passe au rouge, et tout repart
+  automatiquement dès le retour du réseau.
+- Les **suppressions** se propagent aussi.
+
+Sans coffre configuré, l'appli reste 100 % locale : fiches dans `localStorage`,
+photos dans `IndexedDB`, rien n'est envoyé nulle part.
