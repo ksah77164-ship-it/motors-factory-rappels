@@ -485,11 +485,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <div id="r-collection"></div>
     <div id="r-image-actions" style="display:none">
       <button class="btn or pleine" onclick="partagerPhoto()">&#128269; Continuer sur Google</button>
-      <div class="aide" id="r-partage-aide" style="display:none">
-        Ce navigateur ne sait pas passer la photo &agrave; une autre application.
-        Ouvre l'appli <b>Google</b>, appuie sur l'ic&ocirc;ne <b>Lens</b> dans la barre de recherche
-        et vise la montre : c'est le m&ecirc;me r&eacute;sultat.
-      </div>
+      <div class="aide" id="r-partage-aide" style="display:none"></div>
     </div>
 
     <div class="sect">&#9000; Ou par r&eacute;f&eacute;rence</div>
@@ -1310,23 +1306,46 @@ function dataUrlVersFichier(url,nom){
   for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
   return new File([u8],nom,{type:type});
 }
+/* Marche à suivre affichée quand la photo ne peut pas partir vers Lens.
+   « raison » sert au diagnostic : sans elle, impossible de savoir ce qui a bloqué. */
+function aidePartage(titre,corps,raison){
+  $("r-partage-aide").innerHTML=
+    '<b>'+esc(titre)+'</b><br>'+corps+
+    (raison?'<br><span style="opacity:.55;font-size:10.5px">('+esc(raison)+')</span>':'');
+  $("r-partage-aide").style.display="block";
+}
+const MARCHE_A_SUIVRE=
+  'Ouvre l\'appli <b>Google</b> sur ton t&eacute;l&eacute;phone, appuie sur l\'ic&ocirc;ne '+
+  'appareil photo (<b>Lens</b>) dans la barre de recherche, puis choisis la photo '+
+  'dans ta galerie. C\'est exactement le m&ecirc;me r&eacute;sultat.<br>'+
+  'Si tu n\'as pas l\'appli Google, installe-la : c\'est elle qui fournit Lens.';
+
 async function partagerPhoto(){
   if(!rechPhotoCourante){toast("Prends d'abord une photo");return;}
   let fichier;
   try{ fichier=dataUrlVersFichier(rechPhotoCourante.dataUrl,"montre.jpg"); }
-  catch(e){ toast("⚠ Photo illisible"); return; }
-  if(!(navigator.share&&navigator.canShare&&navigator.canShare({files:[fichier]}))){
-    $("r-partage-aide").style.display="block";
-    toast("Partage d'image indisponible ici");
+  catch(e){
+    aidePartage("Photo illisible","Reprends-la, ou choisis-en une autre dans la galerie.","conversion impossible");
+    return;
+  }
+  if(!navigator.share){
+    aidePartage("Ce navigateur ne sait pas partager",MARCHE_A_SUIVRE,"navigator.share absent");
+    return;
+  }
+  if(navigator.canShare&&!navigator.canShare({files:[fichier]})){
+    aidePartage("Ce navigateur refuse d'envoyer une image",MARCHE_A_SUIVRE,"canShare refuse les fichiers");
     return;
   }
   try{
     await navigator.share({files:[fichier],title:"Quelle est cette montre ?"});
+    $("r-partage-aide").style.display="none";
+    aidePartage("Menu de partage ouvert",
+      "Choisis l'appli <b>Google</b> pour lancer Lens. Si elle n'appara&icirc;t pas dans la liste, "+
+      "c'est qu'elle n'est pas install&eacute;e sur le t&eacute;l&eacute;phone.","");
   }catch(e){
-    if(e&&e.name!=="AbortError"){
-      $("r-partage-aide").style.display="block";
-      toast("Partage impossible");
-    }
+    const nom=(e&&e.name)||"erreur";
+    if(nom==="AbortError") return;               // partage simplement annulé
+    aidePartage("Le partage n'a pas abouti",MARCHE_A_SUIVRE,nom+" : "+((e&&e.message)||""));
   }
 }
 
@@ -1348,6 +1367,11 @@ function majLiens(){
 /* Empêche l'ouverture d'un onglet vide quand le champ est encore vide. */
 function texteRempli(){
   if($("r-texte").value.trim()) return true;
+  if(rechPhotoCourante){
+    // une photo est là mais aucune référence : c'est le partage qu'il veut
+    partagerPhoto();
+    return false;
+  }
   toast("Tape d'abord une référence");
   $("r-texte").focus();
   return false;
