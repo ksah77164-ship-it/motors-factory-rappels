@@ -48,6 +48,11 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .pastille.erreur .pt{background:var(--debit);}
 @keyframes clign{0%,100%{opacity:1}50%{opacity:0.25}}
 .topbar-droite{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+.alarme{display:none;background:linear-gradient(160deg,#3a1717,#2a1010);border:1.5px solid rgba(229,143,143,0.5);
+  border-radius:16px;padding:14px 15px;margin-bottom:14px;color:#FFD9D9;font-size:12.5px;font-weight:700;line-height:1.6;}
+.alarme.on{display:block;}
+.alarme b{color:#FFF0F0;}
+.alarme .titre{font-size:13.5px;font-weight:900;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
 .aide{font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.65;background:var(--bg2);border:1px solid var(--line);
   border-radius:12px;padding:11px 13px;margin-bottom:14px;}
 .aide b{color:var(--champ);}
@@ -263,6 +268,11 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
       <button class="pastille" id="pastille" onclick="ouvrirCloud()"><span class="pt"></span><span id="pastille-txt">Hors ligne</span></button>
       <a class="link-back" href="index.html">&#8592;</a>
     </div>
+  </div>
+
+  <div class="alarme" id="alarme">
+    <div class="titre">&#9888;&#65039; Rien n'est enregistr&eacute; sur cet appareil</div>
+    <div id="alarme-txt"></div>
   </div>
 
   <div class="counters" id="counters"></div>
@@ -675,6 +685,39 @@ function photosCharger(){
     };
     t.onerror=()=>rej(t.error);
   })).catch(()=>({}));
+}
+
+/* Vérifie que le navigateur conserve vraiment ce qu'on lui confie.
+   En navigation privée, l'écriture échoue (ou ne survit pas) : l'appli
+   semble fonctionner mais tout disparaît au rechargement. Autant le dire. */
+function stockageUtilisable(){
+  const cle="mf_test_"+Math.random().toString(36).slice(2);
+  try{
+    localStorage.setItem(cle,"1");
+    const ok=localStorage.getItem(cle)==="1";
+    localStorage.removeItem(cle);
+    return ok;
+  }catch(e){ return false; }
+}
+async function verifierStockage(){
+  const localOk=stockageUtilisable();
+  let idbOk=false;
+  try{ await ouvrirDB(); idbOk=true; }catch(e){ idbOk=false; }
+  if(localOk&&idbOk) return true;
+
+  let quoi;
+  if(!localOk&&!idbOk) quoi="Ni les fiches ni les photos ne peuvent &ecirc;tre conserv&eacute;es.";
+  else if(!localOk)    quoi="Les fiches ne peuvent pas &ecirc;tre conserv&eacute;es.";
+  else                 quoi="Les photos ne peuvent pas &ecirc;tre conserv&eacute;es.";
+
+  $("alarme-txt").innerHTML=quoi+
+    " Tout ce que tu saisis dispara&icirc;tra au prochain rechargement.<br><br>"+
+    "<b>C'est presque toujours la navigation priv&eacute;e.</b> Ferme cet onglet, ouvre Safari "+
+    "en navigation normale, et reviens sur l'appli.<br><br>"+
+    "Autre cause possible : la m&eacute;moire de l'iPhone est pleine, ou les donn&eacute;es de site "+
+    "sont bloqu&eacute;es dans R&eacute;glages &#9656; Safari.";
+  $("alarme").classList.add("on");
+  return false;
 }
 
 /* ── Fiches (localStorage) ───────────────────────────────── */
@@ -1763,7 +1806,10 @@ function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString
 async function seConnecter(){
   const pwd=$("login-pwd").value;if(!pwd)return;
   const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pwd));
-  if(toHexAuth(buf)===AUTH_HASH){sessionStorage.setItem("mf_montres_auth","1");deverrouiller();}
+  if(toHexAuth(buf)===AUTH_HASH){
+    try{sessionStorage.setItem("mf_montres_auth","1");}catch(e){/* stockage refusé : on entre quand même */}
+    deverrouiller();
+  }
   else{$("login-err").style.display="block";$("login-pwd").value="";}
 }
 function deverrouiller(){$("login-overlay").style.display="none";demarrer();}
@@ -1792,6 +1838,7 @@ async function demarrer(){
   if(demarre)return;demarre=true;
   chargerReglages();
   const partage=lireLienPartage();
+  await verifierStockage();
   charger();
   const secours=await fichesLire();
   if(secours.length>montres.length){
@@ -1839,7 +1886,9 @@ $("r-texte").addEventListener("keydown",e=>{
   }
 }));
 
-if(sessionStorage.getItem("mf_montres_auth")==="1"){$("login-overlay").style.display="none";demarrer();}
+try{
+  if(sessionStorage.getItem("mf_montres_auth")==="1"){$("login-overlay").style.display="none";demarrer();}
+}catch(e){/* stockage refusé : l'écran de connexion reste affiché, c'est tout */}
 </script>
 </body>
 </html>
