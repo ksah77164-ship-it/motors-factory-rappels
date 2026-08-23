@@ -472,8 +472,8 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
       <button class="btn rouge" id="c-deconnecter" onclick="deconnecterCloud()">D&eacute;connecter</button>
       <button class="btn" id="c-partager" onclick="copierLienPartage()">&#128279; Lien de partage</button>
       <button class="btn" id="c-sync" onclick="synchro(true).then(majEtatCloud)">&#8635; Synchroniser</button>
-      <button class="btn" onclick="fermerCloud()">Fermer</button>
-      <button class="btn or" onclick="connecterCloud()">&#10003; Connecter</button>
+      <button class="btn" id="c-fermer" onclick="fermerCloud()">Fermer</button>
+      <button class="btn or" id="c-connecter" onclick="connecterCloud()">&#10003; Connecter</button>
     </div>
   </div>
 </div>
@@ -1402,7 +1402,7 @@ function lireLienPartage(){
 }
 
 /* ── Connexion ───────────────────────────────────────────── */
-const AUTH_HASH="fde83057674ff5ece52819657d42fb1771cf0e1765a6e36d3225ee4be1085361";
+const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
   const pwd=$("login-pwd").value;if(!pwd)return;

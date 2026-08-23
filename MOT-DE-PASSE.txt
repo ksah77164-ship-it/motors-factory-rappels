@@ -5,7 +5,11 @@ Outil RELEVÉS (releves.html)
   Mot de passe : Motors92390
 
 Appli MONTRES D'ALBERT (montres.html)
-  Mot de passe : Motors92390   (le même que l'outil Relevés)
+  Mot de passe : Kamelia
+
+  (À ne pas confondre avec le mot de passe du COFFRE PARTAGÉ, celui que vous
+   avez écrit dans TOKEN côté Google Apps Script : c'est un mot de passe
+   différent, saisi une seule fois par appareil dans l'écran ☁︎.)
 
 Appli RAPPELS (login.html)
   Mot de passe : (inchangé — non noté ici volontairement)
