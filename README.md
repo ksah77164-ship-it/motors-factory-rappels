@@ -26,10 +26,12 @@ Suivi complet du projet Albert :
 - **Projets** : chaque montre est rattachée à un projet (« Albert » par défaut), avec des onglets
   pour basculer de l'un à l'autre.
 - **Export CSV**, **sauvegarde JSON** (fiches + photos) et **import** qui ajoute sans effacer.
-- **Recherche internet** : bouton 🔎. Photographier la montre vérifie d'abord la collection,
-  puis passe la photo à Google Lens via le partage du téléphone. La référence ouvre en une
-  touche les pages qui donnent des prix — en tête, les **ventes conclues sur eBay**, puis
-  Chrono24, Google Shopping, Vinted, Leboncoin, Yahoo Auctions Japon, Amazon.
+- **Recherche internet** : bouton 🔎. Deux chemins, tous deux en une touche —
+  photographier la montre puis **« Continuer sur Google »** (la photo part vers Lens par le
+  partage du téléphone, la collection est vérifiée au passage), ou taper la référence et
+  **« Rechercher sur Google »** (la touche Entrée marche aussi).
+  Un repli « Voir les prix ailleurs » donne accès aux **ventes conclues sur eBay** (les prix
+  réels de revente), Chrono24, Google Shopping, Vinted, Leboncoin, Yahoo Auctions Japon, Amazon.
   Chaque fiche a aussi un bouton « Chercher son prix » pré-rempli avec sa référence.
 
   *Limite assumée* : aucun moteur de reconnaissance d'image (Lens, Amazon) n'est ouvert à un

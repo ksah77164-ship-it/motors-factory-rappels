@@ -76,7 +76,15 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .lien .ic{font-size:15px;flex-shrink:0;}
 .lien small{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-top:1px;}
 .lien.phare{grid-column:span 2;background:linear-gradient(160deg,var(--card2),var(--card));border-color:var(--line-strong);}
-.btn.pleine{width:100%;padding:13px;font-size:13.5px;justify-content:center;display:block;margin-bottom:4px;}
+.btn.pleine{width:100%;padding:14px;font-size:14px;text-align:center;display:block;margin-bottom:6px;text-decoration:none;}
+details.plus{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;}
+details.plus summary{cursor:pointer;font-size:12px;font-weight:800;color:var(--gold);letter-spacing:0.6px;
+  list-style:none;display:flex;align-items:center;gap:7px;padding:4px 0;}
+details.plus summary::-webkit-details-marker{display:none;}
+details.plus summary::after{content:"▾";margin-left:auto;color:var(--muted);font-size:13px;}
+details.plus[open] summary::after{content:"▴";}
+.champ-ligne{display:flex;gap:8px;margin-bottom:10px;}
+.champ-ligne input{flex:1;margin-bottom:0 !important;}
 .big-btn{border-radius:16px;padding:15px 12px;border:1.5px solid var(--line-strong);cursor:pointer;font-family:'Nunito',sans-serif;
   background:linear-gradient(160deg,var(--card2),var(--card));color:var(--cream);font-size:13px;font-weight:800;text-align:center;line-height:1.35;}
 .big-btn .bb-ico{font-size:22px;display:block;margin-bottom:5px;}
@@ -445,11 +453,10 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <h3>Rechercher une montre</h3>
     <div class="sous">Ce qu'elle vaut, o&ugrave; elle se vend, &agrave; quel prix.</div>
 
-    <div class="sect">&#128248; Avec une photo</div>
     <div id="r-photo-zone" class="photo-zone" onclick="document.getElementById('r-photo-input').click()">
       <div class="pz-ico">&#128247;</div>
       <div class="pz-txt">Photographier la montre</div>
-      <div class="pz-sub">Je v&eacute;rifie d'abord ta collection, puis je passe la main &agrave; Google</div>
+      <div class="pz-sub">puis je bascule sur Google</div>
     </div>
     <input type="file" id="r-photo-input" accept="image/*" capture="environment" style="display:none" onchange="rechPhoto(this)">
     <div id="r-apercu" class="photo-apercu" style="display:none">
@@ -458,17 +465,25 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     </div>
     <div id="r-collection"></div>
     <div id="r-image-actions" style="display:none">
-      <button class="btn or pleine" onclick="partagerPhoto()">&#128228; Envoyer la photo &agrave; Google Lens</button>
+      <button class="btn or pleine" onclick="partagerPhoto()">&#128269; Continuer sur Google</button>
       <div class="aide" id="r-partage-aide" style="display:none">
         Ce navigateur ne sait pas passer la photo &agrave; une autre application.
-        Ouvre l'appli <b>Google</b>, appuie sur l'ic&ocirc;ne <b>Lens</b> (l'appareil photo dans la barre de
-        recherche) et vise la montre : c'est le m&ecirc;me r&eacute;sultat.
+        Ouvre l'appli <b>Google</b>, appuie sur l'ic&ocirc;ne <b>Lens</b> dans la barre de recherche
+        et vise la montre : c'est le m&ecirc;me r&eacute;sultat.
       </div>
     </div>
 
-    <div class="sect">&#9000; Par r&eacute;f&eacute;rence ou mod&egrave;le</div>
-    <input type="text" id="r-texte" placeholder="Casio F-91W, GA-2100-1A1..." autocomplete="off" oninput="majLiens()">
-    <div class="liens" id="r-liens"></div>
+    <div class="sect">&#9000; Ou par r&eacute;f&eacute;rence</div>
+    <div class="champ-ligne">
+      <input type="text" id="r-texte" placeholder="Casio F-91W, GA-2100-1A1..." autocomplete="off" oninput="majLiens()">
+    </div>
+    <a class="btn or pleine" id="r-go" target="_blank" rel="noopener noreferrer" href="#"
+       onclick="return texteRempli()">&#128269; Rechercher sur Google</a>
+
+    <details class="plus" id="r-plus">
+      <summary>&#128176; Voir les prix ailleurs</summary>
+      <div class="liens" id="r-liens"></div>
+    </details>
 
     <div class="modal-actions">
       <button class="btn" onclick="fermerRecherche()">Fermer</button>
@@ -1191,8 +1206,6 @@ const MARCHANDS=[
    url:q=>"https://www.ebay.fr/sch/i.html?_nkw="+q+"&LH_Sold=1&LH_Complete=1&_sop=13", phare:true},
   {cle:"chrono", ico:"⌚", nom:"Chrono24", sous:"cote du marché",
    url:q=>"https://www.chrono24.fr/search/index.htm?query="+q},
-  {cle:"google", ico:"🔎", nom:"Google", sous:"fiche et avis",
-   url:q=>"https://www.google.com/search?q="+q+"+montre"},
   {cle:"images", ico:"🖼", nom:"Google Images", sous:"vérifier le modèle",
    url:q=>"https://www.google.com/search?tbm=isch&q="+q},
   {cle:"shop",   ico:"🏷", nom:"Google Shopping", sous:"prix neufs",
@@ -1211,6 +1224,7 @@ function ouvrirRecherche(texte){
   rechRetirerPhoto();
   $("r-texte").value=texte||"";
   $("r-ajouter").style.display="none";
+  $("r-plus").open=false;
   majLiens();
   $("modal-rech").classList.add("open");
   document.body.style.overflow="hidden";
@@ -1298,16 +1312,25 @@ async function partagerPhoto(){
 
 function majLiens(){
   const t=$("r-texte").value.trim();
+  const q=encodeURIComponent(t);
+  const go=$("r-go");
+  go.href=t?("https://www.google.com/search?q="+q):"#";
+  go.style.opacity=t?"1":"0.45";
   if(!t){
     $("r-liens").innerHTML='<div class="aide" style="grid-column:span 2;margin:0">'+
-      "Tape une référence (elle est écrite sur le cadran ou au dos du boîtier) "+
-      "pour ouvrir les pages qui donnent les prix.</div>";
+      "La référence est écrite sur le cadran ou au dos du boîtier.</div>";
     return;
   }
-  const q=encodeURIComponent(t);
   $("r-liens").innerHTML=MARCHANDS.map(m=>
     '<a class="lien'+(m.phare?" phare":"")+'" target="_blank" rel="noopener noreferrer" href="'+esc(m.url(q))+'">'+
     '<span class="ic">'+m.ico+'</span><span>'+esc(m.nom)+'<small>'+esc(m.sous)+'</small></span></a>').join("");
+}
+/* Empêche l'ouverture d'un onglet vide quand le champ est encore vide. */
+function texteRempli(){
+  if($("r-texte").value.trim()) return true;
+  toast("Tape d'abord une référence");
+  $("r-texte").focus();
+  return false;
 }
 function rechVersAjout(){
   const t=$("r-texte").value.trim();
@@ -1687,6 +1710,9 @@ $("modal-fiche").addEventListener("click",e=>{if(e.target===$("modal-fiche"))fer
 $("modal-scan").addEventListener("click",e=>{if(e.target===$("modal-scan"))fermerScan();});
 $("modal-cloud").addEventListener("click",e=>{if(e.target===$("modal-cloud"))fermerCloud();});
 $("modal-rech").addEventListener("click",e=>{if(e.target===$("modal-rech"))fermerRecherche();});
+$("r-texte").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&$("r-texte").value.trim()){e.preventDefault();$("r-go").click();}
+});
 // Recalcul des doublons quand on tape la référence
 ["f-ref","f-nom"].forEach(i=>$(i).addEventListener("blur",()=>{
   if($("modal-fiche").classList.contains("open")&&(fichePhoto||$("f-ref").value.trim().length>=4)){
