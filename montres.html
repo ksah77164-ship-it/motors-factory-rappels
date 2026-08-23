@@ -794,7 +794,7 @@ function statut(m){
   if(!m.recu) return "transit";
   return m.destination==="garder"?"collection":"avendre";
 }
-const STATUT_LIB={transit:"En transit",avendre:"À vendre",collection:"Collection",vendue:"Vendue"};
+const STATUT_LIB={transit:"En transit",avendre:"Livrée",collection:"Collection",vendue:"Vendue"};
 const STATUT_CLS={transit:"b-transit",avendre:"b-vendre",collection:"b-collec",vendue:"b-vendue"};
 
 /* ── Rendu ───────────────────────────────────────────────── */
@@ -833,7 +833,7 @@ function rendreCompteurs(){
     tuile("ct",l.length,"Montres")+
     tuile("cs",eurCourt(investi),"Investi (achat+frais)")+
     tuile("cb",transit+(transitEur?" · "+eurCourt(transitEur):""),"En transit")+
-    tuile("ct",aVendre+" / "+collection,"À vendre / gardées")+
+    tuile("ct",aVendre+" / "+collection,"Livrées / gardées")+
     tuile("cs",vendues+(encaisse?" · "+eurCourt(encaisse):""),"Vendues")+
     tuile(cls,(pv>0?"+":"")+eurCourt(pv),"Plus-value réalisée");
 }
@@ -844,7 +844,7 @@ function rendreChips(){
   const l=actives();
   const compte=s=>l.filter(m=>statut(m)===s).length;
   const defs=[["tous","Toutes",l.length],["transit","🕒 En transit",compte("transit")],
-    ["avendre","🏷 À vendre",compte("avendre")],["collection","💎 Collection",compte("collection")],
+    ["avendre","📦 Livrées",compte("avendre")],["collection","💎 Collection",compte("collection")],
     ["vendue","💰 Vendues",compte("vendue")]];
   $("chips").innerHTML=defs.map(d=>
     '<button class="chip'+(filtreStatut===d[0]?" actif":"")+'" onclick="choisirStatut(\''+d[0]+'\')">'+d[1]+' ('+d[2]+')</button>').join("");
