@@ -1,5 +1,5 @@
 /**
- * LES MONTRES D'ALBERT — partage en temps réel (Google Apps Script + Google Sheet)
+ * LES MONTRES D'ALBER — partage en temps réel (Google Apps Script + Google Sheet)
  * ================================================================================
  *
  * Ce script transforme un Google Sheet en coffre partagé pour l'appli montres.html.
@@ -34,7 +34,7 @@
  * ──────────────────────────────────────────────────────────────────────────────
  *  - Feuille « Montres » : une ligne par montre (lisible et modifiable à la main).
  *  - Feuille « Photos »  : la correspondance photo ▸ fichier Drive.
- *  - Les photos elles-mêmes : dans un dossier Drive « Montres d'Albert — photos ».
+ *  - Les photos elles-mêmes : dans un dossier Drive « Montres d'Alber — photos ».
  *
  * Règle de fusion : chaque montre porte la date/heure de sa dernière modification.
  * Si deux personnes touchent LA MÊME montre en même temps, la modification la plus
@@ -47,7 +47,7 @@ const TOKEN = "";
 
 const FEUILLE = "Montres";
 const FEUILLE_PHOTOS = "Photos";
-const DOSSIER_PHOTOS = "Montres d'Albert — photos";
+const DOSSIER_PHOTOS = "Montres d'Alber — photos";
 
 const ENTETES = [
   "id", "sync", "majLe", "modifiePar", "supprime",
@@ -340,7 +340,7 @@ function doGet(e) {
   let vivantes = 0;
   toutes.forEach(function (o) { if (!o.supprime) vivantes++; });
   return json_({
-    ok: true, message: "Coffre Montres d'Albert opérationnel.",
+    ok: true, message: "Coffre Montres d'Alber opérationnel.",
     montres: vivantes, lignes: toutes.length, serveur: curseur
   });
 }

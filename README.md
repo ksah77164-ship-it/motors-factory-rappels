@@ -6,11 +6,11 @@ Outils Motors Factory (pages statiques, utilisables hors ligne).
 |------|------|
 | `index.html` | Rappels clients |
 | `releves.html` | Relevés bancaires & factures |
-| `montres.html` | **Les Montres d'Albert** — suivi d'achat, livraison et revente de montres |
+| `montres.html` | **Les Montres d'Alber** — suivi d'achat, livraison et revente de montres |
 
-## Les Montres d'Albert (`montres.html`)
+## Les Montres d'Alber (`montres.html`)
 
-Suivi complet du projet Albert :
+Suivi complet du projet Alber :
 
 - **Fiche montre** : photo, nom, référence, détails (état, boîte, papiers…), projet.
 - **Achat** : date, prix d'achat, frais (port + douane), pays d'achat, vendeur/plateforme.
@@ -23,7 +23,7 @@ Suivi complet du projet Albert :
   En photographiant une montre (bouton « Je l'ai déjà ? »), l'appli compare l'image à toute la
   collection et affiche les correspondances avec un score. La référence et le nom sont aussi
   comparés. La vérification se déclenche automatiquement à l'ajout d'une photo.
-- **Projets** : chaque montre est rattachée à un projet (« Albert » par défaut), avec des onglets
+- **Projets** : chaque montre est rattachée à un projet (« Alber » par défaut), avec des onglets
   pour basculer de l'un à l'autre.
 - **Export CSV**, **sauvegarde JSON** (fiches + photos) et **import** qui ajoute sans effacer.
 - **Recherche internet** : bouton 🔎. Deux chemins, tous deux en une touche —
