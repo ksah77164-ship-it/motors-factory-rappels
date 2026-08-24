@@ -245,6 +245,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 .login-err{display:none;background:rgba(229,143,143,0.12);border:1px solid rgba(229,143,143,0.4);border-radius:10px;
   padding:9px 12px;font-size:13px;color:var(--debit);font-weight:700;text-align:center;margin-bottom:14px;}
 .login-lbl{display:block;font-size:10px;font-weight:800;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.login-ver{margin-top:16px;text-align:center;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:0.5px;}
 </style>
 </head>
 <body>
@@ -260,6 +261,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <label class="login-lbl">Mot de passe</label>
     <input type="password" id="login-pwd" placeholder="Mot de passe" autocomplete="current-password">
     <button class="login-btn" onclick="seConnecter()">Acc&eacute;der</button>
+    <div class="login-ver" id="login-ver"></div>
   </div>
 </div>
 
@@ -2131,6 +2133,10 @@ function lireLienPartage(){
 }
 
 /* ── Connexion ───────────────────────────────────────────── */
+/* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
+   mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
+   appareil n'affiche pas une vieille page gardée en cache. */
+const VERSION="v14", VERSION_DATE="24/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
@@ -2144,6 +2150,7 @@ async function seConnecter(){
 }
 function deverrouiller(){$("login-overlay").style.display="none";demarrer();}
 $("login-pwd").addEventListener("keydown",e=>{if(e.key==="Enter")seConnecter();});
+$("login-ver").textContent=VERSION+" · "+VERSION_DATE;
 
 /* ── Démarrage ───────────────────────────────────────────── */
 let demarre=false;
