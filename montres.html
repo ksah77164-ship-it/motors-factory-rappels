@@ -759,25 +759,72 @@ function actives(){return montres.filter(m=>!m.supprime);}
    en passant par cette étape intermédiaire et des moyennes exactes, la même photo
    donne toujours la même empreinte, quel que soit le chemin emprunté. */
 const EMP_L=72, EMP_H=64;
-function grisNormalise(img){
-  const c=document.createElement("canvas");c.width=EMP_L;c.height=EMP_H;
-  const ctx=c.getContext("2d");
-  ctx.fillStyle="#fff";ctx.fillRect(0,0,EMP_L,EMP_H);
-  ctx.drawImage(img,0,0,EMP_L,EMP_H);
-  const d=ctx.getImageData(0,0,EMP_L,EMP_H).data;
-  const g=new Float64Array(EMP_L*EMP_H);
-  for(let i=0;i<EMP_L*EMP_H;i++) g[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
-  return g;
+function pixelsDe(img,l,h,cadre){
+  const c=document.createElement("canvas");c.width=l;c.height=h;
+  const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,l,h);
+  if(cadre) ctx.drawImage(img,cadre.x,cadre.y,cadre.w,cadre.h,0,0,l,h);
+  else ctx.drawImage(img,0,0,l,h);
+  return ctx.getImageData(0,0,l,h).data;
 }
-function grille(g,cols,rows){
-  const bl=EMP_L/cols, bh=EMP_H/rows;
-  const out=new Array(cols*rows);
+/* Recadrage automatique sur la montre. Sans lui, une capture d'écran est
+   surtout comparée par son fond blanc et ses barres d'interface : toutes les
+   photos produit se ressemblaient alors à 70-90 %, quelle que soit la montre.
+   Le fond est estimé sur le pourtour, on garde la boîte des pixels qui s'en
+   écartent. */
+function recadrer(img){
+  const T=96, d=pixelsDe(img,T,T,null), bord=[];
+  for(let i=0;i<T;i++){bord.push(i);bord.push((T-1)*T+i);bord.push(i*T);bord.push(i*T+T-1);}
+  let br=0,bg=0,bb=0;
+  bord.forEach(i=>{br+=d[i*4];bg+=d[i*4+1];bb+=d[i*4+2];});
+  br/=bord.length;bg/=bord.length;bb/=bord.length;
+  let x0=T,y0=T,x1=-1,y1=-1;
+  for(let y=0;y<T;y++)for(let x=0;x<T;x++){
+    const i=(y*T+x)*4;
+    if(Math.abs(d[i]-br)+Math.abs(d[i+1]-bg)+Math.abs(d[i+2]-bb)>60){
+      if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  }
+  if(x1<0||(x1-x0+1)*(y1-y0+1)<T*T*0.02) return null;
+  x0=Math.max(0,x0-2);y0=Math.max(0,y0-2);x1=Math.min(T-1,x1+2);y1=Math.min(T-1,y1+2);
+  const kx=(img.naturalWidth||img.width)/T, ky=(img.naturalHeight||img.height)/T;
+  return {x:x0*kx,y:y0*ky,w:(x1-x0+1)*kx,h:(y1-y0+1)*ky,
+          part:((x1-x0+1)*(y1-y0+1))/(T*T)};
+}
+function grille(d,cols,rows){
+  const bl=EMP_L/cols, bh=EMP_H/rows, out=[];
   for(let ry=0;ry<rows;ry++) for(let rx=0;rx<cols;rx++){
     let somme=0,n=0;
-    for(let y=ry*bh;y<(ry+1)*bh;y++) for(let x=rx*bl;x<(rx+1)*bl;x++){somme+=g[y*EMP_L+x];n++;}
-    out[ry*cols+rx]=somme/n;
+    for(let y=ry*bh;y<(ry+1)*bh;y++) for(let x=rx*bl;x<(rx+1)*bl;x++){
+      const i=(((y|0)*EMP_L)+(x|0))*4;
+      somme+=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];n++;
+    }
+    out.push(somme/n);
   }
   return out;
+}
+/* Signature de couleur : histogramme de teintes des seuls pixels de la montre.
+   Le fond blanc est écarté — sinon deux montres de couleurs opposées se
+   ressemblent parce que 80 % de l'image est blanche dans les deux cas. */
+const NB_TEINTES=12, NB_GRIS=4;
+function teintes(d){
+  const h=new Float64Array(NB_TEINTES+NB_GRIS);
+  let n=0;
+  for(let i=0;i<d.length;i+=4){
+    const r=d[i],v=d[i+1],b=d[i+2];
+    const mx=Math.max(r,v,b), mn=Math.min(r,v,b), delta=mx-mn;
+    if(mx>238&&delta<18) continue;                       // fond blanc
+    if((mx?delta/mx:0)<0.18){                            // gris, noir, argent
+      h[NB_TEINTES+Math.min(NB_GRIS-1,(mx/64)|0)]+=1;
+    }else{
+      let t;
+      if(mx===r) t=((v-b)/delta+6)%6;
+      else if(mx===v) t=(b-r)/delta+2;
+      else t=(r-v)/delta+4;
+      h[Math.min(NB_TEINTES-1,((t*60)/(360/NB_TEINTES))|0)]+=1;
+    }
+    n++;
+  }
+  if(n) for(let i=0;i<h.length;i++) h[i]/=n;
+  return Array.from(h);
 }
 function bitsVersHex(bits){
   let s="";
@@ -786,18 +833,37 @@ function bitsVersHex(bits){
   }
   return s;
 }
-const EMP_VERSION=2;
-function empreintes(img){
-  const g=grisNormalise(img);
-  // dHash : chaque case comparée à sa voisine de droite (grille 9x8)
-  const gd=grille(g,9,8), bd=[];
+const EMP_VERSION=3;
+function empreinteUne(img,cadre){
+  const d=pixelsDe(img,EMP_L,EMP_H,cadre);
+  const gd=grille(d,9,8), bd=[];
   for(let y=0;y<8;y++) for(let x=0;x<8;x++) bd.push(gd[y*9+x]>gd[y*9+x+1]?1:0);
-  // aHash : chaque case comparée à la moyenne générale (grille 8x8)
-  const ga=grille(g,8,8);
+  const ga=grille(d,8,8);
   let moy=0;for(let i=0;i<64;i++) moy+=ga[i];moy/=64;
   const ba=[];for(let i=0;i<64;i++) ba.push(ga[i]>moy?1:0);
-  return {dhash:bitsVersHex(bd),ahash:bitsVersHex(ba)};
+  return {dhash:bitsVersHex(bd),ahash:bitsVersHex(ba),cs:teintes(d)};
 }
+/* Une photo arrive détourée, encadrée, ou en pleine capture d'écran. On garde
+   plusieurs lectures et on retiendra la meilleure concordance : une seule
+   lecture faisait rater la même montre photographiée autrement. */
+function empreintes(img){
+  const cadre=recadrer(img);
+  const principale=empreinteUne(img,cadre);
+  const variantes=[principale];
+  const ajouter=e=>{
+    if(!variantes.some(v=>v.dhash===e.dhash&&v.ahash===e.ahash)) variantes.push(e);
+  };
+  ajouter(empreinteUne(img,null));
+  // recadrage au centre : rattrape les vignettes bordées d'un cadre, où
+  // l'estimation du fond sur le pourtour tombe sur le cadre et non sur le fond
+  const lg=img.naturalWidth||img.width, ht=img.naturalHeight||img.height;
+  if(lg&&ht) ajouter(empreinteUne(img,{x:lg*0.10,y:ht*0.10,w:lg*0.80,h:ht*0.80}));
+  const l=img.naturalWidth||img.width||1, h=img.naturalHeight||img.height||1;
+  principale.variantes=variantes;
+  principale.capture=(!cadre)||cadre.part<0.30||(h/l)>1.7;
+  return principale;
+}
+
 function hamming(a,b){
   if(!a||!b||a.length!==b.length) return 64;
   let d=0;
@@ -809,11 +875,47 @@ function hamming(a,b){
 }
 function normRef(s){return String(s==null?"":s).toUpperCase().replace(/[^A-Z0-9]/g,"");}
 
-/* Score de ressemblance 0-100 entre une empreinte et une fiche */
+/* Signatures de couleur des montres en collection : calculées à la volée
+   depuis les photos, jamais enregistrées — le coffre garde donc ses colonnes
+   d'origine et n'a pas à être redéployé. */
+const CSIG={};
+async function preparerCouleurs(){
+  for(const m of actives()){
+    if(!m.photoId||CSIG[m.photoId]!==undefined||!PHOTOS[m.photoId]) continue;
+    try{
+      const img=await imageDepuisURL(PHOTOS[m.photoId]);
+      CSIG[m.photoId]=empreinteUne(img,recadrer(img)).cs;
+    }catch(e){ CSIG[m.photoId]=null; }
+  }
+}
+function accordCouleur(a,b){let s=0;for(let i=0;i<a.length;i++)s+=Math.min(a[i],b[i]);return s;}
+
+/* Score 0-100. La forme seule ne suffit pas : toutes les F-91W ont la même
+   silhouette, c'est la couleur qui les distingue. */
+const SEUIL_SUR=80, SEUIL_PEUT=68;
 function ressemblance(emp,m){
-  const dd=hamming(emp.dhash,m.dhash), da=hamming(emp.ahash,m.ahash);
-  const d=Math.min(dd,da);
-  return Math.max(0,Math.round(100*(1-d/32)));   // 0 bit d'écart = 100 %, 32 bits = 0 %
+  const cs=m.photoId?CSIG[m.photoId]:null;
+  const variantes=emp.variantes||[emp];
+  let meilleur=0;
+  variantes.forEach(v=>{
+    const d=Math.min(hamming(v.dhash,m.dhash),hamming(v.ahash,m.ahash));
+    const forme=Math.max(0,1-d/16);
+    // sans signature de couleur (photo pas encore descendue du coffre) on
+    // reste sur la forme, mais on ne prétend jamais à la certitude
+    const s=(cs&&v.cs)?Math.round(100*(0.35*forme+0.65*accordCouleur(v.cs,cs)))
+                      :Math.round(100*forme*0.75);
+    if(s>meilleur) meilleur=s;
+  });
+  return meilleur;
+}
+
+/* Une capture d'écran entière (barres d'interface, prix, vignettes) noie la
+   montre : on le dit au lieu de rendre un résultat douteux en silence. */
+function conseilCapture(emp){
+  return (emp&&emp.capture)
+    ? '<div class="sous" style="margin-top:8px">📸 Cette image ressemble à une capture d\'écran entière. '+
+      'Recadre-la sur la montre seule : la reconnaissance sera bien plus sûre.</div>'
+    : "";
 }
 
 /* Recherche de doublons : photo + référence + nom */
@@ -829,12 +931,12 @@ function chercherDoublons(emp,ref,nom,exclureId){
     }
     const mr=normRef(m.ref);
     if(r && mr && r===mr){ if(score<99){score=99;raison="référence identique";} }
-    else if(r && mr && r.length>=5 && (mr.indexOf(r)===0||r.indexOf(mr)===0)){ if(score<88){score=88;raison="référence proche";} }
-    else if(n && n.length>=6 && String(m.nom||"").toLowerCase().indexOf(n)>=0){ if(score<80){score=80;raison="nom identique";} }
-    if(score>=62) res.push({m:m,score:score,raison:raison});
+    else if(r && mr && r.length>=8 && (mr.indexOf(r)===0||r.indexOf(mr)===0)){ if(score<88){score=88;raison="référence proche";} }
+    else if(n && n.length>=6 && String(m.nom||"").toLowerCase().indexOf(n)>=0){ if(score<85){score=85;raison="nom identique";} }
+    if(score>=SEUIL_PEUT) res.push({m:m,score:score,raison:raison});
   });
   res.sort((a,b)=>b.score-a.score);
-  return res.slice(0,5);
+  return res.slice(0,3);
 }
 
 /* ── Lecture + compression d'une photo ───────────────────── */
@@ -869,7 +971,8 @@ async function traiterFichierPhoto(file){
   if(img.close) img.close();
   const stockee=await imageDepuisURL(dataUrl);
   const emp=empreintes(stockee);
-  return {dataUrl:dataUrl,dhash:emp.dhash,ahash:emp.ahash};
+  return {dataUrl:dataUrl,dhash:emp.dhash,ahash:emp.ahash,cs:emp.cs,
+          variantes:emp.variantes,capture:emp.capture};
 }
 
 /* ── Calculs sur une fiche ───────────────────────────────── */
@@ -1270,10 +1373,10 @@ function afficherDoublons(emp){
   const d=chercherDoublons(emp,$("f-ref").value,$("f-nom").value,ficheEditionId);
   if(!d.length){
     $("f-doublon").innerHTML='<div class="alerte ok"><div class="alerte-titre">✅ Aucune correspondance</div>'+
-      "Cette montre n'a pas d'équivalent dans ta collection.</div>";
+      "Cette montre n'a pas d'équivalent dans ta collection."+conseilCapture(emp)+"</div>";
     return;
   }
-  const fort=d[0].score>=85;
+  const fort=d[0].score>=SEUIL_SUR;
   let h='<div class="alerte warn"><div class="alerte-titre">'+(fort?"⚠ Tu l'as probablement déjà !":"🔎 Ressemblances trouvées")+'</div>'+
     (fort?"Une montre très proche est déjà enregistrée.":"Rien de certain, vérifie avant d'ajouter.");
   d.forEach(x=>{h+=ligneMatch(x);});
@@ -1340,6 +1443,9 @@ function enregistrerFiche(){
       const ancienne=m.photoId;
       const pid="p_"+m.id+"_"+uid();
       m.photoId=pid;m.dhash=fichePhoto.dhash;m.ahash=fichePhoto.ahash;m.hv=EMP_VERSION;
+      if(fichePhoto.cs) CSIG[pid]=fichePhoto.cs;   // sinon la montre à peine ajoutée
+                                                   // n'a pas de couleur à comparer
+      delete CSIG[ancienne];
       PHOTOS[pid]=fichePhoto.dataUrl;
       aEnvoyerPhotos[pid]=1;
       photoEcrire(pid,fichePhoto.dataUrl).catch(()=>toast("⚠ Photo non sauvegardée"));
@@ -1402,16 +1508,21 @@ function afficherScanResultat(emp,texte){
   const d=chercherDoublons(emp,texte,texte,null);
   if(!d.length){
     $("s-resultat").innerHTML='<div class="alerte ok"><div class="alerte-titre">✅ Tu ne l\'as pas</div>'+
-      "Aucune montre de ta collection ne correspond.</div>";
+      "Aucune montre de ta collection ne correspond."+conseilCapture(emp)+"</div>";
     return;
   }
-  const fort=d[0].score>=85;
+  const fort=d[0].score>=SEUIL_SUR;
   let h='<div class="alerte warn"><div class="alerte-titre">'+
     (fort?"✅ Oui, tu l'as déjà":"🤔 Peut-être — à vérifier")+'</div>'+
-    (fort?"Correspondance forte avec :":"Ces montres ressemblent à celle-ci :");
+    (fort?"Correspondance forte avec :":"Ces montres se rapprochent, sans certitude :");
   d.forEach(x=>{h+=ligneMatch(x);});
-  h+='</div>';
+  h+=conseilCapture(emp)+'</div>';
   $("s-resultat").innerHTML=h;
+  // référence reprise de la montre reconnue, seulement si l'on est sûr
+  if(fort&&!$("s-texte").value.trim()){
+    const t=(d[0].m.ref||d[0].m.nom||"").trim();
+    if(t){$("s-texte").value=t;scanTexte();}
+  }
 }
 function scanVersAjout(){
   const t=$("s-texte").value.trim();
@@ -1501,12 +1612,12 @@ async function rechPhoto(input){
 
     const d=chercherDoublons(r,$("r-texte").value,$("r-texte").value,null);
     if(d.length){
-      const fort=d[0].score>=85;
+      const fort=d[0].score>=SEUIL_SUR;
       let h='<div class="alerte warn"><div class="alerte-titre">'+
         (fort?"✅ Tu l'as déjà dans ta collection":"🤔 Ressemble à ce que tu as")+'</div>'+
         (fort?"Inutile de la racheter :":"À vérifier avant d'acheter :");
       d.forEach(x=>{h+=ligneMatch(x);});
-      h+='</div>';
+      h+=conseilCapture(r)+'</div>';
       $("r-collection").innerHTML=h;
       if(fort&&!$("r-texte").value.trim()){
         $("r-texte").value=(d[0].m.ref||d[0].m.nom||"").trim();
@@ -1514,7 +1625,7 @@ async function rechPhoto(input){
       }
     }else{
       $("r-collection").innerHTML='<div class="alerte ok"><div class="alerte-titre">✅ Nouvelle pour toi</div>'+
-        "Tu ne l'as pas encore.</div>";
+        "Tu ne l'as pas encore."+conseilCapture(r)+"</div>";
     }
   }catch(e){
     $("r-collection").innerHTML='<div class="alerte warn">⚠ Impossible de lire cette image.</div>';
@@ -1721,16 +1832,17 @@ function importerJSON(input){
           catch(e){ /* empreinte impossible : la fiche reste valable */ }
         }else if(o.dhash){ emp={dhash:o.dhash,ahash:o.ahash}; }
 
+        const cs=emp&&emp.cs;
         if(o.id){
           // identifiant fourni : la fiche se suffit à elle-même. Un 2e exemplaire
           // d'une montre déjà là est légitime, on ne le confond pas avec un doublon.
-          if(montres.find(m=>m.id===o.id)) aMettreAJour.push({o:o,brute:brute});
-          else aAjouter.push({o:o,brute:brute});
+          if(montres.find(m=>m.id===o.id)) aMettreAJour.push({o:o,brute:brute,cs:cs});
+          else aAjouter.push({o:o,brute:brute,cs:cs});
           continue;
         }
         if(dejaPresente(o.nom,emp,aAjouter.map(x=>x.o))){ ignorees.push(o.nom||"(sans nom)"); continue; }
         o.id=uid();
-        aAjouter.push({o:o,brute:brute});
+        aAjouter.push({o:o,brute:brute,cs:cs});
       }
 
       const question=(aAjouter.length?aAjouter.length+" montre(s) à ajouter":"")+
@@ -1742,10 +1854,11 @@ function importerJSON(input){
       if(!confirm(question)) return;
 
       // 2e passe : on applique
-      for(const {o,brute} of aAjouter.concat(aMettreAJour)){
+      for(const {o,brute,cs} of aAjouter.concat(aMettreAJour)){
         if(brute){
           const pid=o.photoId||("p_"+o.id+"_"+uid());
           o.photoId=pid;
+          if(cs) CSIG[pid]=cs;
           PHOTOS[pid]=brute;
           aEnvoyerPhotos[pid]=1;
           try{await photoEcrire(pid,brute);}catch(e){}
@@ -1764,7 +1877,7 @@ function importerJSON(input){
       toast("\u2713 "+aAjouter.length+" ajoutée(s)"+
             (aMettreAJour.length?", "+aMettreAJour.length+" mise(s) à jour":"")+
             (ignorees.length?", "+ignorees.length+" doublon(s) écarté(s)":""));
-    }catch(e){toast("\u26a0 Fichier illisible ou format inattendu");}
+    }catch(e){console.error("import :",e);toast("\u26a0 Fichier illisible ou format inattendu");}
   };
   fr.readAsText(f);
   input.value="";
@@ -1917,7 +2030,7 @@ async function recupererPhotos(){
   let recues=0;
   lot.forEach(r=>{if(r){PHOTOS[r.pid]=r.data;recues++;}});
   resteADescendre=Math.max(0,manque.length-recues);
-  if(recues){await remettreEmpreintesAJour();rendre();}
+  if(recues){await remettreEmpreintesAJour();await preparerCouleurs();rendre();}
 }
 
 function planifier(){
@@ -2045,6 +2158,7 @@ async function remettreEmpreintesAJour(){
     try{
       const emp=empreintes(await imageDepuisURL(PHOTOS[m.photoId]));
       m.dhash=emp.dhash;m.ahash=emp.ahash;
+      if(emp.cs) CSIG[m.photoId]=emp.cs;   // évite de relire la photo juste après
     }catch(e){ /* photo illisible : on n'y revient pas */ }
     m.hv=EMP_VERSION;
     aEnvoyer[m.id]=1;      // la correction part au coffre sans toucher à la date de modification
@@ -2071,6 +2185,7 @@ async function demarrer(){
   }
   PHOTOS=await photosCharger();
   await remettreEmpreintesAJour();
+  await preparerCouleurs();
   rendre();
   majPastille("");
   if(apiURL()){
