@@ -888,9 +888,10 @@ const STATUT_LIB={transit:"En transit",avendre:"Livrée",collection:"Collection"
    d'écrire « couleur : rose » dans les détails de la fiche. */
 const COULEURS=[
   {c:"Noir",     h:"#15161a", re:/\bnoire?s?\b|\bblack\b/},
-  {c:"Or",       h:"#d4af37", re:/\bors?\b|\bdor[ée]e?s?\b|\bgold\b/},
+  // « doré » finit par un accent : \b ne tient pas après é en JavaScript
+  {c:"Or",       h:"#d4af37", re:/\bors?\b|\bdor[ée]e?s?|\bgold\b/},
   {c:"Argent",   h:"#c8ccd4", re:/\bargent[ée]?e?s?\b|\bsilver\b|\bacier\b/},
-  {c:"Blanc",    h:"#f2f2f0", re:/\bblanche?s?\b|\bwhite\b/},
+  {c:"Blanc",    h:"#f2f2f0", re:/\bblanc(he)?s?\b|\bwhite\b/},
   {c:"Turquoise",h:"#43c9bd", re:/turquoises?|\bteal\b|\bmenthe\b|\bcyan\b/},
   {c:"Bleu ciel",h:"#8fc7f0", re:/bleu\s*ciel|\bciel\b/},
   {c:"Bleu",     h:"#3f6fd8", re:/\bbleue?s?\b|\bblue\b/},
@@ -900,7 +901,7 @@ const COULEURS=[
   {c:"Jaune",    h:"#e8c73d", re:/\bjaunes?\b|\byellow\b/},
   {c:"Orange",   h:"#e8873d", re:/\boranges?\b/},
   {c:"Gris",     h:"#8a8d94", re:/\bgrise?s?\b|\bgrey\b|\bgray\b/},
-  {c:"Violet",   h:"#9b6bd6", re:/\bviolette?s?\b|\bmauve\b|\bpurple\b/},
+  {c:"Violet",   h:"#9b6bd6", re:/\bviolet(te)?s?\b|\bmauve\b|\bpurple\b/},
   {c:"Marron",   h:"#8a6242", re:/\bmarrons?\b|\bbeiges?\b|\bbrown\b/},
   {c:"Transparent",h:"#b9c6d6", re:/transparente?s?|translucides?|\bclaire?\b/}
 ];
