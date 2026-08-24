@@ -1534,6 +1534,21 @@ function exporterJSON(){
    La photo peut être fournie dans « photos » (par identifiant) ou directement
    dans la fiche via « photoData » : dans ce cas l'empreinte visuelle est
    recalculée ici, pour que l'anti-doublon fonctionne aussi sur ces montres. */
+/* Une fiche sans identifiant est-elle déjà dans la collection ?
+   On ne se fie qu'à deux signes sûrs : le même nom, ou la même photo.
+   La référence seule ne suffit pas — F-91WC orange et F-91WC jaune la partagent. */
+function dejaPresente(nom,emp,ajoutees){
+  const n=String(nom||"").toLowerCase().trim();
+  const memeQue=m=>{
+    if(n&&String(m.nom||"").toLowerCase().trim()===n) return true;
+    // strictement la même image : les F-91W noires se ressemblent beaucoup trop
+    // en niveaux de gris pour qu'un simple « très proche » suffise
+    if(emp&&m.dhash&&emp.dhash===m.dhash&&emp.ahash===m.ahash) return true;
+    return false;
+  };
+  return actives().find(memeQue)||(ajoutees||[]).find(memeQue)||null;
+}
+
 function importerJSON(input){
   const f=input.files&&input.files[0];if(!f)return;
   const fr=new FileReader();
@@ -1544,36 +1559,46 @@ function importerJSON(input){
       if(!liste||!liste.length) throw new Error("format");
       const photos=(p&&p.photos)||{};
 
-      let ajouts=0,majs=0;
-      liste.forEach(r=>{(r.id&&montres.find(m=>m.id===r.id))?majs++:ajouts++;});
-      const question=(ajouts?ajouts+" montre(s) à ajouter":"")+
-        (ajouts&&majs?" et ":"")+(majs?majs+" à mettre à jour":"")+
-        ".\n\nRien ne sera effacé. On continue ?";
-      if(!confirm(question)) return;
-
+      // 1re passe : on prépare tout et on repère les doublons, sans rien modifier
+      toast("Lecture du fichier…");
+      const aAjouter=[],aMettreAJour=[],ignorees=[];
       for(const r of liste){
         const o=normaliser(r);
-        if(!o.id) o.id=uid();
         if(!o.majLe) o.majLe=new Date().toISOString();
         if(!o.creeLe) o.creeLe=o.majLe;
         if(!o.projet) o.projet=PROJET_DEFAUT;
 
-        // Photo fournie directement dans la fiche
         const brute=r.photoData||(o.photoId&&photos[o.photoId]);
         delete o.photoData;
+        let emp=null;
+        if(brute&&!o.dhash){
+          try{ emp=empreintes(await imageDepuisURL(brute)); o.dhash=emp.dhash;o.ahash=emp.ahash;o.hv=EMP_VERSION; }
+          catch(e){ /* empreinte impossible : la fiche reste valable */ }
+        }else if(o.dhash){ emp={dhash:o.dhash,ahash:o.ahash}; }
+
+        if(o.id&&montres.find(m=>m.id===o.id)){ aMettreAJour.push({o:o,brute:brute}); continue; }
+        const jumelle=dejaPresente(o.nom,emp,aAjouter.map(x=>x.o));
+        if(jumelle){ ignorees.push(o.nom||"(sans nom)"); continue; }
+        if(!o.id) o.id=uid();
+        aAjouter.push({o:o,brute:brute});
+      }
+
+      const question=(aAjouter.length?aAjouter.length+" montre(s) à ajouter":"")+
+        (aAjouter.length&&aMettreAJour.length?" et ":"")+
+        (aMettreAJour.length?aMettreAJour.length+" à mettre à jour":"")+
+        (aAjouter.length||aMettreAJour.length?"":"rien de nouveau")+
+        (ignorees.length?"\n\n"+ignorees.length+" déjà dans ta collection, elle(s) seront ignorée(s) :\n· "+ignorees.join("\n· "):"")+
+        ".\n\nRien ne sera effacé. On continue ?";
+      if(!confirm(question)) return;
+
+      // 2e passe : on applique
+      for(const {o,brute} of aAjouter.concat(aMettreAJour)){
         if(brute){
           const pid=o.photoId||("p_"+o.id+"_"+uid());
           o.photoId=pid;
           PHOTOS[pid]=brute;
           aEnvoyerPhotos[pid]=1;
           try{await photoEcrire(pid,brute);}catch(e){}
-          if(!o.dhash){
-            try{
-              const img=await imageDepuisURL(brute);
-              const emp=empreintes(img);
-              o.dhash=emp.dhash;o.ahash=emp.ahash;o.hv=EMP_VERSION;
-            }catch(e){ /* empreinte impossible : la fiche reste valable */ }
-          }
         }
         const l=montres.find(m=>m.id===o.id);
         if(l) Object.assign(l,o); else montres.unshift(o);
@@ -1586,8 +1611,10 @@ function importerJSON(input){
         try{await photoEcrire(k,photos[k]);}catch(e){}
       }
       sauverFile();sauver();rendre();synchro();
-      toast("✓ "+ajouts+" ajoutée(s)"+(majs?", "+majs+" mise(s) à jour":""));
-    }catch(e){toast("⚠ Fichier illisible ou format inattendu");}
+      toast("\u2713 "+aAjouter.length+" ajoutée(s)"+
+            (aMettreAJour.length?", "+aMettreAJour.length+" mise(s) à jour":"")+
+            (ignorees.length?", "+ignorees.length+" doublon(s) écarté(s)":""));
+    }catch(e){toast("\u26a0 Fichier illisible ou format inattendu");}
   };
   fr.readAsText(f);
   input.value="";
