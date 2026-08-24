@@ -892,7 +892,10 @@ function accordCouleur(a,b){let s=0;for(let i=0;i<a.length;i++)s+=Math.min(a[i],
 
 /* Score 0-100. La forme seule ne suffit pas : toutes les F-91W ont la même
    silhouette, c'est la couleur qui les distingue. */
-const SEUIL_SUR=80, SEUIL_PEUT=68;
+/* Verdict binaire, à la demande : soit l'appli reconnaît la montre, soit elle
+   dit non. Pas de pourcentage, pas de « peut-être » — une liste de presque-
+   ressemblances ne sert à rien quand on a vingt F-91W qui se ressemblent. */
+const SEUIL_SUR=80, SEUIL_PEUT=SEUIL_SUR;
 function ressemblance(emp,m){
   const cs=m.photoId?CSIG[m.photoId]:null;
   const variantes=emp.variantes||[emp];
@@ -1376,9 +1379,8 @@ function afficherDoublons(emp){
       "Cette montre n'a pas d'équivalent dans ta collection."+conseilCapture(emp)+"</div>";
     return;
   }
-  const fort=d[0].score>=SEUIL_SUR;
-  let h='<div class="alerte warn"><div class="alerte-titre">'+(fort?"⚠ Tu l'as probablement déjà !":"🔎 Ressemblances trouvées")+'</div>'+
-    (fort?"Une montre très proche est déjà enregistrée.":"Rien de certain, vérifie avant d'ajouter.");
+  let h='<div class="alerte warn"><div class="alerte-titre">⚠ Tu l\'as déjà !</div>'+
+    "Cette montre est déjà enregistrée :";
   d.forEach(x=>{h+=ligneMatch(x);});
   h+='</div>';
   $("f-doublon").innerHTML=h;
@@ -1389,8 +1391,8 @@ function ligneMatch(x){
   return '<div class="match" onclick="allerVers(\''+m.id+'\')">'+
     (ph?'<img src="'+ph+'" alt="">':'<div class="match-vide">⌚</div>')+
     '<div class="match-info"><div class="match-nom">'+esc(m.nom||"Sans nom")+'</div>'+
-    '<div class="match-sub">'+esc(m.ref||"")+(m.ref?" · ":"")+STATUT_LIB[s]+" · "+eur(coutTotal(m))+" · "+esc(x.raison)+'</div></div>'+
-    '<div class="match-score">'+x.score+'%</div></div>';
+    '<div class="match-sub">'+esc(m.ref||"")+(m.ref?" · ":"")+STATUT_LIB[s]+" · "+eur(coutTotal(m))+'</div></div>'+
+    '<div class="match-score">&#10003;</div></div>';
 }
 function allerVers(id){
   fermerFiche();fermerScan();
@@ -1511,15 +1513,13 @@ function afficherScanResultat(emp,texte){
       "Aucune montre de ta collection ne correspond."+conseilCapture(emp)+"</div>";
     return;
   }
-  const fort=d[0].score>=SEUIL_SUR;
-  let h='<div class="alerte warn"><div class="alerte-titre">'+
-    (fort?"✅ Oui, tu l'as déjà":"🤔 Peut-être — à vérifier")+'</div>'+
-    (fort?"Correspondance forte avec :":"Ces montres se rapprochent, sans certitude :");
+  let h='<div class="alerte warn"><div class="alerte-titre">✅ Oui, tu l\'as déjà</div>'+
+    (d.length>1?"Elle correspond à :":"");
   d.forEach(x=>{h+=ligneMatch(x);});
-  h+=conseilCapture(emp)+'</div>';
+  h+='</div>';
   $("s-resultat").innerHTML=h;
-  // référence reprise de la montre reconnue, seulement si l'on est sûr
-  if(fort&&!$("s-texte").value.trim()){
+  // la référence de la montre reconnue est reprise dans le champ
+  if(!$("s-texte").value.trim()){
     const t=(d[0].m.ref||d[0].m.nom||"").trim();
     if(t){$("s-texte").value=t;scanTexte();}
   }
@@ -1612,14 +1612,12 @@ async function rechPhoto(input){
 
     const d=chercherDoublons(r,$("r-texte").value,$("r-texte").value,null);
     if(d.length){
-      const fort=d[0].score>=SEUIL_SUR;
-      let h='<div class="alerte warn"><div class="alerte-titre">'+
-        (fort?"✅ Tu l'as déjà dans ta collection":"🤔 Ressemble à ce que tu as")+'</div>'+
-        (fort?"Inutile de la racheter :":"À vérifier avant d'acheter :");
+      let h='<div class="alerte warn"><div class="alerte-titre">✅ Tu l\'as déjà dans ta collection</div>'+
+        "Inutile de la racheter :";
       d.forEach(x=>{h+=ligneMatch(x);});
-      h+=conseilCapture(r)+'</div>';
+      h+='</div>';
       $("r-collection").innerHTML=h;
-      if(fort&&!$("r-texte").value.trim()){
+      if(!$("r-texte").value.trim()){
         $("r-texte").value=(d[0].m.ref||d[0].m.nom||"").trim();
         majLiens();
       }
