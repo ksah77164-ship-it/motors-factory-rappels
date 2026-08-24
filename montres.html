@@ -769,27 +769,52 @@ function pixelsDe(img,l,h,cadre){
   return ctx.getImageData(0,0,l,h).data;
 }
 /* Recadrage automatique sur la montre. Sans lui, une capture d'écran est
-   surtout comparée par son fond blanc et ses barres d'interface : toutes les
-   photos produit se ressemblaient alors à 70-90 %, quelle que soit la montre.
-   Le fond est estimé sur le pourtour, on garde la boîte des pixels qui s'en
-   écartent. */
+   surtout comparée par son fond et ses barres d'interface : la même montre
+   photographiée sur une page produit sortait à 35 % de sa propre fiche.
+
+   Le fond est la couleur MAJORITAIRE de l'image (pas celle du pourtour : sur
+   une capture, le pourtour c'est la barre d'état et la barre de navigation).
+   On garde ensuite la bande de lignes, puis de colonnes, qui concentre le plus
+   de matière : les lignes de texte et les barres d'interface sont fines, elles
+   pèsent peu à côté de la montre. */
 function recadrer(img){
-  const T=96, d=pixelsDe(img,T,T,null), bord=[];
-  for(let i=0;i<T;i++){bord.push(i);bord.push((T-1)*T+i);bord.push(i*T);bord.push(i*T+T-1);}
-  let br=0,bg=0,bb=0;
-  bord.forEach(i=>{br+=d[i*4];bg+=d[i*4+1];bb+=d[i*4+2];});
-  br/=bord.length;bg/=bord.length;bb/=bord.length;
-  let x0=T,y0=T,x1=-1,y1=-1;
-  for(let y=0;y<T;y++)for(let x=0;x<T;x++){
-    const i=(y*T+x)*4;
-    if(Math.abs(d[i]-br)+Math.abs(d[i+1]-bg)+Math.abs(d[i+2]-bb)>60){
-      if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  const S=128, d=pixelsDe(img,S,S,null), hist={};
+  for(let i=0;i<d.length;i+=4){
+    const k=((d[i]>>5)<<10)|((d[i+1]>>5)<<5)|(d[i+2]>>5);
+    hist[k]=(hist[k]||0)+1;
   }
-  if(x1<0||(x1-x0+1)*(y1-y0+1)<T*T*0.02) return null;
-  x0=Math.max(0,x0-2);y0=Math.max(0,y0-2);x1=Math.min(T-1,x1+2);y1=Math.min(T-1,y1+2);
-  const kx=(img.naturalWidth||img.width)/T, ky=(img.naturalHeight||img.height)/T;
+  let mk=0,mv=-1;
+  for(const k in hist) if(hist[k]>mv){mv=hist[k];mk=+k;}
+  const br=((mk>>10)&7)*32+16, bg=((mk>>5)&7)*32+16, bb=(mk&7)*32+16;
+  const masque=new Uint8Array(S*S);
+  for(let i=0,q=0;i<d.length;i+=4,q++)
+    masque[q]=(Math.abs(d[i]-br)+Math.abs(d[i+1]-bg)+Math.abs(d[i+2]-bb)>60)?1:0;
+  const bande=compte=>{
+    const seuil=Math.max(2,Math.round(S*0.10));
+    let meilleur=null,deb=-1,masse=0;
+    for(let i=0;i<=S;i++){
+      const c=i<S?compte[i]:0;
+      if(c>=seuil){ if(deb<0){deb=i;masse=0;} masse+=c; }
+      else if(deb>=0){
+        if(!meilleur||masse>meilleur.masse) meilleur={a:deb,b:i-1,masse:masse};
+        deb=-1;
+      }
+    }
+    return meilleur;
+  };
+  const lignes=new Array(S).fill(0);
+  for(let y=0;y<S;y++) for(let x=0;x<S;x++) if(masque[y*S+x]) lignes[y]++;
+  const by=bande(lignes);
+  if(!by) return null;
+  const colonnes=new Array(S).fill(0);
+  for(let y=by.a;y<=by.b;y++) for(let x=0;x<S;x++) if(masque[y*S+x]) colonnes[x]++;
+  const bx=bande(colonnes)||{a:0,b:S-1};
+  let x0=bx.a,y0=by.a,x1=bx.b,y1=by.b;
+  if((x1-x0+1)*(y1-y0+1)<S*S*0.01) return null;
+  x0=Math.max(0,x0-2);y0=Math.max(0,y0-2);x1=Math.min(S-1,x1+2);y1=Math.min(S-1,y1+2);
+  const kx=(img.naturalWidth||img.width)/S, ky=(img.naturalHeight||img.height)/S;
   return {x:x0*kx,y:y0*ky,w:(x1-x0+1)*kx,h:(y1-y0+1)*ky,
-          part:((x1-x0+1)*(y1-y0+1))/(T*T)};
+          part:((x1-x0+1)*(y1-y0+1))/(S*S)};
 }
 function grille(d,cols,rows){
   const bl=EMP_L/cols, bh=EMP_H/rows, out=[];
@@ -835,7 +860,7 @@ function bitsVersHex(bits){
   }
   return s;
 }
-const EMP_VERSION=3;
+const EMP_VERSION=4;
 function empreinteUne(img,cadre){
   const d=pixelsDe(img,EMP_L,EMP_H,cadre);
   const gd=grille(d,9,8), bd=[];
@@ -897,7 +922,7 @@ function accordCouleur(a,b){let s=0;for(let i=0;i<a.length;i++)s+=Math.min(a[i],
 /* Verdict binaire, à la demande : soit l'appli reconnaît la montre, soit elle
    dit non. Pas de pourcentage, pas de « peut-être » — une liste de presque-
    ressemblances ne sert à rien quand on a vingt F-91W qui se ressemblent. */
-const SEUIL_SUR=80, SEUIL_PEUT=SEUIL_SUR;
+const SEUIL_SUR=82, SEUIL_PEUT=SEUIL_SUR;
 function ressemblance(emp,m){
   const cs=m.photoId?CSIG[m.photoId]:null;
   const variantes=emp.variantes||[emp];
@@ -1523,7 +1548,9 @@ function afficherScanResultat(emp,texte){
   // la référence de la montre reconnue est reprise dans le champ
   if(!$("s-texte").value.trim()){
     const t=(d[0].m.ref||d[0].m.nom||"").trim();
-    if(t){$("s-texte").value=t;scanTexte();}
+    // on remplit la case sans relancer la recherche : sinon les montres qui
+    // partagent la même référence viennent s'ajouter au verdict de la photo
+    if(t) $("s-texte").value=t;
   }
 }
 function scanVersAjout(){
@@ -2136,7 +2163,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v14", VERSION_DATE="24/08/2026";
+const VERSION="v15", VERSION_DATE="24/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
