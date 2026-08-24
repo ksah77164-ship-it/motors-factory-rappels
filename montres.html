@@ -595,6 +595,7 @@ let monNom="";
 let dernierSync="";          // horodatage serveur du dernier échange réussi
 let aEnvoyer={};             // {idMontre:1} modifications locales pas encore parties
 let aEnvoyerPhotos={};       // {photoId:1} photos pas encore envoyées
+let resteADescendre=0;      // photos encore à rapatrier du coffre
 let photosRatees={};         // photos introuvables côté coffre : on n'insiste pas
 let syncEnCours=false, syncTimer=null, derniereActivite=Date.now(), derniereErreur="";
 
@@ -1673,7 +1674,7 @@ async function synchro(manuel){
     const instantane=envoi.map(m=>({id:m.id,majLe:m.majLe}));
     const photos={};let n=0;
     for(const pid in aEnvoyerPhotos){
-      if(n>=2) break;
+      if(n>=3) break;
       if(PHOTOS[pid]){photos[pid]=PHOTOS[pid];n++;}
       else delete aEnvoyerPhotos[pid];
     }
@@ -1724,17 +1725,20 @@ async function recupererPhotos(){
     if(m.photoId&&!PHOTOS[m.photoId]&&!photosRatees[m.photoId]&&!aEnvoyerPhotos[m.photoId]&&manque.indexOf(m.photoId)<0)
       manque.push(m.photoId);
   });
+  resteADescendre=manque.length;
   if(!manque.length) return;
-  let recues=0;
-  for(let i=0;i<Math.min(3,manque.length);i++){
-    const pid=manque[i];
+  // en parallèle : une photo qui tarde ne retient plus les suivantes
+  const lot=await Promise.all(manque.slice(0,4).map(async pid=>{
     try{
       const rep=await fetch(apiURL()+"?token="+encodeURIComponent(apiToken())+"&photo="+encodeURIComponent(pid));
       const d=await rep.json();
-      if(d&&d.data){PHOTOS[pid]=d.data;recues++;await photoEcrire(pid,d.data);}
-      else photosRatees[pid]=1;
-    }catch(e){break;}
-  }
+      if(d&&d.data){await photoEcrire(pid,d.data);return{pid:pid,data:d.data};}
+      photosRatees[pid]=1;return null;
+    }catch(e){return null;}
+  }));
+  let recues=0;
+  lot.forEach(r=>{if(r){PHOTOS[r.pid]=r.data;recues++;}});
+  resteADescendre=Math.max(0,manque.length-recues);
   if(recues){await remettreEmpreintesAJour();rendre();}
 }
 
@@ -1742,7 +1746,10 @@ function planifier(){
   clearTimeout(syncTimer);
   if(!apiURL()) return;
   const actif=(Date.now()-derniereActivite)<180000;
-  const delai=document.hidden?60000:(actif?9000:35000);
+  // rattrapage : tant qu'il reste à monter ou à descendre, on enchaîne
+  const retard=Object.keys(aEnvoyer).length||Object.keys(aEnvoyerPhotos).length||resteADescendre;
+  const delai=document.hidden?(retard?9000:60000)
+             :(retard?1500:(actif?9000:35000));
   syncTimer=setTimeout(()=>{synchro().then(planifier);},delai);
 }
 
