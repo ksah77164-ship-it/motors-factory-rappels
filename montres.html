@@ -108,7 +108,8 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .chip{padding:6px 13px;border-radius:22px;border:1px solid var(--line);background:var(--card);color:var(--muted);
   font-size:11.5px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;}
 .chip.actif{background:var(--card2);border-color:var(--gold);color:var(--champ);}
-.barre-sec{display:flex;gap:8px;margin:-4px 0 10px;}
+.barre-sec{display:flex;gap:8px;margin:-4px 0 10px;flex-wrap:wrap;}
+.chip.danger{border-color:rgba(229,143,143,.5);color:var(--debit);}
 .pastilles-c{display:inline-flex;gap:3px;vertical-align:middle;margin-right:4px;}
 .pc{width:10px;height:10px;border-radius:50%;display:inline-block;
   border:1px solid rgba(255,255,255,.6);box-shadow:0 0 0 1px rgba(0,0,0,.5);}
@@ -317,6 +318,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
   </div>
   <div class="barre-sec">
     <button class="chip actif" id="btn-grouper" onclick="basculerGroupe()">&#128279; Exemplaires group&eacute;s</button>
+    <button class="chip danger" id="btn-purge" style="display:none" onclick="supprimerResultats()"></button>
   </div>
 
   <div class="chips" id="chips"></div>
@@ -1270,6 +1272,14 @@ function casL(l,v){return '<div class="dcase large"><div class="dcase-lbl">'+l+'
 function rendre(){
   const g=$("btn-grouper");
   if(g) g.className="chip"+(grouper?" actif":"");
+  const b=$("btn-purge");
+  if(b){
+    // uniquement sur une recherche en cours : impossible de vider toute la
+    // collection d'un geste
+    const q=$("rech").value.trim(), n=q?filtrees().length:0;
+    b.style.display=n?"inline-block":"none";
+    b.textContent="🗑 Supprimer ces "+n+" montre"+(n>1?"s":"");
+  }
   rendreCompteurs();rendreChips();rendreListe();
 }
 function choisirStatut(s){filtreStatut=s;rendre();}
@@ -1296,6 +1306,28 @@ function marquerVendue(id){
   const pv=plusValue(m);
   toast(pv>=0?"💰 Vendue, +"+eur(pv):"Vendue, "+eur(pv));
 }
+/* Suppression groupée du résultat d'une recherche : retirer une à une quinze
+   montres d'un même vendeur était décourageant. La liste exacte est annoncée
+   avant, et la confirmation demande d'écrire le nombre. */
+function supprimerResultats(){
+  const q=$("rech").value.trim();
+  if(!q) return;
+  const l=filtrees();
+  if(!l.length) return;
+  const noms=l.slice(0,10).map(m=>"· "+(m.nom||"Sans nom")).join("\n")+
+    (l.length>10?"\n· … et "+(l.length-10)+" autre(s)":"");
+  const rep=prompt("Supprimer définitivement ces "+l.length+" montre(s) ?\n\n"+noms+
+    "\n\nÉcris "+l.length+" pour confirmer :");
+  if(rep===null||rep.trim()!==String(l.length)){toast("Rien n'a été supprimé");return;}
+  l.forEach(m=>{
+    if(m.photoId){photoEffacer(m.photoId);delete PHOTOS[m.photoId];delete CSIG[m.photoId];}
+    if(apiURL()){m.supprime=true;marquerModif(m);}
+  });
+  if(!apiURL()){const ids={};l.forEach(m=>ids[m.id]=1);montres=montres.filter(m=>!ids[m.id]);}
+  sauver();rendre();synchro();
+  toast("🗑 "+l.length+" montre(s) supprimée(s)");
+}
+
 function supprimer(id){
   const m=montres.find(x=>x.id===id);if(!m)return;
   if(!confirm("Supprimer définitivement « "+(m.nom||"cette montre")+" » ?")) return;
@@ -2163,7 +2195,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v15", VERSION_DATE="24/08/2026";
+const VERSION="v16", VERSION_DATE="24/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
