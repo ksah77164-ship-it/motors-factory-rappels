@@ -60,10 +60,11 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .aide li{margin-bottom:4px;}
 
 /* Compteurs */
-.counters{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:16px;}
-.counter{border-radius:16px;padding:13px 12px;border:1px solid var(--line);background:linear-gradient(160deg,var(--card2),var(--card));}
-.counter-nb{font-size:20px;font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums;}
-.counter-label{font-size:9.5px;font-weight:800;margin-top:4px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);}
+.counters{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:12px;}
+.counter{border-radius:14px;padding:10px 11px;border:1px solid var(--line);background:linear-gradient(160deg,var(--card2),var(--card));}
+.counter-nb{font-size:17px;font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums;}
+.counter-label{font-size:9px;font-weight:800;margin-top:2px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+@media(min-width:560px){.counter{padding:13px 12px;}.counter-nb{font-size:20px;}}
 .ct .counter-nb{color:var(--cream);}
 .cr .counter-nb{color:var(--debit);}
 .cc .counter-nb{color:var(--credit);}
@@ -90,9 +91,10 @@ details.plus summary::after{content:"▾";margin-left:auto;color:var(--muted);fo
 details.plus[open] summary::after{content:"▴";}
 .champ-ligne{display:flex;gap:8px;margin-bottom:10px;}
 .champ-ligne input{flex:1;margin-bottom:0 !important;}
-.big-btn{border-radius:16px;padding:15px 12px;border:1.5px solid var(--line-strong);cursor:pointer;font-family:'Nunito',sans-serif;
+.big-btn{border-radius:16px;padding:11px 9px;border:1.5px solid var(--line-strong);cursor:pointer;font-family:'Nunito',sans-serif;
   background:linear-gradient(160deg,var(--card2),var(--card));color:var(--cream);font-size:13px;font-weight:800;text-align:center;line-height:1.35;}
-.big-btn .bb-ico{font-size:22px;display:block;margin-bottom:5px;}
+.big-btn .bb-ico{font-size:19px;display:block;margin-bottom:2px;}
+@media(min-width:560px){.big-btn{padding:15px 12px;}.big-btn .bb-ico{font-size:22px;margin-bottom:5px;}}
 .big-btn:active{border-color:var(--gold);}
 .big-btn.or{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border-color:transparent;}
 
@@ -120,6 +122,37 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 
 /* Cartes montres */
 .liste{display:flex;flex-direction:column;gap:9px;}
+
+/* Vue compacte : une ligne par montre, pour en voir le plus possible */
+.liste.compacte{gap:5px;}
+.liste.compacte .mhead{padding:7px 9px;gap:9px;}
+.liste.compacte .mphoto,.liste.compacte .mphoto-vide{width:40px;height:40px;border-radius:10px;font-size:16px;}
+.liste.compacte .mnom{font-size:12.5px;}
+.liste.compacte .mref{font-size:10px;margin-top:0;display:inline;}
+.liste.compacte .mmeta{margin-top:2px;gap:4px;}
+.liste.compacte .badge{font-size:8.5px;padding:2px 6px;}
+.liste.compacte .b-pays{display:none;}
+.liste.compacte .mprix-a{font-size:13px;}
+.liste.compacte .mprix-pv{font-size:10px;}
+.liste.compacte .pc{width:8px;height:8px;}
+
+/* Vue photos : la collection en vignettes */
+.liste.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.liste.photos .mhead{flex-direction:column;align-items:stretch;gap:5px;padding:6px;}
+.liste.photos .mphoto,.liste.photos .mphoto-vide{width:100%;height:auto;aspect-ratio:1/1;border-radius:11px;}
+.liste.photos .mnom{font-size:10.5px;white-space:normal;line-height:1.25;height:2.5em;overflow:hidden;}
+.liste.photos .mref,.liste.photos .mmeta{display:none;}
+.liste.photos .mprix{text-align:left;}
+.liste.photos .mprix-a{font-size:11.5px;}
+.liste.photos .mprix-pv{display:none;}
+.liste.photos .pc{width:7px;height:7px;}
+.liste.photos .mcard.ouverte{grid-column:1/-1;}
+.liste.photos .mcard.ouverte .mhead{flex-direction:row;align-items:center;padding:12px;gap:12px;}
+.liste.photos .mcard.ouverte .mphoto{width:62px;height:62px;}
+.liste.photos .mcard.ouverte .mnom{font-size:14.5px;height:auto;}
+.liste.photos .mcard.ouverte .mref,.liste.photos .mcard.ouverte .mmeta{display:flex;}
+.liste.photos .mcard.ouverte .mref{display:block;}
+@media(min-width:560px){.liste.photos{grid-template-columns:repeat(4,1fr);}}
 .mcard{border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,var(--card2),var(--card));overflow:hidden;}
 .mhead{display:flex;gap:12px;padding:12px;cursor:pointer;align-items:center;}
 .mphoto{width:62px;height:62px;border-radius:14px;flex-shrink:0;object-fit:cover;background:var(--bg2);border:1px solid var(--line);}
@@ -291,15 +324,15 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
   <div class="actions-top">
     <button class="big-btn or" onclick="ouvrirScan()">
       <span class="bb-ico">&#128247;</span>
-      Je l'ai d&eacute;j&agrave; ?<br><span style="font-size:10.5px;opacity:.75;font-weight:700">Scanner une montre</span>
+      Je l'ai d&eacute;j&agrave; ?<br><span style="font-size:10.5px;opacity:.75;font-weight:700">Une montre</span>
     </button>
     <button class="big-btn" onclick="ouvrirRecherche()">
       <span class="bb-ico">&#128269;</span>
-      Rechercher<br><span style="font-size:10.5px;opacity:.6;font-weight:700">Prix, cote, annonces</span>
+      Rechercher<br><span style="font-size:10.5px;opacity:.6;font-weight:700">Prix &amp; cote</span>
     </button>
     <button class="big-btn" onclick="ouvrirAjout()">
       <span class="bb-ico">&#10133;</span>
-      Ajouter<br><span style="font-size:10.5px;opacity:.6;font-weight:700">Achat, livraison</span>
+      Ajouter<br><span style="font-size:10.5px;opacity:.6;font-weight:700">Un achat</span>
     </button>
   </div>
 
@@ -317,7 +350,10 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     </select>
   </div>
   <div class="barre-sec">
-    <button class="chip actif" id="btn-grouper" onclick="basculerGroupe()">&#128279; Exemplaires group&eacute;s</button>
+    <button class="chip" id="vue-liste" onclick="choisirVue('liste')">&#128209; Cartes</button>
+    <button class="chip" id="vue-compacte" onclick="choisirVue('compacte')">&#9776; Liste</button>
+    <button class="chip" id="vue-photos" onclick="choisirVue('photos')">&#9638; Photos</button>
+    <button class="chip actif" id="btn-grouper" onclick="basculerGroupe()" title="Rapprocher les exemplaires identiques">&#128279;</button>
     <button class="chip danger" id="btn-purge" style="display:none" onclick="supprimerResultats()"></button>
   </div>
 
@@ -616,6 +652,10 @@ let aEnvoyerPhotos={};       // {photoId:1} photos pas encore envoyées
 let resteADescendre=0;      // photos encore à rapatrier du coffre
 let grouper=true;           // rapprocher les exemplaires d'une même montre
 const CLE_GROUPE="mf_montres_groupe";
+/* Trois densités d'affichage : la vue en cartes est confortable mais montre
+   trois montres par écran de téléphone. Avec trente montres, ça ne suffit plus. */
+let vue="liste";
+const CLE_VUE="mf_montres_vue", VUES=["liste","compacte","photos"];
 let photosRatees={};         // photos introuvables côté coffre : on n'insiste pas
 let syncEnCours=false, syncTimer=null, derniereActivite=Date.now(), derniereErreur="";
 
@@ -1131,6 +1171,12 @@ function regrouper(l){
   });
   return sortie;
 }
+function choisirVue(v){
+  if(VUES.indexOf(v)<0) return;
+  vue=v;
+  try{localStorage.setItem(CLE_VUE,v);}catch(e){}
+  rendre();
+}
 function basculerGroupe(){
   grouper=!grouper;
   try{localStorage.setItem(CLE_GROUPE,grouper?"1":"0");}catch(e){}
@@ -1149,13 +1195,17 @@ function rendreCompteurs(){
     if(s==="vendue"){vendues++;encaisse+=nb(m.prixVente);pv+=plusValue(m);}
   });
   const cls=pv>0?"cc":pv<0?"cr":"ct";
-  $("counters").innerHTML=
-    tuile("ct",l.length,"Montres")+
-    tuile("cs",eurCourt(investi),"Investi (achat+frais)")+
-    tuile("cb",transit+(transitEur?" · "+eurCourt(transitEur):""),"En transit")+
-    tuile("ct",aVendre+" / "+collection,"Livrées / gardées")+
-    tuile("cs",vendues+(encaisse?" · "+eurCourt(encaisse):""),"Vendues")+
-    tuile(cls,(pv>0?"+":"")+eurCourt(pv),"Plus-value réalisée");
+  // on n'affiche que ce qui a du sens : tant que rien n'est vendu, deux tuiles
+  // vides occupaient une ligne entière de l'écran du téléphone
+  let h=tuile("ct",l.length,"Montres")+
+        tuile("cs",eurCourt(investi),"Investi (achat+frais)");
+  if(transit) h+=tuile("cb",transit+(transitEur?" · "+eurCourt(transitEur):""),"En transit");
+  h+=tuile("ct",aVendre+(collection?" / "+collection:""),collection?"Livrées / gardées":"Livrées");
+  if(vendues){
+    h+=tuile("cs",vendues+(encaisse?" · "+eurCourt(encaisse):""),"Vendues")+
+       tuile(cls,(pv>0?"+":"")+eurCourt(pv),"Plus-value réalisée");
+  }
+  $("counters").innerHTML=h;
 }
 function tuile(cls,nbv,lbl){
   return '<div class="counter '+cls+'"><div class="counter-nb">'+esc(nbv)+'</div><div class="counter-label">'+lbl+'</div></div>';
@@ -1272,6 +1322,9 @@ function casL(l,v){return '<div class="dcase large"><div class="dcase-lbl">'+l+'
 function rendre(){
   const g=$("btn-grouper");
   if(g) g.className="chip"+(grouper?" actif":"");
+  VUES.forEach(v=>{const b=$("vue-"+v);if(b) b.className="chip"+(vue===v?" actif":"");});
+  const l=$("liste");
+  if(l) l.className="liste"+(vue==="liste"?"":" "+vue);
   const b=$("btn-purge");
   if(b){
     // uniquement sur une recherche en cours : impossible de vider toute la
@@ -1286,6 +1339,9 @@ function choisirStatut(s){filtreStatut=s;rendre();}
 function basculer(id){
   const d=$("det-"+id);if(!d)return;
   d.classList.toggle("open");
+  // en vue photos, la fiche ouverte prend toute la largeur de la grille
+  const c=$("card-"+id);
+  if(c) c.classList.toggle("ouverte",d.classList.contains("open"));
 }
 
 /* ── Actions rapides ─────────────────────────────────────── */
@@ -1958,6 +2014,7 @@ function apiToken(){return (localStorage.getItem(CLE_TOKEN)||"").trim();}
 
 function chargerReglages(){
   try{grouper=localStorage.getItem(CLE_GROUPE)!=="0";}catch(e){grouper=true;}
+  try{const v=localStorage.getItem(CLE_VUE);if(VUES.indexOf(v)>=0) vue=v;}catch(e){}
   monNom=localStorage.getItem(CLE_NOM)||"";
   dernierSync=localStorage.getItem(CLE_SYNC)||"";
   try{aEnvoyer=JSON.parse(localStorage.getItem(CLE_FILE)||"{}");}catch(e){aEnvoyer={};}
@@ -2195,7 +2252,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v16", VERSION_DATE="24/08/2026";
+const VERSION="v17", VERSION_DATE="24/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
