@@ -260,9 +260,14 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px);}
 
 /* Bouton flottant */
-.fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:120;width:58px;height:58px;border-radius:50%;
-  border:none;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;font-size:28px;font-weight:900;
-  cursor:pointer;box-shadow:0 10px 30px rgba(201,161,90,0.4);font-family:'Nunito',sans-serif;line-height:1;}
+/* Bouton + flottant : discret, il masquait le prix des dernières montres.
+   Le bouton « Ajouter » du haut fait le même travail, celui-ci n'est qu'un
+   raccourci quand on a défilé loin. */
+.fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:120;width:42px;height:42px;border-radius:50%;
+  border:none;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;font-size:21px;font-weight:900;
+  cursor:pointer;box-shadow:0 6px 18px rgba(201,161,90,0.32);font-family:'Nunito',sans-serif;line-height:1;
+  opacity:.72;transition:opacity .15s;}
+.fab:active,.fab:hover{opacity:1;}
 
 /* Connexion */
 .login-overlay{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:18px;
@@ -2252,7 +2257,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v17", VERSION_DATE="24/08/2026";
+const VERSION="v18", VERSION_DATE="24/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
