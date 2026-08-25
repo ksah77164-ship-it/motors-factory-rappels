@@ -955,7 +955,9 @@ function normRef(s){return String(s==null?"":s).toUpperCase().replace(/[^A-Z0-9]
 const CSIG={};
 async function preparerCouleurs(){
   for(const m of actives()){
-    if(!m.photoId||CSIG[m.photoId]!==undefined||!PHOTOS[m.photoId]) continue;
+    // un échec précédent ne doit pas être définitif : on retente dès que la
+    // photo est là
+    if(!m.photoId||CSIG[m.photoId]||!PHOTOS[m.photoId]) continue;
     try{
       const img=await imageDepuisURL(PHOTOS[m.photoId]);
       CSIG[m.photoId]=empreinteUne(img,recadrer(img)).cs;
@@ -963,6 +965,13 @@ async function preparerCouleurs(){
   }
 }
 function accordCouleur(a,b){let s=0;for(let i=0;i<a.length;i++)s+=Math.min(a[i],b[i]);return s;}
+
+/* Combien de montres ne peuvent pas encore être comparées faute de photo
+   descendue du coffre. Tant qu'il y en a, un « tu ne l'as pas » n'est pas
+   une réponse : c'est une attente. */
+function couleursManquantes(){
+  return actives().filter(m=>m.photoId&&!CSIG[m.photoId]).length;
+}
 
 /* Score 0-100. La forme seule ne suffit pas : toutes les F-91W ont la même
    silhouette, c'est la couleur qui les distingue. */
@@ -972,18 +981,44 @@ function accordCouleur(a,b){let s=0;for(let i=0;i<a.length;i++)s+=Math.min(a[i],
 const SEUIL_SUR=82, SEUIL_PEUT=SEUIL_SUR;
 function ressemblance(emp,m){
   const cs=m.photoId?CSIG[m.photoId]:null;
+  // Photo pas encore descendue du coffre : cette montre n'est PAS comparable.
+  // La juger sur la seule forme la ferait passer pour absente — toutes les
+  // F-91W ont la même silhouette, c'est la couleur qui les sépare. On l'écarte
+  // et l'écran prévient qu'il reste des photos à charger.
+  if(!cs) return -1;
   const variantes=emp.variantes||[emp];
   let meilleur=0;
   variantes.forEach(v=>{
+    if(!v.cs) return;
     const d=Math.min(hamming(v.dhash,m.dhash),hamming(v.ahash,m.ahash));
     const forme=Math.max(0,1-d/16);
-    // sans signature de couleur (photo pas encore descendue du coffre) on
-    // reste sur la forme, mais on ne prétend jamais à la certitude
-    const s=(cs&&v.cs)?Math.round(100*(0.35*forme+0.65*accordCouleur(v.cs,cs)))
-                      :Math.round(100*forme*0.75);
+    const s=Math.round(100*(0.35*forme+0.65*accordCouleur(v.cs,cs)));
     if(s>meilleur) meilleur=s;
   });
   return meilleur;
+}
+
+/* Un « non » n'a de valeur que si toute la collection a pu être comparée. */
+function attenteOuPourquoi(emp,cible){
+  const n=couleursManquantes();
+  if(n) return '<div class="sous" style="margin-top:8px">⏳ '+n+' photo(s) pas encore '+
+    'descendue(s) du coffre : cette réponse est incomplète. Réessaie dans quelques secondes.</div>';
+  if(!emp) return "";
+  return '<div class="sous" style="margin-top:8px"><a href="#" onclick="pourquoiPas(\''+cible+
+         '\');return false" style="color:var(--gold)">Pourquoi ? Voir les plus proches</a></div>';
+}
+/* Détail à la demande : la liste chiffrée reste cachée tant qu'on ne la
+   réclame pas — un verdict binaire ne doit pas se transformer en tableau. */
+function pourquoiPas(cible){
+  const emp=cible==="s"?scanCourant:(cible==="r"?rechPhotoCourante:fichePhoto);
+  if(!emp){toast("Aucune photo à comparer");return;}
+  const l=actives().map(m=>({m:m,s:ressemblance(emp,m)}))
+    .filter(x=>x.s>=0).sort((a,b)=>b.s-a.s).slice(0,3);
+  if(!l.length){toast("Aucune montre comparable");return;}
+  alert("Les plus proches de ta photo :\n\n"+
+    l.map(x=>"· "+(x.m.nom||"Sans nom")+" — "+x.s+" %").join("\n")+
+    "\n\nIl faut au moins "+SEUIL_SUR+" % pour que l'appli affirme que tu l'as.\n"+
+    "Si la première ligne est la bonne montre, dis-le-moi : le seuil est réglable.");
 }
 
 /* Une capture d'écran entière (barres d'interface, prix, vignettes) noie la
@@ -1003,8 +1038,8 @@ function chercherDoublons(emp,ref,nom,exclureId){
     if(exclureId && m.id===exclureId) return;
     let score=0, raison="";
     if(emp && m.dhash){
-      score=ressemblance(emp,m);
-      raison="photo";
+      const r=ressemblance(emp,m);
+      if(r>=0){score=r;raison="photo";}
     }
     const mr=normRef(m.ref);
     if(r && mr && r===mr){ if(score<99){score=99;raison="référence identique";} }
@@ -1492,11 +1527,13 @@ async function photoChoisie(input){
   }
   input.value="";
 }
-function afficherDoublons(emp){
+async function afficherDoublons(emp){
+  await preparerCouleurs();
   const d=chercherDoublons(emp,$("f-ref").value,$("f-nom").value,ficheEditionId);
   if(!d.length){
     $("f-doublon").innerHTML='<div class="alerte ok"><div class="alerte-titre">✅ Aucune correspondance</div>'+
-      "Cette montre n'a pas d'équivalent dans ta collection."+conseilCapture(emp)+"</div>";
+      "Cette montre n'a pas d'équivalent dans ta collection."+conseilCapture(emp)+
+      attenteOuPourquoi(emp,"f")+"</div>";
     return;
   }
   let h='<div class="alerte warn"><div class="alerte-titre">⚠ Tu l\'as déjà !</div>'+
@@ -1622,7 +1659,8 @@ function scanTexte(){
   afficherScanResultat(scanCourant,t);
   $("s-ajouter").style.display=(scanCourant||t.length>=3)?"inline-block":"none";
 }
-function afficherScanResultat(emp,texte){
+async function afficherScanResultat(emp,texte){
+  await preparerCouleurs();
   if(!actives().length){
     $("s-resultat").innerHTML='<div class="alerte ok"><div class="alerte-titre">Collection vide</div>Tu n\'as encore rien enregistré.</div>';
     return;
@@ -1630,7 +1668,8 @@ function afficherScanResultat(emp,texte){
   const d=chercherDoublons(emp,texte,texte,null);
   if(!d.length){
     $("s-resultat").innerHTML='<div class="alerte ok"><div class="alerte-titre">✅ Tu ne l\'as pas</div>'+
-      "Aucune montre de ta collection ne correspond."+conseilCapture(emp)+"</div>";
+      "Aucune montre de ta collection ne correspond."+conseilCapture(emp)+
+      attenteOuPourquoi(emp,"s")+"</div>";
     return;
   }
   let h='<div class="alerte warn"><div class="alerte-titre">✅ Oui, tu l\'as déjà</div>'+
@@ -1732,6 +1771,7 @@ async function rechPhoto(input){
     $("r-partager").className=apiURL()?"btn pleine":"btn or pleine";
     $("r-ajouter").style.display="inline-block";
 
+    await preparerCouleurs();
     const d=chercherDoublons(r,$("r-texte").value,$("r-texte").value,null);
     if(d.length){
       let h='<div class="alerte warn"><div class="alerte-titre">✅ Tu l\'as déjà dans ta collection</div>'+
@@ -1745,7 +1785,7 @@ async function rechPhoto(input){
       }
     }else{
       $("r-collection").innerHTML='<div class="alerte ok"><div class="alerte-titre">✅ Nouvelle pour toi</div>'+
-        "Tu ne l'as pas encore."+conseilCapture(r)+"</div>";
+        "Tu ne l'as pas encore."+conseilCapture(r)+attenteOuPourquoi(r,"r")+"</div>";
     }
   }catch(e){
     $("r-collection").innerHTML='<div class="alerte warn">⚠ Impossible de lire cette image.</div>';
@@ -2257,7 +2297,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v18", VERSION_DATE="24/08/2026";
+const VERSION="v19", VERSION_DATE="24/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
