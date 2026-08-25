@@ -141,7 +141,13 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .liste.photos .mhead{flex-direction:column;align-items:stretch;gap:5px;padding:6px;}
 .liste.photos .mphoto,.liste.photos .mphoto-vide{width:100%;height:auto;aspect-ratio:1/1;border-radius:11px;}
 .liste.photos .mnom{font-size:10.5px;white-space:normal;line-height:1.25;height:2.5em;overflow:hidden;}
-.liste.photos .mref,.liste.photos .mmeta{display:none;}
+.liste.photos .mref{display:none;}
+.liste.photos .mmeta{margin-top:3px;gap:3px;}
+.liste.photos .mmeta .badge{font-size:8px;padding:2px 5px;letter-spacing:.3px;}
+.liste.photos .mmeta .b-transit,.liste.photos .mmeta .b-vendre,
+.liste.photos .mmeta .b-collec,.liste.photos .mmeta .b-pays,
+.liste.photos .mmeta .b-lot{display:none;}
+.liste.photos .lv-long{display:none;}
 .liste.photos .mprix{text-align:left;}
 .liste.photos .mprix-a{font-size:11.5px;}
 .liste.photos .mprix-pv{display:none;}
@@ -151,6 +157,11 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .liste.photos .mcard.ouverte .mphoto{width:62px;height:62px;}
 .liste.photos .mcard.ouverte .mnom{font-size:14.5px;height:auto;}
 .liste.photos .mcard.ouverte .mref,.liste.photos .mcard.ouverte .mmeta{display:flex;}
+.liste.photos .mcard.ouverte .mmeta .badge{font-size:9.5px;padding:3px 9px;}
+.liste.photos .mcard.ouverte .mmeta .b-transit,.liste.photos .mcard.ouverte .mmeta .b-vendre,
+.liste.photos .mcard.ouverte .mmeta .b-collec,.liste.photos .mcard.ouverte .mmeta .b-pays,
+.liste.photos .mcard.ouverte .mmeta .b-lot{display:inline;}
+.liste.photos .mcard.ouverte .lv-long{display:inline;}
 .liste.photos .mcard.ouverte .mref{display:block;}
 @media(min-width:560px){.liste.photos{grid-template-columns:repeat(4,1fr);}}
 .mcard{border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,var(--card2),var(--card));overflow:hidden;}
@@ -343,7 +354,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 
   <div class="barre">
     <input class="champ-rech" id="rech" placeholder="Rechercher : nom, r&eacute;f., vendeur, pays..." oninput="rendre()">
-    <select class="mini" id="tri" onchange="rendre()">
+    <select class="mini" id="tri" onchange="memoriserTri()">
       <option value="recent">Plus r&eacute;centes</option>
       <option value="ancien">Plus anciennes</option>
       <option value="cher">Prix d&eacute;croissant</option>
@@ -659,8 +670,9 @@ let grouper=true;           // rapprocher les exemplaires d'une même montre
 const CLE_GROUPE="mf_montres_groupe";
 /* Trois densités d'affichage : la vue en cartes est confortable mais montre
    trois montres par écran de téléphone. Avec trente montres, ça ne suffit plus. */
-let vue="liste";
+let vue="photos";           // à l'ouverture, on veut voir sa collection
 const CLE_VUE="mf_montres_vue", VUES=["liste","compacte","photos"];
+const CLE_TRI="mf_montres_tri";
 let photosRatees={};         // photos introuvables côté coffre : on n'insiste pas
 let syncEnCours=false, syncTimer=null, derniereActivite=Date.now(), derniereErreur="";
 
@@ -1211,6 +1223,10 @@ function regrouper(l){
   });
   return sortie;
 }
+function memoriserTri(){
+  try{localStorage.setItem(CLE_TRI,$("tri").value);}catch(e){}
+  rendre();
+}
 function choisirVue(v){
   if(VUES.indexOf(v)<0) return;
   vue=v;
@@ -1273,16 +1289,20 @@ function rendreListe(){
 /* Livraison, lisible sans ouvrir la fiche */
 function badgeLivraison(m){
   if(m.vendue) return "";
-  if(m.recu) return m.dateRecu?'<span class="badge b-recue">&#10003; re&ccedil;ue '+esc(dateCourte(m.dateRecu))+'</span>':"";
+  if(m.recu) return m.dateRecu?'<span class="badge b-recue">&#10003;<span class="lv-long"> re&ccedil;ue</span> '+
+    esc(dateCourte(m.dateRecu))+'</span>':'<span class="badge b-recue">&#10003;</span>';
   if(!m.datePrevue) return '<span class="badge b-liv">&#128666; date &agrave; pr&eacute;ciser</span>';
   const j=joursAvant(m.datePrevue);
-  let quand;
-  if(j===null) quand=dateCourte(m.datePrevue);
-  else if(j<0) quand=dateCourte(m.datePrevue)+" &middot; "+(-j)+" j de retard";
-  else if(j===0) quand=dateCourte(m.datePrevue)+" &middot; aujourd'hui";
-  else if(j===1) quand=dateCourte(m.datePrevue)+" &middot; demain";
-  else quand=dateCourte(m.datePrevue)+" &middot; dans "+j+" j";
-  return '<span class="badge b-liv'+(j!==null&&j<0?" tard":"")+'">&#128666; '+quand+'</span>';
+  // la partie « dans 4 j » est masquée en vue photos, où la place manque
+  let reste="";
+  if(j!==null){
+    if(j<0) reste=" &middot; "+(-j)+" j de retard";
+    else if(j===0) reste=" &middot; aujourd'hui";
+    else if(j===1) reste=" &middot; demain";
+    else reste=" &middot; dans "+j+" j";
+  }
+  return '<span class="badge b-liv'+(j!==null&&j<0?" tard":"")+'">&#128666; '+
+         dateCourte(m.datePrevue)+'<span class="lv-long">'+reste+'</span></span>';
 }
 function dateCourte(iso){
   if(!iso) return "";
@@ -2060,6 +2080,12 @@ function apiToken(){return (localStorage.getItem(CLE_TOKEN)||"").trim();}
 function chargerReglages(){
   try{grouper=localStorage.getItem(CLE_GROUPE)!=="0";}catch(e){grouper=true;}
   try{const v=localStorage.getItem(CLE_VUE);if(VUES.indexOf(v)>=0) vue=v;}catch(e){}
+  // tri par livraison par défaut : ce qui n'est pas encore arrivé passe devant
+  try{
+    const t=localStorage.getItem(CLE_TRI)||"livraison";
+    const sel=$("tri");
+    if(sel&&[...sel.options].some(o=>o.value===t)) sel.value=t;
+  }catch(e){}
   monNom=localStorage.getItem(CLE_NOM)||"";
   dernierSync=localStorage.getItem(CLE_SYNC)||"";
   try{aEnvoyer=JSON.parse(localStorage.getItem(CLE_FILE)||"{}");}catch(e){aEnvoyer={};}
@@ -2297,7 +2323,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v19", VERSION_DATE="24/08/2026";
+const VERSION="v20", VERSION_DATE="24/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
