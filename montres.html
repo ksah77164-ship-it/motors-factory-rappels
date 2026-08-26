@@ -152,17 +152,6 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .liste.photos .mprix-a{font-size:11.5px;}
 .liste.photos .mprix-pv{display:none;}
 .liste.photos .pc{width:7px;height:7px;}
-.liste.photos .mcard.ouverte{grid-column:1/-1;}
-.liste.photos .mcard.ouverte .mhead{flex-direction:row;align-items:center;padding:12px;gap:12px;}
-.liste.photos .mcard.ouverte .mphoto{width:62px;height:62px;}
-.liste.photos .mcard.ouverte .mnom{font-size:14.5px;height:auto;}
-.liste.photos .mcard.ouverte .mref,.liste.photos .mcard.ouverte .mmeta{display:flex;}
-.liste.photos .mcard.ouverte .mmeta .badge{font-size:9.5px;padding:3px 9px;}
-.liste.photos .mcard.ouverte .mmeta .b-transit,.liste.photos .mcard.ouverte .mmeta .b-vendre,
-.liste.photos .mcard.ouverte .mmeta .b-collec,.liste.photos .mcard.ouverte .mmeta .b-pays,
-.liste.photos .mcard.ouverte .mmeta .b-lot{display:inline;}
-.liste.photos .mcard.ouverte .lv-long{display:inline;}
-.liste.photos .mcard.ouverte .mref{display:block;}
 @media(min-width:560px){.liste.photos{grid-template-columns:repeat(4,1fr);}}
 .mcard{border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,var(--card2),var(--card));overflow:hidden;}
 .mhead{display:flex;gap:12px;padding:12px;cursor:pointer;align-items:center;}
@@ -185,8 +174,7 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .b-qui{background:rgba(232,205,151,0.1);color:var(--gold);}
 .pv-pos{color:var(--credit);}.pv-neg{color:var(--debit);}.pv-neutre{color:var(--muted);}
 
-.mdetail{display:none;padding:0 12px 12px;border-top:1px solid var(--line);margin-top:2px;}
-.mdetail.open{display:block;}
+.mdetail{padding:0;}
 .dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px;}
 .dcase{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:9px 11px;}
 .dcase-lbl{font-size:9px;font-weight:900;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
@@ -513,6 +501,18 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 </div>
 
 <!-- ══ MODALE SCAN ══ -->
+<!-- ══ MODALE DÉTAIL D'UNE MONTRE ══ -->
+<div class="modal-wrap" id="modal-detail">
+  <div class="modal">
+    <h3 id="d-titre">Montre</h3>
+    <div class="sous" id="d-sous"></div>
+    <div id="d-corps"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="fermerDetail()">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-wrap" id="modal-scan">
   <div class="modal">
     <h3>Je l'ai d&eacute;j&agrave; ?</h3>
@@ -1336,7 +1336,6 @@ function carte(m,n){
       '</div>'+
       '<div class="mprix">'+droite+'</div>'+
     '</div>'+
-    '<div class="mdetail" id="det-'+m.id+'">'+detail(m)+'</div>'+
   '</div>';
 }
 function detail(m){
@@ -1396,19 +1395,41 @@ function rendre(){
   rendreCompteurs();rendreChips();rendreListe();
 }
 function choisirStatut(s){filtreStatut=s;rendre();}
-function basculer(id){
-  const d=$("det-"+id);if(!d)return;
-  d.classList.toggle("open");
-  // en vue photos, la fiche ouverte prend toute la largeur de la grille
-  const c=$("card-"+id);
-  if(c) c.classList.toggle("ouverte",d.classList.contains("open"));
+/* La fiche s'ouvre dans une fenêtre centrée. Dépliée à l'intérieur de la
+   liste, elle restait prisonnière d'une colonne de la grille photos : les
+   champs s'empilaient sur un tiers de largeur, illisibles. */
+let detailCourant=null;
+function basculer(id){ ouvrirDetail(id); }
+function ouvrirDetail(id){
+  const m=montres.find(x=>x.id===id);
+  if(!m) return;
+  detailCourant=id;
+  const s=statut(m);
+  $("d-titre").textContent=m.nom||"Sans nom";
+  $("d-sous").innerHTML='<span class="badge '+STATUT_CLS[s]+'">'+STATUT_LIB[s]+'</span>'+
+    badgeLivraison(m)+(m.ref?' <span class="mref" style="display:inline">'+esc(m.ref)+'</span>':'');
+  $("d-corps").innerHTML=detail(m);
+  $("modal-detail").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function fermerDetail(){
+  detailCourant=null;
+  $("modal-detail").classList.remove("open");
+  document.body.style.overflow="";
+}
+/* Après une action (reçue, vendue, modification, suppression) la fenêtre
+   doit refléter l'état réel, ou disparaître si la montre n'existe plus. */
+function rafraichirDetail(){
+  if(!detailCourant) return;
+  if(!actives().some(m=>m.id===detailCourant)){fermerDetail();return;}
+  ouvrirDetail(detailCourant);
 }
 
 /* ── Actions rapides ─────────────────────────────────────── */
 function marquerRecue(id){
   const m=montres.find(x=>x.id===id);if(!m)return;
   m.recu=true;m.dateRecu=m.dateRecu||auj();
-  marquerModif(m);sauver();rendre();$("det-"+id)&&$("det-"+id).classList.add("open");synchro();
+  marquerModif(m);sauver();rendre();rafraichirDetail();synchro();
   toast("✅ "+(m.nom||"Montre")+" marquée reçue");
 }
 function marquerVendue(id){
@@ -1418,7 +1439,7 @@ function marquerVendue(id){
   if(p===null) return;
   m.vendue=true;m.prixVente=nb(p);m.dateVente=m.dateVente||auj();
   if(!m.recu){m.recu=true;m.dateRecu=m.dateRecu||auj();}
-  marquerModif(m);sauver();rendre();synchro();
+  marquerModif(m);sauver();rendre();rafraichirDetail();synchro();
   const pv=plusValue(m);
   toast(pv>=0?"💰 Vendue, +"+eur(pv):"Vendue, "+eur(pv));
 }
@@ -1454,7 +1475,7 @@ function supprimer(id){
   }else{
     montres=montres.filter(x=>x.id!==id);
   }
-  sauver();rendre();synchro();toast("Montre supprimée");
+  sauver();rendre();rafraichirDetail();synchro();toast("Montre supprimée");
 }
 
 /* ── Modale fiche ────────────────────────────────────────── */
@@ -1495,6 +1516,7 @@ function ouvrirAjout(){
   document.body.style.overflow="hidden";
 }
 function ouvrirEdition(id){
+  fermerDetail();
   const m=montres.find(x=>x.id===id);if(!m)return;
   ficheEditionId=id;
   viderFiche();
@@ -1572,12 +1594,13 @@ function ligneMatch(x){
     '<div class="match-score">&#10003;</div></div>';
 }
 function allerVers(id){
-  fermerFiche();fermerScan();
+  fermerFiche();fermerScan();fermerDetail();
   const m=montres.find(x=>x.id===id);if(!m)return;
   filtreStatut="tous";$("rech").value="";
   rendre();
-  const d=$("det-"+id);
-  if(d){d.classList.add("open");$("card-"+id).scrollIntoView({behavior:"smooth",block:"center"});}
+  const c=$("card-"+id);
+  if(c) c.scrollIntoView({behavior:"smooth",block:"center"});
+  ouvrirDetail(id);
 }
 function enregistrerFiche(){
   const nom=$("f-nom").value.trim();
@@ -1764,6 +1787,7 @@ function fermerRecherche(){
   document.body.style.overflow="";
 }
 function rechercherMontre(id){
+  fermerDetail();
   const m=montres.find(x=>x.id===id);if(!m)return;
   ouvrirRecherche((m.ref||m.nom||"").trim());
 }
@@ -2323,7 +2347,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v20", VERSION_DATE="24/08/2026";
+const VERSION="v21", VERSION_DATE="24/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
