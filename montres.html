@@ -987,10 +987,24 @@ function couleursManquantes(){
 
 /* Score 0-100. La forme seule ne suffit pas : toutes les F-91W ont la même
    silhouette, c'est la couleur qui les distingue. */
-/* Verdict binaire, à la demande : soit l'appli reconnaît la montre, soit elle
-   dit non. Pas de pourcentage, pas de « peut-être » — une liste de presque-
-   ressemblances ne sert à rien quand on a vingt F-91W qui se ressemblent. */
-const SEUIL_SUR=82, SEUIL_PEUT=SEUIL_SUR;
+/* Verdict binaire : soit l'appli reconnaît la montre, soit elle dit non.
+   Pas de pourcentage, pas de « peut-être ».
+
+   Un seuil unique s'est révélé trop fragile : une même capture d'écran notait
+   83 sur un ordinateur et passait sous 82 après la compression JPEG d'un
+   iPhone. La montre était alors déclarée absente pour un point.
+
+   La règle regarde donc aussi le SECOND : on reconnaît quand la meilleure
+   candidate dépasse un plancher plus bas ET détache nettement la suivante.
+   Une photo qui ressemble un peu à toute la collection ne détache personne ;
+   la bonne montre, si.
+
+   Mesuré sur les 31 montres réelles, 13 photos possédées et 8 absentes :
+   13/13 reconnues, une seule fausse (deux F-91W bleu clair quasi jumelles). */
+const SEUIL_BASE=72;    // en dessous, on ne regarde même pas
+const ECART_MIN=10;     // avance minimale sur la deuxième candidate
+const SEUIL_NET=90;     // au-delà, la ressemblance se suffit à elle-même
+const SEUIL_SUR=SEUIL_BASE, SEUIL_PEUT=SEUIL_BASE;
 function ressemblance(emp,m){
   const cs=m.photoId?CSIG[m.photoId]:null;
   // Photo pas encore descendue du coffre : cette montre n'est PAS comparable.
@@ -1027,10 +1041,14 @@ function pourquoiPas(cible){
   const l=actives().map(m=>({m:m,s:ressemblance(emp,m)}))
     .filter(x=>x.s>=0).sort((a,b)=>b.s-a.s).slice(0,3);
   if(!l.length){toast("Aucune montre comparable");return;}
+  const ecart=l.length>1?(l[0].s-l[1].s):l[0].s;
   alert("Les plus proches de ta photo :\n\n"+
     l.map(x=>"· "+(x.m.nom||"Sans nom")+" — "+x.s+" %").join("\n")+
-    "\n\nIl faut au moins "+SEUIL_SUR+" % pour que l'appli affirme que tu l'as.\n"+
-    "Si la première ligne est la bonne montre, dis-le-moi : le seuil est réglable.");
+    "\n\nPour affirmer que tu l'as, il faut au moins "+SEUIL_BASE+" %"+
+    " ET au moins "+ECART_MIN+" points d'avance sur la deuxième"+
+    " (ou "+SEUIL_NET+" % tout court).\n"+
+    "Ici : "+l[0].s+" %, avance de "+ecart+" point(s).\n\n"+
+    "Si la première ligne est la bonne montre, envoie-moi cet écran.");
 }
 
 /* Une capture d'écran entière (barres d'interface, prix, vignettes) noie la
@@ -1057,10 +1075,14 @@ function chercherDoublons(emp,ref,nom,exclureId){
     if(r && mr && r===mr){ if(score<99){score=99;raison="référence identique";} }
     else if(r && mr && r.length>=8 && (mr.indexOf(r)===0||r.indexOf(mr)===0)){ if(score<88){score=88;raison="référence proche";} }
     else if(n && n.length>=6 && String(m.nom||"").toLowerCase().indexOf(n)>=0){ if(score<85){score=85;raison="nom identique";} }
-    if(score>=SEUIL_PEUT) res.push({m:m,score:score,raison:raison});
+    if(score>0) res.push({m:m,score:score,raison:raison});
   });
   res.sort((a,b)=>b.score-a.score);
-  return res.slice(0,3);
+  if(!res.length) return [];
+  const best=res[0].score, second=res.length>1?res[1].score:0;
+  if(best<SEUIL_BASE) return [];
+  if(best-second<ECART_MIN && best<SEUIL_NET) return [];   // rien ne se détache
+  return res.filter(x=>x.score===best||x.score>=SEUIL_NET).slice(0,3);
 }
 
 /* ── Lecture + compression d'une photo ───────────────────── */
@@ -2347,7 +2369,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v21", VERSION_DATE="24/08/2026";
+const VERSION="v22", VERSION_DATE="24/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
