@@ -251,6 +251,19 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 .match-vide{width:46px;height:46px;border-radius:10px;flex-shrink:0;background:var(--card);display:flex;
   align-items:center;justify-content:center;font-size:20px;opacity:0.6;}
 .match-score{font-size:14px;font-weight:900;color:var(--gold2);flex-shrink:0;font-variant-numeric:tabular-nums;}
+/* Comparaison côte à côte : ta photo à gauche, les plus proches à droite. */
+.compare{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px;}
+.compare img{width:100%;aspect-ratio:1;border-radius:10px;object-fit:cover;background:var(--card);display:block;}
+.cmp-toi,.cmp-carte{min-width:0;}
+.cmp-toi img{border:2px solid var(--muted);}
+.cmp-carte{cursor:pointer;}
+.cmp-carte img{border:2px solid transparent;}
+.cmp-carte:active img{border-color:var(--gold);}
+.cmp-lg{font-size:9.5px;font-weight:900;color:var(--cream);margin-top:4px;line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+.cmp-toi .cmp-lg{color:var(--muted);}
+.cmp-st{font-size:9px;font-weight:700;color:var(--muted);text-align:center;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 /* Toast */
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom));z-index:500;
@@ -542,6 +555,8 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <div id="s-recadre-actions" style="display:none;margin:-4px 0 12px">
       <div class="sous" id="s-recadre-aide" style="margin-bottom:8px"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="s-pivoter" onclick="pivoter(-8)" title="redresser">&#8630; Redresser</button>
+        <button class="btn" id="s-pivoter2" onclick="pivoter(8)" title="redresser">&#8631;</button>
         <button class="btn" id="s-recadrer" onclick="recadrageDemarrer()">&#9986; Recadrer sur la montre</button>
         <button class="btn or" id="s-recadre-ok" style="display:none" onclick="recadrageValider()">&#10003; Utiliser ce cadrage</button>
         <button class="btn" id="s-recadre-non" style="display:none" onclick="recadrageAnnuler()">Annuler</button>
@@ -838,10 +853,35 @@ function actives(){return montres.filter(m=>!m.supprime);}
    en passant par cette étape intermédiaire et des moyennes exactes, la même photo
    donne toujours la même empreinte, quel que soit le chemin emprunté. */
 const EMP_L=72, EMP_H=64;
-function pixelsDe(img,l,h,cadre){
+function pixelsDe(img,l,h,cadre,rot){
   const c=document.createElement("canvas");c.width=l;c.height=h;
   const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,l,h);
-  if(cadre) ctx.drawImage(img,cadre.x,cadre.y,cadre.w,cadre.h,0,0,l,h);
+  const sx=cadre?cadre.x:0, sy=cadre?cadre.y:0;
+  const sw=cadre?cadre.w:(img.naturalWidth||img.width);
+  const sh=cadre?cadre.h:(img.naturalHeight||img.height);
+  if(rot){
+    /* Une montre posée sur une table n'est jamais droite. On la redresse —
+       mais dans ses proportions d'origine : tourner l'image APRÈS l'avoir
+       écrasée en 72x64 ne défait aucune inclinaison, ça en fabrique une autre.
+       D'où ce passage par une planche intermédiaire à la bonne forme. */
+    const T=256, k=T/Math.max(sw,sh)||1;
+    const t=document.createElement("canvas");
+    t.width=Math.max(1,Math.round(sw*k)); t.height=Math.max(1,Math.round(sh*k));
+    const tc=t.getContext("2d");
+    tc.fillStyle="#fff"; tc.fillRect(0,0,t.width,t.height);
+    tc.translate(t.width/2,t.height/2);
+    tc.rotate(rot*Math.PI/180);
+    tc.translate(-t.width/2,-t.height/2);
+    tc.drawImage(img,sx,sy,sw,sh,0,0,t.width,t.height);
+    /* Redresser ne suffit pas : le cadre d'une montre penchée est plein de
+       triangles de fond dans les coins, et c'est cette table beige qui finit
+       par décider de la couleur. On resserre donc sur la partie utile. */
+    const a=Math.abs(rot)*Math.PI/180, z=1/(Math.cos(a)+Math.sin(a));
+    const zw=t.width*z, zh=t.height*z;
+    ctx.drawImage(t,(t.width-zw)/2,(t.height-zh)/2,zw,zh,0,0,l,h);
+    return ctx.getImageData(0,0,l,h).data;
+  }
+  if(cadre) ctx.drawImage(img,sx,sy,sw,sh,0,0,l,h);
   else ctx.drawImage(img,0,0,l,h);
   return ctx.getImageData(0,0,l,h).data;
 }
@@ -909,11 +949,32 @@ function grille(d,cols,rows){
    Le fond blanc est écarté — sinon deux montres de couleurs opposées se
    ressemblent parce que 80 % de l'image est blanche dans les deux cas. */
 const NB_TEINTES=12, NB_GRIS=4;
+/* La lumière d'abord. Une même montre sous une lampe chaude, dans l'ombre ou
+   sur la photo blanche d'une boutique donne trois histogrammes sans rapport :
+   la teinte glisse vers l'orange et les niveaux de gris changent de case. On
+   annule donc l'éclairage avant de compter — moyennes des trois canaux
+   ramenées l'une sur l'autre (la couleur de la lampe s'en va), puis exposition
+   ramenée à un niveau fixe. Ne reste que la couleur propre de la montre. */
+function lumiereNeutre(d){
+  let sr=0,sv=0,sb=0,n=0;
+  for(let i=0;i<d.length;i+=4){
+    const r=d[i],v=d[i+1],b=d[i+2];
+    const mx=Math.max(r,v,b);
+    if(mx<14||(mx>245&&mx-Math.min(r,v,b)<12)) continue;  // noir bouché, blanc brûlé
+    sr+=r;sv+=v;sb+=b;n++;
+  }
+  if(!n) return [1,1,1];
+  const mr=sr/n||1, mv=sv/n||1, mb=sb/n||1, moy=(mr+mv+mb)/3;
+  const expo=Math.max(0.55,Math.min(1.9,132/moy));
+  const bride=k=>Math.max(0.6,Math.min(1.7,k));
+  return [bride(moy/mr)*expo,bride(moy/mv)*expo,bride(moy/mb)*expo];
+}
 function teintes(d){
+  const [kr,kv,kb]=lumiereNeutre(d);
   const h=new Float64Array(NB_TEINTES+NB_GRIS);
   let n=0;
   for(let i=0;i<d.length;i+=4){
-    const r=d[i],v=d[i+1],b=d[i+2];
+    const r=Math.min(255,d[i]*kr), v=Math.min(255,d[i+1]*kv), b=Math.min(255,d[i+2]*kb);
     const mx=Math.max(r,v,b), mn=Math.min(r,v,b), delta=mx-mn;
     if(mx>238&&delta<18) continue;                       // fond blanc
     if((mx?delta/mx:0)<0.18){                            // gris, noir, argent
@@ -938,8 +999,8 @@ function bitsVersHex(bits){
   return s;
 }
 const EMP_VERSION=4;
-function empreinteUne(img,cadre){
-  const d=pixelsDe(img,EMP_L,EMP_H,cadre);
+function empreinteUne(img,cadre,rot){
+  const d=pixelsDe(img,EMP_L,EMP_H,cadre,rot);
   const gd=grille(d,9,8), bd=[];
   for(let y=0;y<8;y++) for(let x=0;x<8;x++) bd.push(gd[y*9+x]>gd[y*9+x+1]?1:0);
   const ga=grille(d,8,8);
@@ -962,6 +1023,9 @@ function empreintes(img){
   // l'estimation du fond sur le pourtour tombe sur le cadre et non sur le fond
   const lg=img.naturalWidth||img.width, ht=img.naturalHeight||img.height;
   if(lg&&ht) ajouter(empreinteUne(img,{x:lg*0.10,y:ht*0.10,w:lg*0.80,h:ht*0.80}));
+  // et redressée de quelques degrés : une montre posée de biais ne se
+  // reconnaissait pas du tout, la lecture ligne par ligne n'y retrouvait rien
+  [-18,-9,9,18].forEach(a=>ajouter(empreinteUne(img,cadre,a)));
   const l=img.naturalWidth||img.width||1, h=img.naturalHeight||img.height||1;
   principale.variantes=variantes;
   principale.capture=(!cadre)||cadre.part<0.30||(h/l)>1.7;
@@ -990,7 +1054,7 @@ async function preparerCouleurs(){
     if(!m.photoId||CSIG[m.photoId]||!PHOTOS[m.photoId]) continue;
     try{
       const img=await imageDepuisURL(PHOTOS[m.photoId]);
-      CSIG[m.photoId]=empreinteUne(img,recadrer(img)).cs;
+      CSIG[m.photoId]={cs:empreinteUne(img,recadrer(img)).cs};
     }catch(e){ CSIG[m.photoId]=null; }
   }
 }
@@ -1019,9 +1083,15 @@ function couleursManquantes(){
 
    Mesuré sur les 31 montres réelles, 13 photos possédées et 8 absentes :
    13/13 reconnues, une seule fausse (deux F-91W bleu clair quasi jumelles). */
-const SEUIL_BASE=72;    // en dessous, on ne regarde même pas
+const SEUIL_BASE=78;    // en dessous, on ne regarde même pas
 const ECART_MIN=10;     // avance minimale sur la deuxième candidate
 const SEUIL_NET=90;     // au-delà, la ressemblance se suffit à elle-même
+/* Entre les deux il y a un troisième cas, celui d'une photo prise à la main :
+   la lumière, l'angle et l'ombre suffisent à faire perdre la première place à
+   la bonne montre une fois sur deux. Affirmer quoi que ce soit là serait mentir.
+   On montre alors les plus proches côte à côte : l'œil tranche en une seconde
+   ce qu'aucun calcul ne tranche ici. */
+const SEUIL_PROCHE=45;
 const SEUIL_SUR=SEUIL_BASE, SEUIL_PEUT=SEUIL_BASE;
 function ressemblance(emp,m){
   const cs=m.photoId?CSIG[m.photoId]:null;
@@ -1036,7 +1106,7 @@ function ressemblance(emp,m){
     if(!v.cs) return;
     const d=Math.min(hamming(v.dhash,m.dhash),hamming(v.ahash,m.ahash));
     const forme=Math.max(0,1-d/16);
-    const s=Math.round(100*(0.35*forme+0.65*accordCouleur(v.cs,cs)));
+    const s=Math.round(100*(0.35*forme+0.65*accordCouleur(v.cs,cs.cs||cs)));
     if(s>meilleur) meilleur=s;
   });
   return meilleur;
@@ -1101,6 +1171,13 @@ function chercherDoublons(emp,ref,nom,exclureId){
   if(best<SEUIL_BASE) return [];
   if(best-second<ECART_MIN && best<SEUIL_NET) return [];   // rien ne se détache
   return res.filter(x=>x.score===best||x.score>=SEUIL_NET).slice(0,3);
+}
+/* Les montres les plus proches, sans rien affirmer. */
+function approchantes(emp,n){
+  if(!emp) return [];
+  return actives().map(m=>({m:m,score:ressemblance(emp,m)}))
+    .filter(x=>x.score>=SEUIL_PROCHE)
+    .sort((a,b)=>b.score-a.score).slice(0,n||3);
 }
 
 /* ── Lecture + compression d'une photo ───────────────────── */
@@ -1685,7 +1762,7 @@ function enregistrerFiche(){
       const ancienne=m.photoId;
       const pid="p_"+m.id+"_"+uid();
       m.photoId=pid;m.dhash=fichePhoto.dhash;m.ahash=fichePhoto.ahash;m.hv=EMP_VERSION;
-      if(fichePhoto.cs) CSIG[pid]=fichePhoto.cs;   // sinon la montre à peine ajoutée
+      if(fichePhoto.cs) CSIG[pid]={cs:fichePhoto.cs};   // sinon la montre à peine ajoutée
                                                    // n'a pas de couleur à comparer
       delete CSIG[ancienne];
       PHOTOS[pid]=fichePhoto.dataUrl;
@@ -1751,11 +1828,52 @@ let recadrageSel=null;       // {x,y,w,h} en pixels affichés
 function recadrageProposer(capture){
   $("s-recadre-actions").style.display="block";
   $("s-recadrer").style.display="inline-block";
+  $("s-pivoter").style.display="inline-block";
+  $("s-pivoter2").style.display="inline-block";
   $("s-recadre-ok").style.display="none";
   $("s-recadre-non").style.display=recadrageOrigine?"inline-block":"none";
   $("s-recadre-aide").innerHTML=capture
     ? "📸 Cette image ressemble à une capture d'écran. Recadre-la sur la montre : c'est le moyen le plus sûr d'être reconnu."
-    : (recadrageOrigine?"Cadrage manuel appliqué.":"");
+    : (recadrageOrigine?"Cadrage appliqué."
+       :"Montre penchée ? Redresse-la d'abord, puis recadre : c'est l'inclinaison qui fait tout rater.");
+}
+/* Redresser la photo. Mesuré sur les 31 montres : une montre bien droite et
+   cadrée serré sort en tête 10 fois sur 10 ; la même penchée de 17°, 1 fois
+   sur 10. L'inclinaison est de loin ce qui coûte le plus cher, et c'est la
+   seule chose que l'appli ne peut pas corriger toute seule. */
+let recadrageAngle=0;
+async function pivoter(pas){
+  if(!scanCourant) return;
+  recadrageAngle=(recadrageAngle+pas)%360;
+  const img=$("s-img");
+  if(!img.naturalWidth) return;
+  const src=recadrageOrigine?scanCourant:scanCourant;
+  $("s-resultat").innerHTML='<div class="alerte load">⏳ Analyse…</div>';
+  try{
+    const base=await imageDepuisURL(src.dataUrl);
+    const a=Math.abs(pas)*Math.PI/180;
+    const c=document.createElement("canvas");
+    c.width=base.naturalWidth; c.height=base.naturalHeight;
+    const x=c.getContext("2d");
+    x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height);
+    // on garde le même cadre : on tourne autour du centre et on resserre
+    // juste ce qu'il faut pour ne pas faire entrer de coins blancs
+    const z=1/(Math.cos(a)+Math.sin(a));
+    x.translate(c.width/2,c.height/2);
+    x.rotate(pas*Math.PI/180);
+    x.scale(1/z,1/z);
+    x.drawImage(base,-c.width/2,-c.height/2,c.width,c.height);
+    const url=c.toDataURL("image/jpeg",0.92);
+    if(!recadrageOrigine) recadrageOrigine=scanCourant;
+    const emp=empreintes(await imageDepuisURL(url));
+    scanCourant={dataUrl:url,dhash:emp.dhash,ahash:emp.ahash,cs:emp.cs,
+                 variantes:emp.variantes,capture:false};
+    img.src=url;
+    recadrageProposer(false);
+    afficherScanResultat(scanCourant,$("s-texte").value);
+  }catch(e){
+    $("s-resultat").innerHTML='<div class="alerte warn">⚠ La rotation n\'a pas pu être appliquée.</div>';
+  }
 }
 function recadrageDemarrer(){
   const z=$("s-zone"), b=$("s-boite");
@@ -1763,6 +1881,8 @@ function recadrageDemarrer(){
   b.style.display="none";
   recadrageSel=null;
   $("s-recadrer").style.display="none";
+  $("s-pivoter").style.display="none";
+  $("s-pivoter2").style.display="none";
   $("s-recadre-ok").style.display="none";
   $("s-recadre-non").style.display="inline-block";
   $("s-recadre-aide").textContent="Fais glisser ton doigt sur la montre pour l'encadrer.";
@@ -1857,6 +1977,26 @@ async function afficherScanResultat(emp,texte){
   }
   const d=chercherDoublons(emp,texte,texte,null);
   if(!d.length){
+    // rien de certain : plutôt que d'affirmer « tu ne l'as pas » sur une photo
+    // prise à la main, on met les plus proches côte à côte et on laisse l'œil
+    // décider — c'est la seule réponse honnête à cet endroit
+    const pr=texte?[]:approchantes(emp,3);
+    if(pr.length){
+      let h='<div class="alerte warn"><div class="alerte-titre">🤔 Je ne peux pas trancher</div>'+
+        "Sur une photo prise à la main, la lumière et l'angle m'empêchent d'être sûr. "+
+        "Voici les plus ressemblantes de ta collection — compare toi-même :</div>"+
+        '<div class="compare">';
+      if(emp.dataUrl) h+='<div class="cmp-toi"><img src="'+emp.dataUrl+'" alt="">'+
+        '<div class="cmp-lg">ta photo</div></div>';
+      pr.forEach(x=>{h+=cartePropose(x.m);});
+      h+='</div><button class="btn" style="width:100%;margin-top:10px" onclick="scanAucune()">'+
+        "Aucune de celles-là</button>"+
+        '<div class="alerte ok" style="margin-top:10px">'+
+        "Pour un verdict net : redresse la montre, puis recadre dessus."+
+        conseilCapture(emp)+attenteOuPourquoi(emp,"s")+"</div>";
+      $("s-resultat").innerHTML=h;
+      return;
+    }
     $("s-resultat").innerHTML='<div class="alerte ok"><div class="alerte-titre">✅ Tu ne l\'as pas</div>'+
       "Aucune montre de ta collection ne correspond."+conseilCapture(emp)+
       attenteOuPourquoi(emp,"s")+"</div>";
@@ -1874,6 +2014,28 @@ async function afficherScanResultat(emp,texte){
     // partagent la même référence viennent s'ajouter au verdict de la photo
     if(t) $("s-texte").value=t;
   }
+}
+/* Une vignette de comparaison : la photo en grand, le nom dessous, et de quoi
+   dire « c'est celle-là » sans avoir à retenir la référence. */
+function cartePropose(m){
+  const ph=m.photoId&&PHOTOS[m.photoId];
+  return '<div class="cmp-carte" onclick="scanChoisir(\''+m.id+'\')">'+
+    (ph?'<img src="'+ph+'" alt="">':'<div class="match-vide">⌚</div>')+
+    '<div class="cmp-lg">'+esc(m.ref||m.nom||"")+'</div>'+
+    '<div class="cmp-st">'+STATUT_LIB[statut(m)]+'</div></div>';
+}
+function scanChoisir(id){
+  const m=montres.find(x=>x.id===id); if(!m) return;
+  $("s-resultat").innerHTML='<div class="alerte warn">'+
+    '<div class="alerte-titre">✅ Oui, tu l\'as déjà</div>'+ligneMatch({m:m})+'</div>';
+  const t=(m.ref||m.nom||"").trim();
+  if(t && !$("s-texte").value.trim()) $("s-texte").value=t;
+}
+function scanAucune(){
+  $("s-resultat").innerHTML='<div class="alerte ok">'+
+    '<div class="alerte-titre">✅ Tu ne l\'as pas</div>'+
+    "Aucune de ta collection ne lui ressemble d'assez près."+conseilCapture(scanCourant)+"</div>";
+  $("s-ajouter").style.display="";
 }
 function scanVersAjout(){
   const t=$("s-texte").value.trim();
@@ -2209,7 +2371,7 @@ function importerJSON(input){
         if(brute){
           const pid=o.photoId||("p_"+o.id+"_"+uid());
           o.photoId=pid;
-          if(cs) CSIG[pid]=cs;
+          if(cs) CSIG[pid]={cs:cs};
           PHOTOS[pid]=brute;
           aEnvoyerPhotos[pid]=1;
           try{await photoEcrire(pid,brute);}catch(e){}
@@ -2494,7 +2656,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v23", VERSION_DATE="27/08/2026";
+const VERSION="v24", VERSION_DATE="27/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
@@ -2521,7 +2683,7 @@ async function remettreEmpreintesAJour(){
     try{
       const emp=empreintes(await imageDepuisURL(PHOTOS[m.photoId]));
       m.dhash=emp.dhash;m.ahash=emp.ahash;
-      if(emp.cs) CSIG[m.photoId]=emp.cs;   // évite de relire la photo juste après
+      if(emp.cs) CSIG[m.photoId]={cs:emp.cs};   // évite de relire la photo juste après
     }catch(e){ /* photo illisible : on n'y revient pas */ }
     m.hv=EMP_VERSION;
     aEnvoyer[m.id]=1;      // la correction part au coffre sans toucher à la date de modification
