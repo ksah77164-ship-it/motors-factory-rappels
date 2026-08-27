@@ -283,6 +283,11 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 .login-err{display:none;background:rgba(229,143,143,0.12);border:1px solid rgba(229,143,143,0.4);border-radius:10px;
   padding:9px 12px;font-size:13px;color:var(--debit);font-weight:700;text-align:center;margin-bottom:14px;}
 .login-lbl{display:block;font-size:10px;font-weight:800;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.recadre-zone{position:relative;display:inline-block;max-width:100%;line-height:0;}
+.recadre-zone.actif{cursor:crosshair;touch-action:none;}
+.recadre-zone.actif img{opacity:.55;}
+.recadre-boite{position:absolute;border:2px solid var(--gold);border-radius:4px;
+  box-shadow:0 0 0 9999px rgba(6,5,4,.55);pointer-events:none;}
 .login-ver{margin-top:16px;text-align:center;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:0.5px;}
 </style>
 </head>
@@ -528,7 +533,20 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     </div>
     <input type="file" id="s-photo-cam" accept="image/*" capture="environment" style="display:none" onchange="scanPhoto(this)">
     <input type="file" id="s-photo-gal" accept="image/*" style="display:none" onchange="scanPhoto(this)">
-    <div id="s-apercu" class="photo-apercu" style="display:none"><img id="s-img" alt=""></div>
+    <div id="s-apercu" class="photo-apercu" style="display:none">
+      <div class="recadre-zone" id="s-zone">
+        <img id="s-img" alt="">
+        <div class="recadre-boite" id="s-boite" style="display:none"></div>
+      </div>
+    </div>
+    <div id="s-recadre-actions" style="display:none;margin:-4px 0 12px">
+      <div class="sous" id="s-recadre-aide" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="s-recadrer" onclick="recadrageDemarrer()">&#9986; Recadrer sur la montre</button>
+        <button class="btn or" id="s-recadre-ok" style="display:none" onclick="recadrageValider()">&#10003; Utiliser ce cadrage</button>
+        <button class="btn" id="s-recadre-non" style="display:none" onclick="recadrageAnnuler()">Annuler</button>
+      </div>
+    </div>
 
     <label class="lbl">Ou cherche par r&eacute;f&eacute;rence / nom</label>
     <input type="text" id="s-texte" placeholder="GA-2100..." oninput="scanTexte()" autocomplete="off">
@@ -1689,6 +1707,8 @@ function enregistrerFiche(){
 /* ── Modale scan ─────────────────────────────────────────── */
 function ouvrirScan(){
   scanCourant=null;
+  recadrageOrigine=null;recadrageSortir();
+  $("s-recadre-actions").style.display="none";
   $("s-resultat").innerHTML="";
   $("s-texte").value="";
   $("s-apercu").style.display="none";
@@ -1712,12 +1732,117 @@ async function scanPhoto(input){
     $("s-apercu").style.display="block";
     $("s-photo-zone").style.display="none";
     $("s-ajouter").style.display="inline-block";
+    recadrageOrigine=null;
+    recadrageProposer(r.capture);
     afficherScanResultat(r,$("s-texte").value);
   }catch(e){
     $("s-resultat").innerHTML='<div class="alerte warn">⚠ Impossible de lire cette image.</div>';
   }
   input.value="";
 }
+/* ── Recadrage manuel ───────────────────────────────────────
+   Une capture d'écran entière compare surtout une page web : la montre y
+   occupe un cinquième de l'image. Le recadrage automatique s'en sort la
+   plupart du temps, mais pas sur une montre blanche posée sur fond blanc.
+   Ici l'utilisateur trace lui-même la zone, au doigt. */
+let recadrageOrigine=null;   // photo entière, pour pouvoir revenir en arrière
+let recadrageSel=null;       // {x,y,w,h} en pixels affichés
+
+function recadrageProposer(capture){
+  $("s-recadre-actions").style.display="block";
+  $("s-recadrer").style.display="inline-block";
+  $("s-recadre-ok").style.display="none";
+  $("s-recadre-non").style.display=recadrageOrigine?"inline-block":"none";
+  $("s-recadre-aide").innerHTML=capture
+    ? "📸 Cette image ressemble à une capture d'écran. Recadre-la sur la montre : c'est le moyen le plus sûr d'être reconnu."
+    : (recadrageOrigine?"Cadrage manuel appliqué.":"");
+}
+function recadrageDemarrer(){
+  const z=$("s-zone"), b=$("s-boite");
+  z.classList.add("actif");
+  b.style.display="none";
+  recadrageSel=null;
+  $("s-recadrer").style.display="none";
+  $("s-recadre-ok").style.display="none";
+  $("s-recadre-non").style.display="inline-block";
+  $("s-recadre-aide").textContent="Fais glisser ton doigt sur la montre pour l'encadrer.";
+  let dep=null;
+  const pos=e=>{
+    const r=z.getBoundingClientRect();
+    return {x:Math.max(0,Math.min(r.width,e.clientX-r.left)),
+            y:Math.max(0,Math.min(r.height,e.clientY-r.top))};
+  };
+  const dessiner=p2=>{
+    const x=Math.min(dep.x,p2.x), y=Math.min(dep.y,p2.y);
+    const w=Math.abs(p2.x-dep.x), h=Math.abs(p2.y-dep.y);
+    recadrageSel={x:x,y:y,w:w,h:h};
+    b.style.display="block";
+    b.style.left=x+"px";b.style.top=y+"px";b.style.width=w+"px";b.style.height=h+"px";
+  };
+  const onDown=e=>{dep=pos(e);z.setPointerCapture&&z.setPointerCapture(e.pointerId);e.preventDefault();};
+  const onMove=e=>{if(dep){dessiner(pos(e));e.preventDefault();}};
+  const onUp=e=>{
+    if(!dep) return;
+    dessiner(pos(e)); dep=null;
+    // une sélection minuscule est un appui, pas un cadrage
+    if(recadrageSel&&recadrageSel.w>24&&recadrageSel.h>24) $("s-recadre-ok").style.display="inline-block";
+    else {recadrageSel=null;b.style.display="none";}
+  };
+  z._h&&z._h();                       // pas deux jeux d'écouteurs
+  z.addEventListener("pointerdown",onDown);
+  z.addEventListener("pointermove",onMove);
+  z.addEventListener("pointerup",onUp);
+  z.addEventListener("pointercancel",onUp);
+  z._h=()=>{
+    z.removeEventListener("pointerdown",onDown);
+    z.removeEventListener("pointermove",onMove);
+    z.removeEventListener("pointerup",onUp);
+    z.removeEventListener("pointercancel",onUp);
+    z._h=null;
+  };
+}
+function recadrageSortir(){
+  const z=$("s-zone");
+  z.classList.remove("actif");
+  z._h&&z._h();
+  $("s-boite").style.display="none";
+}
+async function recadrageValider(){
+  if(!recadrageSel) return;
+  const img=$("s-img");
+  const kx=img.naturalWidth/img.clientWidth, ky=img.naturalHeight/img.clientHeight;
+  const c=document.createElement("canvas");
+  c.width=Math.max(1,Math.round(recadrageSel.w*kx));
+  c.height=Math.max(1,Math.round(recadrageSel.h*ky));
+  c.getContext("2d").drawImage(img,
+    recadrageSel.x*kx,recadrageSel.y*ky,c.width,c.height,0,0,c.width,c.height);
+  const url=c.toDataURL("image/jpeg",0.9);
+  if(!recadrageOrigine) recadrageOrigine=scanCourant;
+  recadrageSortir();
+  $("s-resultat").innerHTML='<div class="alerte load">⏳ Analyse du cadrage…</div>';
+  try{
+    const stockee=await imageDepuisURL(url);
+    const emp=empreintes(stockee);
+    scanCourant={dataUrl:url,dhash:emp.dhash,ahash:emp.ahash,cs:emp.cs,
+                 variantes:emp.variantes,capture:false};
+    $("s-img").src=url;
+    recadrageProposer(false);
+    afficherScanResultat(scanCourant,$("s-texte").value);
+  }catch(e){
+    $("s-resultat").innerHTML='<div class="alerte warn">⚠ Ce cadrage n\'a pas pu être lu.</div>';
+  }
+}
+function recadrageAnnuler(){
+  recadrageSortir();
+  if(recadrageOrigine){
+    scanCourant=recadrageOrigine;
+    recadrageOrigine=null;
+    $("s-img").src=scanCourant.dataUrl;
+    afficherScanResultat(scanCourant,$("s-texte").value);
+  }
+  recadrageProposer(scanCourant&&scanCourant.capture);
+}
+
 function scanTexte(){
   const t=$("s-texte").value.trim();
   if(!scanCourant&&t.length<3){$("s-resultat").innerHTML="";return;}
@@ -2369,7 +2494,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v22", VERSION_DATE="24/08/2026";
+const VERSION="v23", VERSION_DATE="27/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
