@@ -55,7 +55,11 @@ const ENTETES = [
   "dateAchat", "prixAchat", "frais", "paysAchat", "vendeur",
   "lieu", "paysLivraison", "datePrevue", "suivi", "recu", "dateRecu",
   "destination", "prixVise", "vendue", "prixVente", "dateVente", "acheteur",
-  "photoId", "dhash", "ahash", "creeLe"
+  "photoId", "dhash", "ahash", "creeLe",
+  // Ajoutées le 28/08/2026 : le matériel (coffrets, kits, outils) se range dans
+  // la même feuille que les montres — c'est un achat comme un autre, il lui
+  // manque seulement la revente. Et « payePar » sert aux comptes entre associés.
+  "type", "payePar"
 ];
 const ENTETES_PHOTOS = ["photoId", "fileId", "creeLe"];
 
@@ -89,6 +93,19 @@ function feuille_(nom, entetes) {
     sh.appendRow(entetes);
     sh.setFrozenRows(1);
   }
+  // Une feuille créée par une version précédente est trop étroite : on
+  // l'élargit et on écrit les en-têtes qui manquent, sans toucher aux données
+  // déjà en place. Sans ça, la première écriture planterait.
+  if (sh.getMaxColumns() < entetes.length) {
+    sh.insertColumnsAfter(sh.getMaxColumns(), entetes.length - sh.getMaxColumns());
+    sh.getRange(1, 1, sh.getMaxRows(), entetes.length).setNumberFormat("@");
+  }
+  const enPlace = sh.getRange(1, 1, 1, entetes.length).getValues()[0];
+  let aCompleter = false;
+  for (let i = 0; i < entetes.length; i++) {
+    if (String(enPlace[i] || "") !== entetes[i]) { aCompleter = true; break; }
+  }
+  if (aCompleter) sh.getRange(1, 1, 1, entetes.length).setValues([entetes]);
   return sh;
 }
 

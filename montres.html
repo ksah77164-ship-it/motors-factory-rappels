@@ -29,7 +29,7 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 
 /* En-tête */
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;}
-.logo{display:flex;align-items:center;gap:12px;}
+.logo{display:flex;align-items:center;gap:12px;min-width:0;overflow:hidden;}
 .logo-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;
   background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;box-shadow:0 6px 20px rgba(201,161,90,0.28);}
 .logo-text{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;color:var(--champ);letter-spacing:0.3px;line-height:1;}
@@ -47,7 +47,9 @@ body{font-family:'Nunito',sans-serif;color:var(--cream);
 .pastille.erreur{color:var(--debit);border-color:rgba(229,143,143,0.35);}
 .pastille.erreur .pt{background:var(--debit);}
 @keyframes clign{0%,100%{opacity:1}50%{opacity:0.25}}
-.topbar-droite{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+/* Une seule ligne : chaque repli de cette barre, c'est une rangee
+   de photos qui passe sous le bord de l'ecran. */
+.topbar-droite{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;justify-content:flex-end;flex-shrink:0;}
 .alarme{display:none;background:linear-gradient(160deg,#3a1717,#2a1010);border:1.5px solid rgba(229,143,143,0.5);
   border-radius:16px;padding:14px 15px;margin-bottom:14px;color:#FFD9D9;font-size:12.5px;font-weight:700;line-height:1.6;}
 .alarme.on{display:block;}
@@ -107,6 +109,34 @@ select.mini{background:var(--bg2);border:1px solid var(--line);border-radius:14p
   font-family:'Nunito',sans-serif;font-weight:800;color:var(--champ);}
 select.mini:focus{outline:none;border-color:var(--gold);}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+/* Trois univers dans la même appli : les montres, le matériel, et les comptes
+   entre associés. Un onglet plutôt qu'un filtre — ce ne sont pas les mêmes
+   chiffres, ils ne doivent jamais s'additionner par accident. */
+/* Deux accès discrets dans l'en-tête : ils ne doivent rien coûter à la
+   hauteur de la barre, sinon c'est une rangée de photos en moins. */
+.ico-top{width:30px;height:30px;padding:0;flex-shrink:0;border-radius:9px;
+  border:1px solid var(--line);background:var(--bg2);color:var(--cream);
+  font-size:14px;line-height:1;cursor:pointer;font-family:inherit;}
+.onglets{display:flex;gap:5px;margin-bottom:9px;}
+.ong{flex:1;padding:7px 4px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);
+  color:var(--muted);font-weight:900;font-size:11.5px;cursor:pointer;font-family:inherit;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ong.actif{background:var(--gold);border-color:var(--gold);color:#1a1408;}
+/* Comptes */
+.cpt{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;}
+.cpt-t{font-size:11px;font-weight:900;color:var(--gold2);text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:10px;}
+.cpt-l{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:7px 0;border-bottom:1px solid var(--line);}
+.cpt-l:last-child{border-bottom:none;}
+.cpt-n{font-size:13px;font-weight:800;color:var(--cream);}
+.cpt-d{font-size:10.5px;color:var(--muted);font-weight:700;}
+.cpt-v{font-size:14px;font-weight:900;color:var(--cream);font-variant-numeric:tabular-nums;
+  white-space:nowrap;}
+.cpt-bilan{background:linear-gradient(160deg,rgba(198,160,74,.16),rgba(198,160,74,.05));
+  border-color:var(--gold);}
+.cpt-gros{font-size:19px;font-weight:900;color:var(--gold2);font-variant-numeric:tabular-nums;}
+.cpt-phrase{font-size:12.5px;font-weight:800;color:var(--cream);line-height:1.5;margin-top:6px;}
 .chip{padding:6px 13px;border-radius:22px;border:1px solid var(--line);background:var(--card);color:var(--muted);
   font-size:11.5px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;}
 .chip.actif{background:var(--card2);border-color:var(--gold);color:var(--champ);}
@@ -341,9 +371,20 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <div id="alarme-txt"></div>
   </div>
 
+  <!-- Sur l'écran des montres cette barre reste cachée : elle coûtait une
+       rangée entière de photos, sur l'écran qu'on regarde tous les jours.
+       On y accède par deux pastilles glissées dans la barre existante. -->
+  <div class="onglets" id="onglets" style="display:none">
+    <button class="ong" id="ong-montres" onclick="choisirSection('montres')">&#8592; Montres</button>
+    <button class="ong" id="ong-materiel" onclick="choisirSection('materiel')">&#129520; Mat&eacute;riel</button>
+    <button class="ong" id="ong-comptes" onclick="choisirSection('comptes')">&#129309; Comptes</button>
+  </div>
+
   <div class="counters" id="counters"></div>
 
-  <div class="actions-top">
+  <div id="zone-comptes" style="display:none"></div>
+
+  <div class="actions-top" id="actions-top">
     <button class="big-btn or" onclick="ouvrirScan()">
       <span class="bb-ico">&#128247;</span>
       Je l'ai d&eacute;j&agrave; ?<br><span style="font-size:10.5px;opacity:.75;font-weight:700">Une montre</span>
@@ -358,7 +399,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     </button>
   </div>
 
-  <div class="barre">
+  <div class="barre" id="barre">
     <input class="champ-rech" id="rech" placeholder="Rechercher : nom, r&eacute;f., vendeur, pays..." oninput="rendre()">
     <select class="mini" id="tri" onchange="memoriserTri()">
       <option value="recent">Plus r&eacute;centes</option>
@@ -371,7 +412,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
       <option value="nom">Nom A-Z</option>
     </select>
   </div>
-  <div class="barre-sec">
+  <div class="barre-sec" id="barre-sec">
     <button class="chip" id="vue-liste" onclick="choisirVue('liste')">&#128209; Cartes</button>
     <button class="chip" id="vue-compacte" onclick="choisirVue('compacte')">&#9776; Liste</button>
     <button class="chip" id="vue-photos" onclick="choisirVue('photos')">&#9638; Photos</button>
@@ -394,7 +435,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
   </div>
 </div>
 
-<button class="fab" onclick="ouvrirAjout()">+</button>
+<button class="fab" onclick="ouvrirAjout(section==='materiel'?'materiel':'montre')">+</button>
 
 <!-- ══ MODALE AJOUT / MODIFICATION ══ -->
 <div class="modal-wrap" id="modal-fiche">
@@ -402,7 +443,12 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <h3 id="fiche-titre">Nouvelle montre</h3>
     <div class="sous" id="fiche-sous">Projet Alber</div>
 
-    <div class="sect">&#128248; Photo &amp; identit&eacute;</div>
+    <div class="seg" style="margin-bottom:12px">
+      <button type="button" id="seg-t-montre" onclick="choisirType('montre')">&#8986; Une montre</button>
+      <button type="button" id="seg-t-materiel" onclick="choisirType('materiel')">&#129520; Du mat&eacute;riel</button>
+    </div>
+
+    <div class="sect" id="sect-photo">&#128248; Photo &amp; identit&eacute;</div>
 
     <div id="f-photo-zone" class="photo-choix">
       <button type="button" class="pchoix" onclick="document.getElementById('f-photo-cam').click()">
@@ -420,10 +466,10 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     </div>
     <div id="f-doublon"></div>
 
-    <label class="lbl">Nom de la montre *</label>
+    <label class="lbl" id="lbl-nom">Nom de la montre *</label>
     <input type="text" id="f-nom" placeholder="Casio G-Shock GA-2100" autocomplete="off">
 
-    <label class="lbl">R&eacute;f&eacute;rence / mod&egrave;le</label>
+    <label class="lbl" id="lbl-ref">R&eacute;f&eacute;rence / mod&egrave;le</label>
     <input type="text" id="f-ref" placeholder="GA-2100-1A1" autocomplete="off">
 
     <label class="lbl">D&eacute;tails (&eacute;tat, bo&icirc;te, papiers, particularit&eacute;s...)</label>
@@ -453,6 +499,11 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <label class="lbl">Vendeur / plateforme</label>
     <input type="text" id="f-vendeur" placeholder="Yahoo Japan, eBay, Chrono24, Amazon..." autocomplete="off">
 
+    <label class="lbl">Pay&eacute; par</label>
+    <input type="text" id="f-paye-par" list="payeurs-list" placeholder="Qui a sorti l'argent ?" autocomplete="off">
+    <datalist id="payeurs-list"></datalist>
+    <div id="f-paye-rapide" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
+
     <div class="sect">&#128666; Livraison</div>
     <label class="lbl">Lieu de livraison</label>
     <input type="text" id="f-lieu" placeholder="Domicile, point relais, bureau..." autocomplete="off">
@@ -478,6 +529,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
       <input type="date" id="f-date-recu">
     </div>
 
+    <div id="bloc-revente">
     <div class="sect">&#128176; Destination &amp; revente</div>
     <div class="seg">
       <button type="button" id="seg-garder" onclick="setDestination('garder')">&#128142; Je garde</button>
@@ -509,6 +561,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
       </div>
       <label class="lbl">Acheteur / plateforme de vente</label>
       <input type="text" id="f-acheteur" placeholder="Vinted, Leboncoin, main propre..." autocomplete="off">
+    </div>
     </div>
 
     <div class="modal-actions">
@@ -703,6 +756,9 @@ let grouper=true;           // rapprocher les exemplaires d'une même montre
 const CLE_GROUPE="mf_montres_groupe";
 /* Trois densités d'affichage : la vue en cartes est confortable mais montre
    trois montres par écran de téléphone. Avec trente montres, ça ne suffit plus. */
+/* Section affichée : les montres, le matériel, ou les comptes entre associés. */
+let section="montres";
+const CLE_SECTION="mf_montres_section";
 let vue="photos";           // à l'ouverture, on veut voir sa collection
 const CLE_VUE="mf_montres_vue", VUES=["liste","compacte","photos"];
 const CLE_TRI="mf_montres_tri";
@@ -843,7 +899,28 @@ function sauver(){
 }
 /* Les montres supprimées restent dans le tableau (marquées « supprime ») le temps
    que l'autre appareil soit prévenu ; elles n'apparaissent jamais à l'écran. */
-function actives(){return montres.filter(m=>!m.supprime);}
+/* Deux sortes de fiches partagent le même tableau : les montres, et le
+   matériel (coffrets, kits de démontage, piles, outils). Le matériel se range
+   exactement comme une montre — un achat, un prix, des frais, une livraison —
+   il lui manque seulement la partie revente. D'où une simple étiquette plutôt
+   qu'une deuxième base à tenir. */
+function estMateriel(m){return m&&m.type==="materiel";}
+function actives(){return montres.filter(m=>!m.supprime&&!estMateriel(m));}
+function materiel(){return montres.filter(m=>!m.supprime&&estMateriel(m));}
+function toutes(){return montres.filter(m=>!m.supprime);}
+
+/* Qui a payé. Les deux noms sont proposés d'office, mais le champ reste
+   libre : rien n'empêche d'en ajouter un troisième. */
+const PAYEURS=["Salem","Kamelia"];
+function payeurs(){
+  const v=[];
+  PAYEURS.forEach(x=>v.push(x));
+  toutes().forEach(m=>{
+    const p=(m.payePar||"").trim();
+    if(p&&v.indexOf(p)<0) v.push(p);
+  });
+  return v;
+}
 
 /* ── Empreinte visuelle (dHash + aHash) ──────────────────────
    Deux photos de la même montre donnent des empreintes proches.
@@ -1220,6 +1297,7 @@ async function traiterFichierPhoto(file){
 function coutTotal(m){return nb(m.prixAchat)+nb(m.frais);}
 function plusValue(m){return m.vendue?nb(m.prixVente)-coutTotal(m):0;}
 function statut(m){
+  if(estMateriel(m)) return m.recu?"avendre":"transit";
   if(m.vendue) return "vendue";
   if(!m.recu) return "transit";
   return m.destination==="garder"?"collection":"avendre";
@@ -1282,7 +1360,7 @@ const STATUT_CLS={transit:"b-transit",avendre:"b-vendre",collection:"b-collec",v
 
 /* ── Rendu ───────────────────────────────────────────────── */
 function filtrees(){
-  let l=actives();
+  let l=(section==="materiel")?materiel():actives();
   if(filtreStatut!=="tous") l=l.filter(m=>statut(m)===filtreStatut);
   const q=$("rech").value.toLowerCase().trim();
   if(q){
@@ -1356,6 +1434,8 @@ function basculerGroupe(){
   rendre();
 }
 function rendreCompteurs(){
+  if(section==="materiel") return rendreCompteursMateriel();
+  if(section==="comptes"){ $("counters").innerHTML=""; return; }
   const l=actives();
   let investi=0, transit=0, transitEur=0, aVendre=0, collection=0, vendues=0, encaisse=0, pv=0;
   l.forEach(m=>{
@@ -1380,23 +1460,189 @@ function rendreCompteurs(){
   }
   $("counters").innerHTML=h;
 }
+function rendreCompteursMateriel(){
+  const l=materiel();
+  let depense=0,transit=0;
+  l.forEach(m=>{depense+=coutTotal(m);if(!m.recu)transit++;});
+  let h=tuile("ct",l.length,"Articles")+tuile("cs",eurCourt(depense),"Dépensé");
+  if(transit) h+=tuile("cb",transit,"En transit");
+  $("counters").innerHTML=h;
+}
+
+/* ── Comptes entre associés ──────────────────────────────────────────────
+   Une seule question à laquelle il faut répondre juste : qui a avancé combien,
+   et qui doit quoi à l'autre. On additionne montres ET matériel : c'est le
+   même porte-monnaie. Ce qui n'a pas de payeur renseigné est mis à part —
+   l'ignorer en silence fausserait le solde sans prévenir. */
+const CLE_PART="mf_montres_part";
+function partEgale(){
+  const v=parseFloat(localStorage.getItem(CLE_PART));
+  return (isFinite(v)&&v>0&&v<100)?v:50;
+}
+function comptes(){
+  const par={}, sans=[];
+  let total=0;
+  toutes().forEach(m=>{
+    const c=coutTotal(m);
+    if(!c) return;
+    total+=c;
+    const p=(m.payePar||"").trim();
+    if(!p){ sans.push(m); return; }
+    par[p]=(par[p]||0)+c;
+  });
+  const manque=sans.reduce((s,m)=>s+coutTotal(m),0);
+  /* Ordre alphabétique, jamais par montant : le réglage « part de X » doit
+     toujours désigner la même personne. Trié par dépense, il changeait de
+     cible dès que l'autre passait devant, et le solde partait à l'envers. */
+  const noms=Object.keys(par).sort((a,b)=>a.localeCompare(b,"fr"));
+  const connu=total-manque;
+  return {par:par,noms:noms,total:total,connu:connu,manque:manque,sans:sans};
+}
+function rendreComptes(){
+  const z=$("zone-comptes");
+  if(!z) return;
+  if(section!=="comptes"){ z.style.display="none"; return; }
+  z.style.display="block";
+  const c=comptes(), pct=partEgale();
+  let h='<div class="cpt"><div class="cpt-t">Qui a payé quoi</div>';
+  if(!c.noms.length){
+    h+='<div class="cpt-d">Aucun payeur renseigné pour l\'instant. '+
+       'Ouvre une fiche et remplis « Payé par » — ou utilise le bouton plus bas '+
+       'pour attribuer d\'un coup tout ce qui n\'a pas de payeur.</div>';
+  }
+  c.noms.forEach(n=>{
+    const nb=toutes().filter(m=>(m.payePar||"").trim()===n).length;
+    h+='<div class="cpt-l"><div><div class="cpt-n">'+esc(n)+'</div>'+
+       '<div class="cpt-d">'+nb+' article'+(nb>1?"s":"")+'</div></div>'+
+       '<div class="cpt-v">'+eur(c.par[n])+'</div></div>';
+  });
+  if(c.manque>0){
+    h+='<div class="cpt-l"><div><div class="cpt-n" style="color:var(--muted)">Payeur non renseigné</div>'+
+       '<div class="cpt-d">'+c.sans.length+' article'+(c.sans.length>1?"s":"")+
+       ' — pas compté dans le solde</div></div>'+
+       '<div class="cpt-v" style="color:var(--muted)">'+eur(c.manque)+'</div></div>';
+  }
+  h+='<div class="cpt-l"><div class="cpt-n">Total engagé</div>'+
+     '<div class="cpt-v">'+eur(c.total)+'</div></div></div>';
+
+  // le solde : uniquement à deux, sinon la phrase n'a plus de sens
+  if(c.noms.length===2){
+    const a=c.noms[0], b=c.noms[1];
+    const da=c.par[a], db=c.par[b];
+    const duA=c.connu*(pct/100);         // ce que le premier aurait dû payer
+    const ecart=da-duA;                  // >0 : il a trop avancé
+    h+='<div class="cpt cpt-bilan"><div class="cpt-t">Solde ('+pct+' / '+(100-pct)+')</div>';
+    if(Math.abs(ecart)<0.005){
+      h+='<div class="cpt-phrase">✅ Vous êtes à égalité, personne ne doit rien.</div>';
+    }else{
+      const doit=ecart>0?b:a, recoit=ecart>0?a:b;
+      h+='<div class="cpt-gros">'+eur(Math.abs(ecart))+'</div>'+
+         '<div class="cpt-phrase">'+esc(doit)+' doit '+eur(Math.abs(ecart))+' à '+esc(recoit)+'.</div>';
+    }
+    h+='<div class="cpt-d" style="margin-top:8px">Sur '+eur(c.connu)+
+       ' de dépenses attribuées, chacun devrait en porter '+eur(c.connu*(pct/100))+' / '+
+       eur(c.connu*((100-pct)/100))+'.</div>';
+    h+='<div style="margin-top:10px"><label class="lbl">Part de '+esc(a)+' (%)</label>'+
+       '<input type="number" id="c-part" min="1" max="99" step="1" value="'+pct+
+       '" oninput="changerPart(this.value)" inputmode="numeric"></div>';
+    h+='</div>';
+  }else if(c.noms.length>2){
+    h+='<div class="cpt"><div class="cpt-d">Le partage automatique ne se calcule qu\'à deux. '+
+       'Au-dessus, les totaux ci-dessus restent justes.</div></div>';
+  }
+
+  if(c.sans.length){
+    h+='<div class="cpt"><div class="cpt-t">'+c.sans.length+
+       ' article'+(c.sans.length>1?"s":"")+' sans payeur</div>'+
+       '<div class="cpt-d" style="margin-bottom:10px">Attribue-les d\'un coup, '+
+       'puis corrige les exceptions une par une.</div>'+
+       '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+       payeurs().map(x=>'<button class="btn" onclick="attribuerSansPayeur(\''+esc(x)+'\')">'+
+         'Tout à '+esc(x)+'</button>').join("")+'</div></div>';
+  }
+  z.innerHTML=h;
+}
+function changerPart(v){
+  const n=parseFloat(v);
+  if(!isFinite(n)||n<=0||n>=100) return;
+  localStorage.setItem(CLE_PART,String(n));
+  const g=$("zone-comptes").querySelector(".cpt-bilan");
+  rendreComptes();
+  const c=$("c-part"); if(c) c.focus();
+}
+function attribuerSansPayeur(qui){
+  const l=comptes().sans;
+  if(!l.length) return;
+  if(!confirm("Mettre « "+qui+" » comme payeur sur "+l.length+
+     " article(s) sans payeur ?\n\nTu pourras corriger les exceptions ensuite."))
+    return;
+  l.forEach(m=>{m.payePar=qui;marquerModif(m);});
+  sauver();rendre();synchro();
+  toast(l.length+" article(s) attribué(s) à "+qui);
+}
+function choisirSection(s){
+  section=s;
+  try{localStorage.setItem(CLE_SECTION,s);}catch(e){}
+  ["montres","materiel","comptes"].forEach(x=>{
+    const b=$("ong-"+x); if(b) b.className="ong"+(x===s?" actif":"");
+  });
+  const og=$("onglets"); if(og) og.style.display=(s==="montres")?"none":"flex";
+  ["chip-materiel","chip-comptes"].forEach(i=>{
+    const e=$(i); if(e) e.style.display=(s==="montres")?"":"none";
+  });
+  const listes=(s!=="comptes");
+  ["barre","barre-sec","chips","liste"].forEach(i=>{
+    const e=$(i); if(e) e.style.display=listes?"":"none";
+  });
+  const at=$("actions-top"); if(at) at.style.display=(s==="montres")?"":"none";
+  const fab=document.querySelector(".fab");
+  if(fab) fab.style.display=(s==="comptes")?"none":"";
+  if(s==="materiel") filtreStatut="tous";
+  rendre();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
 function tuile(cls,nbv,lbl){
   return '<div class="counter '+cls+'"><div class="counter-nb">'+esc(nbv)+'</div><div class="counter-label">'+lbl+'</div></div>';
 }
+/* Les deux accès sont glissés en fin de rangée de filtres : cette rangée se
+   replie déjà sur deux lignes et il y reste de la place. Ailleurs, ils
+   faisaient descendre la liste et mangeaient une rangée de photos. */
+function chipsSections(){
+  if(section!=="montres") return "";
+  const n=materiel().length;
+  return '<button class="chip" id="chip-materiel" title="Mat&eacute;riel" '+
+         'onclick="choisirSection(\'materiel\')">&#129520;'+(n?" "+n:"")+'</button>'+
+         '<button class="chip" id="chip-comptes" title="Comptes entre nous" '+
+         'onclick="choisirSection(\'comptes\')">&#129309;</button>';
+}
 function rendreChips(){
+  if(section==="materiel"){
+    const l=materiel();
+    const d=[["tous","Tout",l.length],["transit","🕒 En transit",l.filter(m=>!m.recu).length],
+             ["avendre","✅ Reçus",l.filter(m=>!!m.recu).length]];
+    $("chips").innerHTML=d.map(x=>
+      '<button class="chip'+(filtreStatut===x[0]?" actif":"")+'" onclick="choisirStatut(\''+x[0]+'\')">'+
+      x[1]+' ('+x[2]+')</button>').join("");
+    return;
+  }
   const l=actives();
   const compte=s=>l.filter(m=>statut(m)===s).length;
   const defs=[["tous","Toutes",l.length],["transit","🕒 En transit",compte("transit")],
     ["avendre","📦 Livrées",compte("avendre")],["collection","💎 Collection",compte("collection")],
     ["vendue","💰 Vendues",compte("vendue")]];
   $("chips").innerHTML=defs.map(d=>
-    '<button class="chip'+(filtreStatut===d[0]?" actif":"")+'" onclick="choisirStatut(\''+d[0]+'\')">'+d[1]+' ('+d[2]+')</button>').join("");
+    '<button class="chip'+(filtreStatut===d[0]?" actif":"")+'" onclick="choisirStatut(\''+d[0]+'\')">'+d[1]+' ('+d[2]+')</button>').join("")
+    +chipsSections();
 }
 function rendreListe(){
   const l=filtrees();
   if(!l.length){
-    $("liste").innerHTML='<div class="vide"><div class="vide-ico">⌚</div>'+
-      (actives().length?"Aucune montre ne correspond à ce filtre.":"Aucune montre pour l'instant.<br>Appuie sur <b>+</b> pour ajouter ton premier achat.")+'</div>';
+    const mat=(section==="materiel");
+    $("liste").innerHTML='<div class="vide"><div class="vide-ico">'+(mat?"🧰":"⌚")+'</div>'+
+      (mat
+        ? (materiel().length?"Aucun article ne correspond à ce filtre."
+            :"Aucun matériel pour l'instant.<br>Coffrets, kits de démontage, piles, outils :<br>appuie sur <b>+</b> pour en ajouter.")
+        : (actives().length?"Aucune montre ne correspond à ce filtre.":"Aucune montre pour l'instant.<br>Appuie sur <b>+</b> pour ajouter ton premier achat."))+'</div>';
     return;
   }
   const compte={};
@@ -1440,7 +1686,8 @@ function carte(m,n){
     cs.map(c=>'<i class="pc" style="background:'+c.h+'" title="'+c.c+'"></i>').join("")+'</span>':"";
   return '<div class="mcard" id="card-'+m.id+'">'+
     '<div class="mhead" onclick="basculer(\''+m.id+'\')">'+
-      (photo?'<img class="mphoto" src="'+photo+'" alt="">':'<div class="mphoto-vide">⌚</div>')+
+      (photo?'<img class="mphoto" src="'+photo+'" alt="">'
+            :'<div class="mphoto-vide">'+(estMateriel(m)?"🧰":"⌚")+'</div>')+
       '<div class="minfo">'+
         '<div class="mnom">'+pastilles+esc(m.nom||"Sans nom")+'</div>'+
         (m.ref?'<div class="mref">'+esc(m.ref)+'</div>':'')+
@@ -1467,13 +1714,16 @@ function detail(m){
   h+=cas("Coût total",eur(c));
   h+=cas("Pays d'achat",m.paysAchat||"—");
   h+=cas("Vendeur",m.vendeur||"—");
+  h+=cas("Payé par",m.payePar||"—");
   h+=cas("Livraison prévue",dateFR(m.datePrevue));
-  h+=cas("Reçue le",m.recu?dateFR(m.dateRecu):"Pas encore");
+  h+=cas(estMateriel(m)?"Reçu le":"Reçue le",m.recu?dateFR(m.dateRecu):"Pas encore");
   h+=casL("Lieu de livraison",(m.lieu||"—")+(m.paysLivraison?" · "+m.paysLivraison:""));
   if(m.suivi) h+=casL("Suivi",m.suivi);
+  if(!estMateriel(m)){
   h+=cas("Destination",m.destination==="garder"?"💎 Je garde":"🏷 À revendre");
   h+=cas("Prix visé",nb(m.prixVise)?eur(nb(m.prixVise)):"—");
-  if(m.vendue){
+  }
+  if(m.vendue&&!estMateriel(m)){
     h+=cas("Vendue le",dateFR(m.dateVente));
     h+=cas("Prix de vente",eur(nb(m.prixVente)));
     h+=casL("Plus-value","<span class=\""+(pv>0?"pv-pos":pv<0?"pv-neg":"pv-neutre")+"\">"+(pv>0?"+":"")+eur(pv)+
@@ -1509,7 +1759,7 @@ function rendre(){
     b.style.display=n?"inline-block":"none";
     b.textContent="🗑 Supprimer ces "+n+" montre"+(n>1?"s":"");
   }
-  rendreCompteurs();rendreChips();rendreListe();
+  rendreCompteurs();rendreChips();rendreListe();rendreComptes();
 }
 function choisirStatut(s){filtreStatut=s;rendre();}
 /* La fiche s'ouvre dans une fenêtre centrée. Dépliée à l'intérieur de la
@@ -1522,7 +1772,7 @@ function ouvrirDetail(id){
   if(!m) return;
   detailCourant=id;
   const s=statut(m);
-  $("d-titre").textContent=m.nom||"Sans nom";
+  $("d-titre").textContent=(estMateriel(m)?"🧰 ":"")+(m.nom||"Sans nom");
   $("d-sous").innerHTML='<span class="badge '+STATUT_CLS[s]+'">'+STATUT_LIB[s]+'</span>'+
     badgeLivraison(m)+(m.ref?' <span class="mref" style="display:inline">'+esc(m.ref)+'</span>':'');
   $("d-corps").innerHTML=detail(m);
@@ -1538,7 +1788,7 @@ function fermerDetail(){
    doit refléter l'état réel, ou disparaître si la montre n'existe plus. */
 function rafraichirDetail(){
   if(!detailCourant) return;
-  if(!actives().some(m=>m.id===detailCourant)){fermerDetail();return;}
+  if(!toutes().some(m=>m.id===detailCourant)){fermerDetail();return;}
   ouvrirDetail(detailCourant);
 }
 
@@ -1612,21 +1862,50 @@ function majBlocVente(){
   $("bloc-vente").style.display=$("f-vendue").value==="1"?"block":"none";
   if($("f-vendue").value==="1"&&!$("f-date-vente").value) $("f-date-vente").value=auj();
 }
+let ficheType="montre";
+/* Le matériel n'a ni revente ni recherche de doublon : on masque ce qui n'a
+   pas de sens plutôt que de laisser des cases vides à remplir pour rien. */
+function appliquerType(t){
+  ficheType=t;
+  const mat=(t==="materiel");
+  ["bloc-revente","f-doublon"].forEach(i=>{const e=$(i);if(e)e.style.display=mat?"none":"";});
+  $("lbl-nom").textContent=mat?"Nom de l'article *":"Nom de la montre *";
+  $("f-nom").placeholder=mat?"Coffret 12 montres, kit de démontage...":"Casio G-Shock GA-2100";
+  $("lbl-ref").textContent=mat?"Référence / modèle":"Référence / modèle";
+  $("sect-photo").innerHTML=mat?"&#128248; Photo &amp; identit&eacute;":"&#128248; Photo &amp; identit&eacute;";
+  $("seg-t-montre").classList.toggle("actif",!mat);
+  $("seg-t-materiel").classList.toggle("actif",mat);
+}
+function choisirType(t){appliquerType(t);}
 function viderFiche(){
   ["f-nom","f-ref","f-details","f-vendeur","f-lieu","f-suivi","f-acheteur",
    "f-prix-achat","f-frais","f-prix-vise","f-prix-vente","f-pays-achat","f-pays-liv",
-   "f-date-achat","f-date-prevue","f-date-recu","f-date-vente"].forEach(i=>$(i).value="");
+   "f-date-achat","f-date-prevue","f-date-recu","f-date-vente","f-paye-par"].forEach(i=>$(i).value="");
   $("f-vendue").value="0";
   $("f-doublon").innerHTML="";
   retirerPhoto();
   setRecu(false);setDestination("vendre");majBlocVente();
+  majListePayeurs();
 }
-function ouvrirAjout(){
+/* Les noms déjà utilisés sont proposés : on ne se retrouve pas avec
+   « Salem », « salem » et « SALEM » comptés séparément. */
+function majListePayeurs(){
+  const dl=$("payeurs-list");
+  if(dl) dl.innerHTML=payeurs().map(x=>'<option value="'+esc(x)+'">').join("");
+  const z=$("f-paye-rapide");
+  if(z) z.innerHTML=PAYEURS.map(x=>
+    '<button type="button" class="chip" onclick="mettrePayeur(\''+esc(x)+'\')">'+esc(x)+'</button>').join("");
+}
+function mettrePayeur(x){ $("f-paye-par").value=x; }
+function ouvrirAjout(t){
   ficheEditionId=null;
-  $("fiche-titre").textContent="Nouvelle montre";
-  $("fiche-sous").textContent="Achat, livraison, revente — tout au même endroit";
+  const mat=(t==="materiel");
+  $("fiche-titre").textContent=mat?"Nouvel article":"Nouvelle montre";
+  $("fiche-sous").textContent=mat?"Coffret, outil, pièce — tout ce qui n'est pas une montre"
+                                 :"Achat, livraison, revente — tout au même endroit";
   $("fiche-valider").innerHTML="✓ Enregistrer";
   viderFiche();
+  appliquerType(mat?"materiel":"montre");
   $("f-date-achat").value=auj();
   $("f-pays-liv").value="France";
   $("modal-fiche").classList.add("open");
@@ -1648,6 +1927,9 @@ function ouvrirEdition(id){
   $("f-suivi").value=m.suivi||"";$("f-date-recu").value=m.dateRecu||"";
   $("f-prix-vise").value=m.prixVise||"";$("f-vendue").value=m.vendue?"1":"0";
   $("f-prix-vente").value=m.prixVente||"";$("f-date-vente").value=m.dateVente||"";$("f-acheteur").value=m.acheteur||"";
+  $("f-paye-par").value=m.payePar||"";
+  appliquerType(estMateriel(m)?"materiel":"montre");
+  $("fiche-titre").textContent=estMateriel(m)?"Modifier l'article":"Modifier la montre";
   setRecu(!!m.recu);setDestination(m.destination||"vendre");majBlocVente();
   if(m.photoId&&PHOTOS[m.photoId]){
     fichePhoto={dataUrl:PHOTOS[m.photoId],dhash:m.dhash,ahash:m.ahash,existante:true};
@@ -1744,6 +2026,8 @@ function enregistrerFiche(){
     prixVente:vendue?nb($("f-prix-vente").value):0,
     dateVente:vendue?($("f-date-vente").value||auj()):"",
     acheteur:vendue?$("f-acheteur").value.trim():"",
+    payePar:$("f-paye-par").value.trim(),
+    type:ficheType,
     majLe:new Date().toISOString()
   };
   let m;
@@ -2279,13 +2563,14 @@ function csvChamp(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"';}
 function exporterCSV(){
   const l=filtrees();
   if(!l.length){toast("Rien à exporter");return;}
-  let csv="﻿Nom;Référence;Statut;Date achat;Prix achat;Frais;Coût total;Pays achat;Vendeur;"+
+  let csv="﻿Type;Nom;Référence;Statut;Date achat;Prix achat;Frais;Coût total;Pays achat;Vendeur;Payé par;"+
     "Lieu livraison;Pays livraison;Livraison prévue;Reçue;Date réception;Suivi;Destination;Prix visé;"+
     "Vendue;Prix vente;Date vente;Acheteur;Plus-value;Détails\n";
   l.forEach(m=>{
-    csv+=[csvChamp(m.nom),csvChamp(m.ref),csvChamp(STATUT_LIB[statut(m)]),
+    csv+=[estMateriel(m)?"Matériel":"Montre",
+      csvChamp(m.nom),csvChamp(m.ref),csvChamp(STATUT_LIB[statut(m)]),
       m.dateAchat||"",nb(m.prixAchat).toFixed(2),nb(m.frais).toFixed(2),coutTotal(m).toFixed(2),
-      csvChamp(m.paysAchat),csvChamp(m.vendeur),csvChamp(m.lieu),csvChamp(m.paysLivraison),m.datePrevue||"",
+      csvChamp(m.paysAchat),csvChamp(m.vendeur),csvChamp(m.payePar),csvChamp(m.lieu),csvChamp(m.paysLivraison),m.datePrevue||"",
       m.recu?"Oui":"Non",m.dateRecu||"",csvChamp(m.suivi),m.destination==="garder"?"Garder":"Revendre",
       nb(m.prixVise).toFixed(2),m.vendue?"Oui":"Non",m.vendue?nb(m.prixVente).toFixed(2):"",m.dateVente||"",
       csvChamp(m.acheteur),m.vendue?plusValue(m).toFixed(2):"",csvChamp(m.details)].join(";")+"\n";
@@ -2422,6 +2707,9 @@ function apiToken(){return (localStorage.getItem(CLE_TOKEN)||"").trim();}
 function chargerReglages(){
   try{grouper=localStorage.getItem(CLE_GROUPE)!=="0";}catch(e){grouper=true;}
   try{const v=localStorage.getItem(CLE_VUE);if(VUES.indexOf(v)>=0) vue=v;}catch(e){}
+  // on rouvre sur les montres : le matériel et les comptes se consultent,
+  // la collection se regarde tous les jours
+  section="montres";
   // tri par livraison par défaut : ce qui n'est pas encore arrivé passe devant
   try{
     const t=localStorage.getItem(CLE_TRI)||"livraison";
@@ -2665,7 +2953,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v25", VERSION_DATE="28/08/2026";
+const VERSION="v26", VERSION_DATE="28/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
@@ -2720,7 +3008,8 @@ async function demarrer(){
   PHOTOS=await photosCharger();
   await remettreEmpreintesAJour();
   await preparerCouleurs();
-  rendre();
+  majListePayeurs();
+  choisirSection("montres");
   majPastille("");
   if(apiURL()){
     if(partage){
