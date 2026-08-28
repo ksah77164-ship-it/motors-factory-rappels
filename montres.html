@@ -2377,7 +2377,16 @@ function importerJSON(input){
           try{await photoEcrire(pid,brute);}catch(e){}
         }
         const l=montres.find(m=>m.id===o.id);
-        if(l) Object.assign(l,o); else montres.unshift(o);
+        if(l){
+          /* La fiche était supprimée : la réimporter, c'est vouloir la
+             reprendre. Sans ça elle revenait à l'écran puis disparaissait à la
+             synchro suivante — le coffre gardait la suppression, plus récente,
+             et personne ne comprenait pourquoi. On lève donc la suppression et
+             on redate la fiche pour qu'elle l'emporte sur la pierre tombale. */
+          const ressuscite=!!l.supprime;
+          Object.assign(l,o);
+          if(ressuscite){ l.supprime=false; l.majLe=new Date().toISOString(); }
+        } else montres.unshift(o);
         aEnvoyer[o.id]=1;
       }
       // Photos supplémentaires du paquet (sauvegarde complète)
@@ -2656,7 +2665,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v24", VERSION_DATE="27/08/2026";
+const VERSION="v25", VERSION_DATE="28/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
