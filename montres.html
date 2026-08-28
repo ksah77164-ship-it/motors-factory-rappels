@@ -172,7 +172,9 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .liste.photos .mmeta .badge{font-size:8px;padding:2px 5px;letter-spacing:.3px;}
 .liste.photos .mmeta .b-transit,.liste.photos .mmeta .b-vendre,
 .liste.photos .mmeta .b-collec,.liste.photos .mmeta .b-pays,
-.liste.photos .mmeta .b-lot{display:none;}
+/* En vue photos une seule vignette représente les deux exemplaires : le
+   « ×2 » doit rester lisible, seul le mot est de trop sur une si petite carte. */
+.liste.photos .mmeta .b-lot .lot-mot{display:none;}
 .liste.photos .lv-long{display:none;}
 .liste.photos .mprix{text-align:left;}
 .liste.photos .mprix-a{font-size:11.5px;}
@@ -412,7 +414,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     <button class="chip" id="vue-liste" onclick="choisirVue('liste')">&#128209; Cartes</button>
     <button class="chip" id="vue-compacte" onclick="choisirVue('compacte')">&#9776; Liste</button>
     <button class="chip" id="vue-photos" onclick="choisirVue('photos')">&#9638; Photos</button>
-    <button class="chip actif" id="btn-grouper" onclick="basculerGroupe()" title="Rapprocher les exemplaires identiques">&#128279;</button>
+    <button class="chip actif" id="btn-grouper" onclick="basculerGroupe()" title="N'afficher qu'une vignette par mod&egrave;le">&#128279;</button>
     <button class="chip danger" id="btn-purge" style="display:none" onclick="supprimerResultats()"></button>
   </div>
 
@@ -1399,18 +1401,17 @@ function filtrees(){
   return grouper?regrouper(l):l;
 }
 
-/* Rapproche les exemplaires d'une même montre sans casser le tri :
-   chaque groupe reste à la place de son premier exemplaire. */
+/* Le 🔗 ne déplace plus rien : il n'affiche qu'une vignette par modèle, celle
+   qui vient en tête du tri, marquée « ×2 ». L'ancienne version remontait le
+   deuxième exemplaire à côté du premier APRÈS le tri — un tri par prix ou par
+   couleur se retrouvait donc faux dès qu'on possédait une montre en double,
+   et rien ne disait pourquoi. Le tri passe maintenant avant tout. */
 function regrouper(l){
   const vus={}, sortie=[];
   l.forEach(m=>{
     const k=cleExemplaire(m);
-    if(vus[k]===undefined){vus[k]=sortie.length;sortie.push(m);}
-    else{
-      let i=vus[k]+1;
-      while(i<sortie.length&&cleExemplaire(sortie[i])===k) i++;
-      sortie.splice(i,0,m);
-    }
+    if(vus[k]) return;
+    vus[k]=1; sortie.push(m);
   });
   return sortie;
 }
@@ -1602,7 +1603,8 @@ function rendreListe(){
     return;
   }
   const compte={};
-  actives().forEach(m=>{const k=cleExemplaire(m);compte[k]=(compte[k]||0)+1;});
+  (section==="materiel"?materiel():actives())
+    .forEach(m=>{const k=cleExemplaire(m);compte[k]=(compte[k]||0)+1;});
   $("liste").innerHTML=l.map(m=>carte(m,compte[cleExemplaire(m)]||1)).join("");
 }
 /* Livraison, lisible sans ouvrir la fiche */
@@ -1650,7 +1652,8 @@ function carte(m,n){
         '<div class="mmeta">'+
           '<span class="badge '+STATUT_CLS[s]+'">'+STATUT_LIB[s]+'</span>'+
           badgeLivraison(m)+
-          (n>1?'<span class="badge b-lot">&times;'+n+' exemplaires</span>':'')+
+          (n>1?'<span class="badge b-lot">&times;'+n+
+               '<span class="lot-mot"> exemplaires</span></span>':'')+
           (m.paysAchat?'<span class="badge b-pays">'+esc(m.paysAchat)+'</span>':'')+
         '</div>'+
       '</div>'+
@@ -2909,7 +2912,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v27", VERSION_DATE="28/08/2026";
+const VERSION="v28", VERSION_DATE="28/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
