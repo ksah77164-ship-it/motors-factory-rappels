@@ -133,10 +133,6 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .cpt-d{font-size:10.5px;color:var(--muted);font-weight:700;}
 .cpt-v{font-size:14px;font-weight:900;color:var(--cream);font-variant-numeric:tabular-nums;
   white-space:nowrap;}
-.cpt-bilan{background:linear-gradient(160deg,rgba(198,160,74,.16),rgba(198,160,74,.05));
-  border-color:var(--gold);}
-.cpt-gros{font-size:19px;font-weight:900;color:var(--gold2);font-variant-numeric:tabular-nums;}
-.cpt-phrase{font-size:12.5px;font-weight:800;color:var(--cream);line-height:1.5;margin-top:6px;}
 .chip{padding:6px 13px;border-radius:22px;border:1px solid var(--line);background:var(--card);color:var(--muted);
   font-size:11.5px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;}
 .chip.actif{background:var(--card2);border-color:var(--gold);color:var(--champ);}
@@ -377,7 +373,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
   <div class="onglets" id="onglets" style="display:none">
     <button class="ong" id="ong-montres" onclick="choisirSection('montres')">&#8592; Montres</button>
     <button class="ong" id="ong-materiel" onclick="choisirSection('materiel')">&#129520; Mat&eacute;riel</button>
-    <button class="ong" id="ong-comptes" onclick="choisirSection('comptes')">&#129309; Comptes</button>
+    <button class="ong" id="ong-comptes" onclick="choisirSection('comptes')">&#129518; Math&eacute;matique</button>
   </div>
 
   <div class="counters" id="counters"></div>
@@ -1471,14 +1467,9 @@ function rendreCompteursMateriel(){
 
 /* ── Comptes entre associés ──────────────────────────────────────────────
    Une seule question à laquelle il faut répondre juste : qui a avancé combien,
-   et qui doit quoi à l'autre. On additionne montres ET matériel : c'est le
-   même porte-monnaie. Ce qui n'a pas de payeur renseigné est mis à part —
-   l'ignorer en silence fausserait le solde sans prévenir. */
-const CLE_PART="mf_montres_part";
-function partEgale(){
-  const v=parseFloat(localStorage.getItem(CLE_PART));
-  return (isFinite(v)&&v>0&&v<100)?v:50;
-}
+   sur quels articles. On additionne montres ET matériel : c'est le même
+   porte-monnaie. Le partage, lui, ne se calcule pas ici : les chiffres bruts
+   suffisent, et personne ne veut d'un solde décidé à sa place. */
 function comptes(){
   const par={}, sans=[];
   let total=0;
@@ -1503,12 +1494,11 @@ function rendreComptes(){
   if(!z) return;
   if(section!=="comptes"){ z.style.display="none"; return; }
   z.style.display="block";
-  const c=comptes(), pct=partEgale();
+  const c=comptes();
   let h='<div class="cpt"><div class="cpt-t">Qui a payé quoi</div>';
   if(!c.noms.length){
     h+='<div class="cpt-d">Aucun payeur renseigné pour l\'instant. '+
-       'Ouvre une fiche et remplis « Payé par » — ou utilise le bouton plus bas '+
-       'pour attribuer d\'un coup tout ce qui n\'a pas de payeur.</div>';
+       'Ouvre une fiche et remplis « Payé par ».</div>';
   }
   c.noms.forEach(n=>{
     const nb=toutes().filter(m=>(m.payePar||"").trim()===n).length;
@@ -1518,57 +1508,23 @@ function rendreComptes(){
   });
   if(c.manque>0){
     h+='<div class="cpt-l"><div><div class="cpt-n" style="color:var(--muted)">Payeur non renseigné</div>'+
-       '<div class="cpt-d">'+c.sans.length+' article'+(c.sans.length>1?"s":"")+
-       ' — pas compté dans le solde</div></div>'+
+       '<div class="cpt-d">'+c.sans.length+' article'+(c.sans.length>1?"s":"")+'</div></div>'+
        '<div class="cpt-v" style="color:var(--muted)">'+eur(c.manque)+'</div></div>';
   }
   h+='<div class="cpt-l"><div class="cpt-n">Total engagé</div>'+
-     '<div class="cpt-v">'+eur(c.total)+'</div></div></div>';
-
-  // le solde : uniquement à deux, sinon la phrase n'a plus de sens
-  if(c.noms.length===2){
-    const a=c.noms[0], b=c.noms[1];
-    const da=c.par[a], db=c.par[b];
-    const duA=c.connu*(pct/100);         // ce que le premier aurait dû payer
-    const ecart=da-duA;                  // >0 : il a trop avancé
-    h+='<div class="cpt cpt-bilan"><div class="cpt-t">Solde ('+pct+' / '+(100-pct)+')</div>';
-    if(Math.abs(ecart)<0.005){
-      h+='<div class="cpt-phrase">✅ Vous êtes à égalité, personne ne doit rien.</div>';
-    }else{
-      const doit=ecart>0?b:a, recoit=ecart>0?a:b;
-      h+='<div class="cpt-gros">'+eur(Math.abs(ecart))+'</div>'+
-         '<div class="cpt-phrase">'+esc(doit)+' doit '+eur(Math.abs(ecart))+' à '+esc(recoit)+'.</div>';
-    }
-    h+='<div class="cpt-d" style="margin-top:8px">Sur '+eur(c.connu)+
-       ' de dépenses attribuées, chacun devrait en porter '+eur(c.connu*(pct/100))+' / '+
-       eur(c.connu*((100-pct)/100))+'.</div>';
-    h+='<div style="margin-top:10px"><label class="lbl">Part de '+esc(a)+' (%)</label>'+
-       '<input type="number" id="c-part" min="1" max="99" step="1" value="'+pct+
-       '" oninput="changerPart(this.value)" inputmode="numeric"></div>';
-    h+='</div>';
-  }else if(c.noms.length>2){
-    h+='<div class="cpt"><div class="cpt-d">Le partage automatique ne se calcule qu\'à deux. '+
-       'Au-dessus, les totaux ci-dessus restent justes.</div></div>';
-  }
-
+     '<div class="cpt-v">'+eur(c.total)+'</div></div>';
+  // l'outil d'attribution reste dans le même encadré : c'est ce qui permet de
+  // remplir les fiches d'un geste, pas un calcul de plus
   if(c.sans.length){
-    h+='<div class="cpt"><div class="cpt-t">'+c.sans.length+
-       ' article'+(c.sans.length>1?"s":"")+' sans payeur</div>'+
-       '<div class="cpt-d" style="margin-bottom:10px">Attribue-les d\'un coup, '+
+    h+='<div style="margin-top:12px"><div class="cpt-d" style="margin-bottom:8px">'+
+       c.sans.length+' article'+(c.sans.length>1?"s":"")+' sans payeur — attribue-les d\'un coup, '+
        'puis corrige les exceptions une par une.</div>'+
        '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
        payeurs().map(x=>'<button class="btn" onclick="attribuerSansPayeur(\''+esc(x)+'\')">'+
          'Tout à '+esc(x)+'</button>').join("")+'</div></div>';
   }
+  h+='</div>';
   z.innerHTML=h;
-}
-function changerPart(v){
-  const n=parseFloat(v);
-  if(!isFinite(n)||n<=0||n>=100) return;
-  localStorage.setItem(CLE_PART,String(n));
-  const g=$("zone-comptes").querySelector(".cpt-bilan");
-  rendreComptes();
-  const c=$("c-part"); if(c) c.focus();
 }
 function attribuerSansPayeur(qui){
   const l=comptes().sans;
@@ -1612,8 +1568,8 @@ function chipsSections(){
   const n=materiel().length;
   return '<button class="chip" id="chip-materiel" title="Mat&eacute;riel" '+
          'onclick="choisirSection(\'materiel\')">&#129520;'+(n?" "+n:"")+'</button>'+
-         '<button class="chip" id="chip-comptes" title="Comptes entre nous" '+
-         'onclick="choisirSection(\'comptes\')">&#129309;</button>';
+         '<button class="chip" id="chip-comptes" title="Math&eacute;matique" '+
+         'onclick="choisirSection(\'comptes\')">&#129518;</button>';
 }
 function rendreChips(){
   if(section==="materiel"){
@@ -2953,7 +2909,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v26", VERSION_DATE="28/08/2026";
+const VERSION="v27", VERSION_DATE="28/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
