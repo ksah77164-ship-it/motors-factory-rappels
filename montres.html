@@ -219,6 +219,20 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .ail-l input[type=number]{max-width:96px;}
 .ail-l .btn{flex-shrink:0;padding:9px 13px;}
 .ail-r{font-size:12px;font-weight:700;color:var(--cream);line-height:1.5;margin-top:8px;}
+.ail-liste{margin-bottom:9px;}
+.ail-item{display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px solid var(--line);}
+.ail-item:last-child{border-bottom:none;}
+.ail-p{font-size:13px;font-weight:900;color:var(--muted);font-variant-numeric:tabular-nums;
+  min-width:62px;flex-shrink:0;}
+.ail-item.top .ail-p{color:var(--gold2);}
+.ail-s{flex:1;min-width:0;font-size:11.5px;font-weight:700;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+a.ail-s{color:var(--gold);text-decoration:none;}
+.ail-eco{font-size:11px;font-weight:900;color:#8fd6a4;flex-shrink:0;}
+.ail-x{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;
+  padding:2px 4px;flex-shrink:0;font-family:inherit;}
+.ail-x:active{color:var(--debit);}
 .b-eco{background:rgba(120,200,140,.15);color:#8fd6a4;}
 /* Regrouper fait disparaître des vignettes au milieu d'une grille qui défile.
    Sans un mot pour le dire, le bouton passe pour cassé. */
@@ -508,17 +522,6 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     </div>
     <label class="lbl">Vendeur / plateforme</label>
     <input type="text" id="f-vendeur" placeholder="Yahoo Japan, eBay, Chrono24, Amazon..." autocomplete="off">
-
-    <div class="row2">
-      <div>
-        <label class="lbl">Vu moins cher ailleurs (&euro;)</label>
-        <input type="number" id="f-prix-ailleurs" step="0.01" min="0" placeholder="0,00" inputmode="decimal">
-      </div>
-      <div>
-        <label class="lbl">Sur quel site</label>
-        <input type="text" id="f-site-ailleurs" placeholder="Nom du site" autocomplete="off">
-      </div>
-    </div>
 
     <label class="lbl">Pay&eacute; par</label>
     <input type="text" id="f-paye-par" list="payeurs-list" placeholder="Qui a sorti l'argent ?" autocomplete="off">
@@ -1319,10 +1322,30 @@ function coutTotal(m){return nb(m.prixAchat)+nb(m.frais);}
 /* Le prix trouvé ailleurs, et ce qu'il aurait fait gagner. On ne compte que
    les écarts favorables : un prix plus cher ailleurs n'est pas une perte,
    c'est simplement la preuve qu'on a bien acheté. */
+/* Plusieurs sites par montre : on garde une liste, et c'est le moins cher qui
+   compte. Un seul champ obligeait à écraser le relevé précédent pour en noter
+   un nouveau — on perdait la comparaison au moment même où elle servait. */
+function relevesAilleurs(m){
+  if(Array.isArray(m.ailleurs)) return m.ailleurs;
+  if(typeof m.ailleurs==="string"&&m.ailleurs.trim()){
+    try{const l=JSON.parse(m.ailleurs); if(Array.isArray(l)){m.ailleurs=l;return l;}}catch(e){}
+  }
+  // fiche d'une version précédente : un seul prix, on le reprend tel quel
+  const l=[];
+  if(nb(m.prixAilleurs)>0) l.push({p:nb(m.prixAilleurs),s:String(m.siteAilleurs||"")});
+  m.ailleurs=l;
+  return l;
+}
+function meilleurAilleurs(m){
+  const l=relevesAilleurs(m);
+  let best=null;
+  l.forEach(x=>{ const p=nb(x.p); if(p>0&&(!best||p<best.p)) best={p:p,s:x.s||""}; });
+  return best;
+}
 function ecoPossible(m){
-  const a=nb(m.prixAilleurs);
-  if(a<=0) return 0;
-  const d=coutTotal(m)-a;
+  const b=meilleurAilleurs(m);
+  if(!b) return 0;
+  const d=coutTotal(m)-b.p;
   return d>0?d:0;
 }
 function ecoTotale(l){return (l||toutes()).reduce((s,m)=>s+ecoPossible(m),0);}
@@ -1764,23 +1787,36 @@ function detail(m){
   if(m.details) h+='<div class="dnote">'+esc(m.details)+'</div>';
   // saisie sur place : c'est en regardant la montre qu'on a le prix de l'autre
   // site sous les yeux, pas dans le formulaire complet
-  const eco=ecoPossible(m);
+  const eco=ecoPossible(m), best=meilleurAilleurs(m), rel=relevesAilleurs(m);
   h+='<div class="ailleurs'+(eco>0?" gagne":"")+'">'+
-     '<div class="ail-t">&#128161; Trouv&eacute;e moins cher ailleurs ?</div>'+
-     '<div class="ail-l">'+
-       '<input type="number" id="a-prix" step="0.01" min="0" inputmode="decimal" '+
-         'placeholder="Prix vu" value="'+(nb(m.prixAilleurs)||"")+'">'+
-       '<input type="text" id="a-site" placeholder="Sur quel site ?" '+
-         'autocomplete="off" value="'+esc(m.siteAilleurs||"")+'">'+
-       '<button class="btn or" onclick="enregistrerAilleurs(\''+m.id+'\')">&#10003;</button>'+
+     '<div class="ail-t">&#128161; Trouv&eacute;e moins cher ailleurs ?</div>';
+  if(rel.length){
+    h+='<div class="ail-liste">';
+    rel.forEach((x,i)=>{
+      const p=nb(x.p), gagnant=best&&p===best.p;
+      const nom=x.s||"site non pr\u00e9cis\u00e9";
+      h+='<div class="ail-item'+(gagnant?" top":"")+'">'+
+         '<span class="ail-p">'+eur(p)+'</span>'+
+         (x.u?'<a class="ail-s" href="'+esc(x.u)+'" target="_blank" rel="noopener">'+esc(nom)+' &#8599;</a>'
+             :'<span class="ail-s">'+esc(nom)+'</span>')+
+         (gagnant&&eco>0?'<span class="ail-eco">-'+eur(eco)+'</span>':'')+
+         '<button class="ail-x" title="Retirer" onclick="retirerAilleurs(\''+m.id+'\','+i+')">&#10006;</button>'+
+         '</div>';
+    });
+    h+='</div>';
+  }
+  h+='<div class="ail-l">'+
+       '<input type="number" id="a-prix" step="0.01" min="0" inputmode="decimal" placeholder="Prix vu">'+
+       '<input type="text" id="a-site" placeholder="Site ou lien coll\u00e9" autocomplete="off">'+
+       '<button class="btn or" onclick="ajouterAilleurs(\''+m.id+'\')">&#10133;</button>'+
      '</div>'+
      (eco>0
-       ? '<div class="ail-r">Tu aurais économisé <b>'+eur(eco)+'</b> sur celle-ci'+
-         (m.siteAilleurs?' chez '+esc(m.siteAilleurs):'')+
-         ' — payée '+eur(coutTotal(m))+' au lieu de '+eur(nb(m.prixAilleurs))+'.</div>'
-       : (nb(m.prixAilleurs)>0
-          ? '<div class="ail-r">Rien à regretter : tu l\'as payée '+eur(coutTotal(m))+
-            ', c\'est déjà moins cher qu\'ailleurs.</div>'
+       ? '<div class="ail-r">Tu aurais \u00e9conomis\u00e9 <b>'+eur(eco)+'</b> sur celle-ci'+
+         (best.s?' chez '+esc(best.s):'')+
+         ' \u2014 pay\u00e9e '+eur(coutTotal(m))+' au lieu de '+eur(best.p)+'.</div>'
+       : (best
+          ? '<div class="ail-r">Rien \u00e0 regretter : tu l\'as pay\u00e9e '+eur(coutTotal(m))+
+            ', c\'est d\u00e9j\u00e0 le meilleur prix.</div>'
           : ''))+
      '</div>';
   h+='<div class="dactions">';
@@ -1792,17 +1828,48 @@ function detail(m){
   h+='</div>';
   return h;
 }
-function enregistrerAilleurs(id){
+/* Un lien collé vaut un nom de site : on garde l'adresse pour y revenir, et
+   on en tire le nom pour que la liste reste lisible. */
+function nomDeSite(v){
+  const t=String(v||"").trim();
+  if(!/^https?:\/\//i.test(t)) return {s:t,u:""};
+  try{
+    const h=new URL(t).hostname.replace(/^www\./,"");
+    return {s:h,u:t};
+  }catch(e){ return {s:t,u:""}; }
+}
+function ajouterAilleurs(id){
   const m=montres.find(x=>x.id===id); if(!m) return;
-  const p=nb($("a-prix").value), site=$("a-site").value.trim();
-  m.prixAilleurs=p>0?p:0;
-  m.siteAilleurs=p>0?site:"";
+  const p=nb($("a-prix").value);
+  if(p<=0){toast("⚠ Indique le prix vu sur l'autre site");$("a-prix").focus();return;}
+  const q=nomDeSite($("a-site").value);
+  const l=relevesAilleurs(m).slice();
+  l.push({p:p,s:q.s,u:q.u});
+  l.sort((x,y)=>nb(x.p)-nb(y.p));      // le moins cher en tête
+  m.ailleurs=l;
+  majAilleurs(m);
+  const e=ecoPossible(m);
+  toast(e>0?"Ajouté — économie possible : "+eur(e)
+           :"Ajouté — tu l'avais payée moins cher");
+}
+function retirerAilleurs(id,i){
+  const m=montres.find(x=>x.id===id); if(!m) return;
+  const l=relevesAilleurs(m).slice();
+  if(i<0||i>=l.length) return;
+  l.splice(i,1);
+  m.ailleurs=l;
+  majAilleurs(m);
+  toast("Relevé retiré");
+}
+/* Les deux anciens champs restent renseignés avec le meilleur prix : les
+   exports, le coffre et les fiches d'une version précédente continuent de
+   fonctionner sans rien comprendre à la liste. */
+function majAilleurs(m){
+  const b=meilleurAilleurs(m);
+  m.prixAilleurs=b?b.p:0;
+  m.siteAilleurs=b?b.s:"";
   marquerModif(m);
   sauver();rendre();rafraichirDetail();synchro();
-  const e=ecoPossible(m);
-  toast(p<=0?"Prix ailleurs effacé"
-       :e>0?"Économie possible : "+eur(e)
-       :"Noté — tu l'avais payée moins cher");
 }
 function cas(l,v){return '<div class="dcase"><div class="dcase-lbl">'+l+'</div><div class="dcase-val">'+v+'</div></div>';}
 function casL(l,v){return '<div class="dcase large"><div class="dcase-lbl">'+l+'</div><div class="dcase-val">'+v+'</div></div>';}
@@ -1942,8 +2009,7 @@ function choisirType(t){appliquerType(t);}
 function viderFiche(){
   ["f-nom","f-ref","f-details","f-vendeur","f-lieu","f-suivi","f-acheteur",
    "f-prix-achat","f-frais","f-prix-vise","f-prix-vente","f-pays-achat","f-pays-liv",
-   "f-date-achat","f-date-prevue","f-date-recu","f-date-vente","f-paye-par",
-   "f-prix-ailleurs","f-site-ailleurs"].forEach(i=>$(i).value="");
+   "f-date-achat","f-date-prevue","f-date-recu","f-date-vente","f-paye-par"].forEach(i=>$(i).value="");
   $("f-vendue").value="0";
   $("f-doublon").innerHTML="";
   retirerPhoto();
@@ -1991,8 +2057,6 @@ function ouvrirEdition(id){
   $("f-prix-vise").value=m.prixVise||"";$("f-vendue").value=m.vendue?"1":"0";
   $("f-prix-vente").value=m.prixVente||"";$("f-date-vente").value=m.dateVente||"";$("f-acheteur").value=m.acheteur||"";
   $("f-paye-par").value=m.payePar||"";
-  $("f-prix-ailleurs").value=m.prixAilleurs||"";
-  $("f-site-ailleurs").value=m.siteAilleurs||"";
   appliquerType(estMateriel(m)?"materiel":"montre");
   $("fiche-titre").textContent=estMateriel(m)?"Modifier l'article":"Modifier la montre";
   setRecu(!!m.recu);setDestination(m.destination||"vendre");majBlocVente();
@@ -2092,8 +2156,6 @@ function enregistrerFiche(){
     dateVente:vendue?($("f-date-vente").value||auj()):"",
     acheteur:vendue?$("f-acheteur").value.trim():"",
     payePar:$("f-paye-par").value.trim(),
-    prixAilleurs:nb($("f-prix-ailleurs").value),
-    siteAilleurs:$("f-site-ailleurs").value.trim(),
     type:ficheType,
     majLe:new Date().toISOString()
   };
@@ -2842,12 +2904,20 @@ function fusionner(distantes){
   return change;
 }
 
+/* La feuille de calcul ne stocke que du texte : la liste des prix relevés
+   ailleurs part donc en JSON. Elle est relue à la volée à l'arrivée. */
+function pourCoffre(m){
+  const o=Object.assign({},m);
+  o.ailleurs=JSON.stringify(relevesAilleurs(m)||[]);
+  return o;
+}
 async function synchro(manuel){
   if(!apiURL()){if(manuel)toast("Aucun coffre configuré");return;}
   if(syncEnCours) return;
   syncEnCours=true;majPastille("envoi");
   try{
-    const envoi=Object.keys(aEnvoyer).map(id=>montres.find(m=>m.id===id)).filter(Boolean);
+    const envoi=Object.keys(aEnvoyer).map(id=>montres.find(m=>m.id===id)).filter(Boolean)
+      .map(pourCoffre);
     const instantane=envoi.map(m=>({id:m.id,majLe:m.majLe}));
     const photos={};let n=0;
     for(const pid in aEnvoyerPhotos){
@@ -3022,7 +3092,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v31", VERSION_DATE="28/08/2026";
+const VERSION="v32", VERSION_DATE="28/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){

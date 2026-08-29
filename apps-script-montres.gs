@@ -62,7 +62,11 @@ const ENTETES = [
   "type", "payePar",
   // Ajoutées le 28/08/2026 : le prix relevé sur un autre site, et lequel.
   // Sert à voir ce qu'on aurait pu économiser, montre par montre.
-  "prixAilleurs", "siteAilleurs"
+  "prixAilleurs", "siteAilleurs",
+  // La liste complète des prix relevés sur d'autres sites, en JSON : plusieurs
+  // sites par montre. Les deux colonnes ci-dessus gardent le meilleur des trois,
+  // pour rester lisibles à l'œil dans la feuille.
+  "ailleurs"
 ];
 const ENTETES_PHOTOS = ["photoId", "fileId", "creeLe"];
 
