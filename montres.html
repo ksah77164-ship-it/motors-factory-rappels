@@ -211,6 +211,18 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .dnote{background:var(--bg2);border-left:2px solid var(--gold);border-radius:8px;padding:9px 11px;font-size:12.5px;
   color:var(--champ);font-weight:600;line-height:1.6;margin-top:8px;white-space:pre-wrap;}
 .dactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+/* Le prix vu ailleurs se saisit là où on regarde la montre. */
+.ailleurs{background:var(--bg2);border:1px solid var(--line);border-radius:12px;
+  padding:11px;margin-top:12px;}
+.ailleurs.gagne{border-color:var(--gold);background:linear-gradient(160deg,rgba(198,160,74,.13),rgba(198,160,74,.04));}
+.ail-t{font-size:11px;font-weight:900;color:var(--gold2);text-transform:uppercase;
+  letter-spacing:.05em;margin-bottom:8px;}
+.ail-l{display:flex;gap:6px;}
+.ail-l input{flex:1;min-width:0;margin:0;}
+.ail-l input[type=number]{max-width:96px;}
+.ail-l .btn{flex-shrink:0;padding:9px 13px;}
+.ail-r{font-size:12px;font-weight:700;color:var(--cream);line-height:1.5;margin-top:8px;}
+.b-eco{background:rgba(120,200,140,.15);color:#8fd6a4;}
 .btn{padding:8px 14px;border-radius:22px;border:1px solid var(--line);font-size:12px;font-weight:800;cursor:pointer;
   font-family:'Nunito',sans-serif;background:var(--card);color:var(--champ);}
 .btn.or{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border-color:transparent;}
@@ -406,6 +418,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
       <option value="pascher">Prix croissant</option>
       <option value="commande">Date de commande</option>
       <option value="livraison">Livraison pr&eacute;vue</option>
+      <option value="eco">&Eacute;conomie possible</option>
       <option value="couleur">Par couleur</option>
       <option value="nom">Nom A-Z</option>
     </select>
@@ -496,6 +509,17 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
     </div>
     <label class="lbl">Vendeur / plateforme</label>
     <input type="text" id="f-vendeur" placeholder="Yahoo Japan, eBay, Chrono24, Amazon..." autocomplete="off">
+
+    <div class="row2">
+      <div>
+        <label class="lbl">Vu moins cher ailleurs (&euro;)</label>
+        <input type="number" id="f-prix-ailleurs" step="0.01" min="0" placeholder="0,00" inputmode="decimal">
+      </div>
+      <div>
+        <label class="lbl">Sur quel site</label>
+        <input type="text" id="f-site-ailleurs" placeholder="Nom du site" autocomplete="off">
+      </div>
+    </div>
 
     <label class="lbl">Pay&eacute; par</label>
     <input type="text" id="f-paye-par" list="payeurs-list" placeholder="Qui a sorti l'argent ?" autocomplete="off">
@@ -1293,6 +1317,16 @@ async function traiterFichierPhoto(file){
 
 /* ── Calculs sur une fiche ───────────────────────────────── */
 function coutTotal(m){return nb(m.prixAchat)+nb(m.frais);}
+/* Le prix trouvé ailleurs, et ce qu'il aurait fait gagner. On ne compte que
+   les écarts favorables : un prix plus cher ailleurs n'est pas une perte,
+   c'est simplement la preuve qu'on a bien acheté. */
+function ecoPossible(m){
+  const a=nb(m.prixAilleurs);
+  if(a<=0) return 0;
+  const d=coutTotal(m)-a;
+  return d>0?d:0;
+}
+function ecoTotale(l){return (l||toutes()).reduce((s,m)=>s+ecoPossible(m),0);}
 function plusValue(m){return m.vendue?nb(m.prixVente)-coutTotal(m):0;}
 function statut(m){
   if(estMateriel(m)) return m.recu?"avendre":"transit";
@@ -1386,6 +1420,11 @@ function filtrees(){
       if(ra) return String(b.dateRecu||"").localeCompare(String(a.dateRecu||""));
       return parDate(a,b,"datePrevue")||parDate(a,b,"dateAchat");
     }
+    if(tri==="eco"){
+      const ea=ecoPossible(a), eb=ecoPossible(b);
+      if(ea!==eb) return eb-ea;
+      return coutTotal(b)-coutTotal(a);
+    }
     if(tri==="couleur"){
       const ca=libelleCouleur(a), cb=libelleCouleur(b);
       if(ca!==cb){
@@ -1455,6 +1494,10 @@ function rendreCompteurs(){
     h+=tuile("cs",vendues+(encaisse?" · "+eurCourt(encaisse):""),"Vendues")+
        tuile(cls,(pv>0?"+":"")+eurCourt(pv),"Plus-value réalisée");
   }
+  // ne s'affiche que si un prix a été relevé quelque part : une tuile à zéro
+  // n'apprend rien et prend une ligne sur le téléphone
+  const eco=ecoTotale(l), nEco=l.filter(m=>ecoPossible(m)>0).length;
+  if(eco>0) h+=tuile("cb",eurCourt(eco),"Économie possible sur "+nEco+" montre"+(nEco>1?"s":""));
   $("counters").innerHTML=h;
 }
 function rendreCompteursMateriel(){
@@ -1654,6 +1697,8 @@ function carte(m,n){
           badgeLivraison(m)+
           (n>1?'<span class="badge b-lot">&times;'+n+
                '<span class="lot-mot"> exemplaires</span></span>':'')+
+          (ecoPossible(m)>0?'<span class="badge b-eco">&#128161; -'+eur(ecoPossible(m))+
+               '<span class="lot-mot"> ailleurs</span></span>':'')+
           (m.paysAchat?'<span class="badge b-pays">'+esc(m.paysAchat)+'</span>':'')+
         '</div>'+
       '</div>'+
@@ -1692,6 +1737,27 @@ function detail(m){
   if(m.modifiePar) h+=cas("Dernière saisie",esc(m.modifiePar));
   h+='</div>';
   if(m.details) h+='<div class="dnote">'+esc(m.details)+'</div>';
+  // saisie sur place : c'est en regardant la montre qu'on a le prix de l'autre
+  // site sous les yeux, pas dans le formulaire complet
+  const eco=ecoPossible(m);
+  h+='<div class="ailleurs'+(eco>0?" gagne":"")+'">'+
+     '<div class="ail-t">&#128161; Trouv&eacute;e moins cher ailleurs ?</div>'+
+     '<div class="ail-l">'+
+       '<input type="number" id="a-prix" step="0.01" min="0" inputmode="decimal" '+
+         'placeholder="Prix vu" value="'+(nb(m.prixAilleurs)||"")+'">'+
+       '<input type="text" id="a-site" placeholder="Sur quel site ?" '+
+         'autocomplete="off" value="'+esc(m.siteAilleurs||"")+'">'+
+       '<button class="btn or" onclick="enregistrerAilleurs(\''+m.id+'\')">&#10003;</button>'+
+     '</div>'+
+     (eco>0
+       ? '<div class="ail-r">Tu aurais économisé <b>'+eur(eco)+'</b> sur celle-ci'+
+         (m.siteAilleurs?' chez '+esc(m.siteAilleurs):'')+
+         ' — payée '+eur(coutTotal(m))+' au lieu de '+eur(nb(m.prixAilleurs))+'.</div>'
+       : (nb(m.prixAilleurs)>0
+          ? '<div class="ail-r">Rien à regretter : tu l\'as payée '+eur(coutTotal(m))+
+            ', c\'est déjà moins cher qu\'ailleurs.</div>'
+          : ''))+
+     '</div>';
   h+='<div class="dactions">';
   if(!m.recu) h+='<button class="btn vert" onclick="marquerRecue(\''+m.id+'\')">✅ Marquer reçue</button>';
   if(m.recu&&!m.vendue) h+='<button class="btn or" onclick="marquerVendue(\''+m.id+'\')">💰 Marquer vendue</button>';
@@ -1700,6 +1766,18 @@ function detail(m){
   h+='<button class="btn rouge" onclick="supprimer(\''+m.id+'\')">🗑 Supprimer</button>';
   h+='</div>';
   return h;
+}
+function enregistrerAilleurs(id){
+  const m=montres.find(x=>x.id===id); if(!m) return;
+  const p=nb($("a-prix").value), site=$("a-site").value.trim();
+  m.prixAilleurs=p>0?p:0;
+  m.siteAilleurs=p>0?site:"";
+  marquerModif(m);
+  sauver();rendre();rafraichirDetail();synchro();
+  const e=ecoPossible(m);
+  toast(p<=0?"Prix ailleurs effacé"
+       :e>0?"Économie possible : "+eur(e)
+       :"Noté — tu l'avais payée moins cher");
 }
 function cas(l,v){return '<div class="dcase"><div class="dcase-lbl">'+l+'</div><div class="dcase-val">'+v+'</div></div>';}
 function casL(l,v){return '<div class="dcase large"><div class="dcase-lbl">'+l+'</div><div class="dcase-val">'+v+'</div></div>';}
@@ -1839,7 +1917,8 @@ function choisirType(t){appliquerType(t);}
 function viderFiche(){
   ["f-nom","f-ref","f-details","f-vendeur","f-lieu","f-suivi","f-acheteur",
    "f-prix-achat","f-frais","f-prix-vise","f-prix-vente","f-pays-achat","f-pays-liv",
-   "f-date-achat","f-date-prevue","f-date-recu","f-date-vente","f-paye-par"].forEach(i=>$(i).value="");
+   "f-date-achat","f-date-prevue","f-date-recu","f-date-vente","f-paye-par",
+   "f-prix-ailleurs","f-site-ailleurs"].forEach(i=>$(i).value="");
   $("f-vendue").value="0";
   $("f-doublon").innerHTML="";
   retirerPhoto();
@@ -1887,6 +1966,8 @@ function ouvrirEdition(id){
   $("f-prix-vise").value=m.prixVise||"";$("f-vendue").value=m.vendue?"1":"0";
   $("f-prix-vente").value=m.prixVente||"";$("f-date-vente").value=m.dateVente||"";$("f-acheteur").value=m.acheteur||"";
   $("f-paye-par").value=m.payePar||"";
+  $("f-prix-ailleurs").value=m.prixAilleurs||"";
+  $("f-site-ailleurs").value=m.siteAilleurs||"";
   appliquerType(estMateriel(m)?"materiel":"montre");
   $("fiche-titre").textContent=estMateriel(m)?"Modifier l'article":"Modifier la montre";
   setRecu(!!m.recu);setDestination(m.destination||"vendre");majBlocVente();
@@ -1986,6 +2067,8 @@ function enregistrerFiche(){
     dateVente:vendue?($("f-date-vente").value||auj()):"",
     acheteur:vendue?$("f-acheteur").value.trim():"",
     payePar:$("f-paye-par").value.trim(),
+    prixAilleurs:nb($("f-prix-ailleurs").value),
+    siteAilleurs:$("f-site-ailleurs").value.trim(),
     type:ficheType,
     majLe:new Date().toISOString()
   };
@@ -2522,14 +2605,16 @@ function csvChamp(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"';}
 function exporterCSV(){
   const l=filtrees();
   if(!l.length){toast("Rien à exporter");return;}
-  let csv="﻿Type;Nom;Référence;Statut;Date achat;Prix achat;Frais;Coût total;Pays achat;Vendeur;Payé par;"+
+  let csv="﻿Type;Nom;Référence;Statut;Date achat;Prix achat;Frais;Coût total;Pays achat;Vendeur;Payé par;Vu ailleurs;Site;Économie possible;"+
     "Lieu livraison;Pays livraison;Livraison prévue;Reçue;Date réception;Suivi;Destination;Prix visé;"+
     "Vendue;Prix vente;Date vente;Acheteur;Plus-value;Détails\n";
   l.forEach(m=>{
     csv+=[estMateriel(m)?"Matériel":"Montre",
       csvChamp(m.nom),csvChamp(m.ref),csvChamp(STATUT_LIB[statut(m)]),
       m.dateAchat||"",nb(m.prixAchat).toFixed(2),nb(m.frais).toFixed(2),coutTotal(m).toFixed(2),
-      csvChamp(m.paysAchat),csvChamp(m.vendeur),csvChamp(m.payePar),csvChamp(m.lieu),csvChamp(m.paysLivraison),m.datePrevue||"",
+      csvChamp(m.paysAchat),csvChamp(m.vendeur),csvChamp(m.payePar),
+      nb(m.prixAilleurs)?nb(m.prixAilleurs).toFixed(2):"",csvChamp(m.siteAilleurs),
+      ecoPossible(m)?ecoPossible(m).toFixed(2):"",csvChamp(m.lieu),csvChamp(m.paysLivraison),m.datePrevue||"",
       m.recu?"Oui":"Non",m.dateRecu||"",csvChamp(m.suivi),m.destination==="garder"?"Garder":"Revendre",
       nb(m.prixVise).toFixed(2),m.vendue?"Oui":"Non",m.vendue?nb(m.prixVente).toFixed(2):"",m.dateVente||"",
       csvChamp(m.acheteur),m.vendue?plusValue(m).toFixed(2):"",csvChamp(m.details)].join(";")+"\n";
@@ -2715,7 +2800,7 @@ function normaliser(r){
   const o=Object.assign({},r);
   delete o.sync;delete o._ligne;
   o.prixAchat=nb(o.prixAchat);o.frais=nb(o.frais);
-  o.prixVise=nb(o.prixVise);o.prixVente=nb(o.prixVente);
+  o.prixVise=nb(o.prixVise);o.prixVente=nb(o.prixVente);o.prixAilleurs=nb(o.prixAilleurs);
   o.recu=!!o.recu;o.vendue=!!o.vendue;o.supprime=!!o.supprime;
   return o;
 }
@@ -2912,7 +2997,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v28", VERSION_DATE="28/08/2026";
+const VERSION="v29", VERSION_DATE="28/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){

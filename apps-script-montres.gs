@@ -59,12 +59,15 @@ const ENTETES = [
   // Ajoutées le 28/08/2026 : le matériel (coffrets, kits, outils) se range dans
   // la même feuille que les montres — c'est un achat comme un autre, il lui
   // manque seulement la revente. Et « payePar » sert aux comptes entre associés.
-  "type", "payePar"
+  "type", "payePar",
+  // Ajoutées le 28/08/2026 : le prix relevé sur un autre site, et lequel.
+  // Sert à voir ce qu'on aurait pu économiser, montre par montre.
+  "prixAilleurs", "siteAilleurs"
 ];
 const ENTETES_PHOTOS = ["photoId", "fileId", "creeLe"];
 
 // Champs numériques et booléens (pour relire proprement)
-const NOMBRES = { prixAchat: 1, frais: 1, prixVise: 1, prixVente: 1 };
+const NOMBRES = { prixAchat: 1, frais: 1, prixVise: 1, prixVente: 1, prixAilleurs: 1 };
 const BOOLEENS = { supprime: 1, recu: 1, vendue: 1 };
 
 /* ── Utilitaires ─────────────────────────────────────────────────────────── */
