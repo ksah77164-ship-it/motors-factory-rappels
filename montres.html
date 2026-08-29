@@ -238,6 +238,16 @@ a.ail-s{color:var(--gold);text-decoration:none;}
    quand les vignettes sont regroupées. */
 button.b-lot{border:none;font-family:inherit;cursor:pointer;}
 button.b-lot:active{filter:brightness(1.4);}
+/* Le titre encadré de deux flèches : on passe d'une montre à l'autre sans
+   refermer la fiche. */
+.d-nav{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.d-nav-mid{flex:1;min-width:0;}
+.d-nav-mid h3{margin:0;}
+.d-pos{font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-top:2px;}
+.d-fleche{width:38px;height:38px;flex-shrink:0;border-radius:50%;border:1px solid var(--line);
+  background:var(--bg2);color:var(--gold);font-size:22px;line-height:1;cursor:pointer;
+  font-family:inherit;padding:0;}
+.d-fleche:active{background:var(--card);}
 .lien-frere{background:none;border:none;color:var(--gold);font:inherit;font-weight:900;
   text-decoration:underline;cursor:pointer;padding:0;}
 /* Regrouper fait disparaître des vignettes au milieu d'une grille qui défile.
@@ -439,6 +449,9 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
       <option value="livraison">Livraison pr&eacute;vue</option>
       <option value="eco">&Eacute;conomie possible</option>
       <option value="couleur">Par couleur</option>
+      <option value="payeur">Par payeur</option>
+      <option value="pays">Par pays d'achat</option>
+      <option value="boutique">Par boutique</option>
       <option value="nom">Nom A-Z</option>
     </select>
   </div>
@@ -616,7 +629,14 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 
 <div class="modal-wrap" id="modal-detail">
   <div class="modal">
-    <h3 id="d-titre">Montre</h3>
+    <div class="d-nav">
+      <button class="d-fleche" id="d-prec" onclick="montreVoisine(-1)" title="Pr&eacute;c&eacute;dente">&#8249;</button>
+      <div class="d-nav-mid">
+        <h3 id="d-titre">Montre</h3>
+        <div class="d-pos" id="d-pos"></div>
+      </div>
+      <button class="d-fleche" id="d-suiv" onclick="montreVoisine(1)" title="Suivante">&#8250;</button>
+    </div>
     <div class="sous" id="d-sous"></div>
     <div id="d-corps"></div>
     <div class="modal-actions">
@@ -1435,7 +1455,8 @@ function filtrees(){
   if(filtreStatut!=="tous") l=l.filter(m=>statut(m)===filtreStatut);
   const q=$("rech").value.toLowerCase().trim();
   if(q){
-    l=l.filter(m=>[m.nom,m.ref,m.vendeur,m.paysAchat,m.paysLivraison,m.lieu,m.details,m.acheteur,m.suivi]
+    l=l.filter(m=>[m.nom,m.ref,m.vendeur,m.paysAchat,m.paysLivraison,m.lieu,m.details,
+      m.acheteur,m.suivi,m.payePar,m.siteAilleurs]
       .some(v=>String(v==null?"":v).toLowerCase().indexOf(q)>=0));
   }
   const tri=$("tri").value;
@@ -1462,6 +1483,18 @@ function filtrees(){
     if(tri==="eco"){
       const ea=ecoPossible(a), eb=ecoPossible(b);
       if(ea!==eb) return eb-ea;
+      return coutTotal(b)-coutTotal(a);
+    }
+    /* Regrouper par payeur, par pays ou par boutique : ce qui n'est pas
+       renseigné part à la fin, et à l'intérieur d'un groupe le plus cher
+       d'abord — c'est ce qu'on cherche quand on regarde un fournisseur. */
+    if(tri==="payeur"||tri==="pays"||tri==="boutique"){
+      const champ=tri==="payeur"?"payePar":tri==="pays"?"paysAchat":"vendeur";
+      const v=x=>String(x[champ]||"").trim();
+      const va=v(a), vb=v(b);
+      if(!va!==!vb) return va?-1:1;
+      if(va&&vb&&va.toLowerCase()!==vb.toLowerCase())
+        return va.localeCompare(vb,"fr",{sensitivity:"base"});
       return coutTotal(b)-coutTotal(a);
     }
     if(tri==="couleur"){
@@ -1932,8 +1965,44 @@ function ouvrirDetail(id){
   $("d-sous").innerHTML='<span class="badge '+STATUT_CLS[s]+'">'+STATUT_LIB[s]+'</span>'+
     badgeLivraison(m)+(m.ref?' <span class="mref" style="display:inline">'+esc(m.ref)+'</span>':'');
   $("d-corps").innerHTML=detail(m);
+  majNavDetail();
   $("modal-detail").classList.add("open");
+  $("modal-detail").scrollTop=0;
+  const mo=$("modal-detail").querySelector(".modal");
+  if(mo) mo.scrollTop=0;
   document.body.style.overflow="hidden";
+}
+
+/* Passer d'une montre à l'autre sans refermer la fenêtre. L'ordre suivi est
+   celui de la liste affichée : ce qu'on voit derrière la fenêtre est ce qu'on
+   parcourt. Une montre absente de cette liste (exemplaire regroupé, filtre en
+   cours) reste consultable, mais sans voisines — on ne se retrouve pas
+   propulsé ailleurs sans comprendre. */
+function listeParcours(){
+  const l=filtrees();
+  return l.some(m=>m.id===detailCourant) ? l : null;
+}
+function montreVoisine(pas){
+  const l=listeParcours(); if(!l) return;
+  const i=l.findIndex(m=>m.id===detailCourant);
+  if(i<0) return;
+  const j=i+pas;
+  if(j<0||j>=l.length) return;
+  ouvrirDetail(l[j].id);
+}
+function majNavDetail(){
+  const l=listeParcours();
+  const i=l?l.findIndex(m=>m.id===detailCourant):-1;
+  const p=$("d-prec"), n=$("d-suiv"), z=$("d-pos");
+  if(!p||!n||!z) return;
+  if(i<0){
+    p.style.visibility=n.style.visibility="hidden";
+    z.textContent="";
+    return;
+  }
+  p.style.visibility=(i>0)?"visible":"hidden";
+  n.style.visibility=(i<l.length-1)?"visible":"hidden";
+  z.textContent=(i+1)+" / "+l.length;
 }
 /* Regrouper ne doit jamais rendre un exemplaire inatteignable. Le badge « ×2 »
    ouvre la liste des exemplaires, chacun avec son prix et sa date — c'est
@@ -3162,7 +3231,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v33", VERSION_DATE="29/08/2026";
+const VERSION="v34", VERSION_DATE="29/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
@@ -3241,6 +3310,35 @@ document.addEventListener("visibilitychange",()=>{
 $("modal-fiche").addEventListener("click",e=>{if(e.target===$("modal-fiche"))fermerFiche();});
 $("modal-scan").addEventListener("click",e=>{if(e.target===$("modal-scan"))fermerScan();});
 $("modal-groupe").addEventListener("click",e=>{if(e.target===$("modal-groupe"))fermerGroupe();});
+
+/* Au doigt : un balayage horizontal franc passe à la montre suivante. Le seuil
+   est volontairement haut et le geste doit rester plus horizontal que vertical,
+   sinon on changerait de montre en voulant simplement faire défiler la fiche. */
+(function(){
+  const z=$("modal-detail"); if(!z) return;
+  let x0=0,y0=0,actif=false;
+  z.addEventListener("touchstart",e=>{
+    if(e.touches.length!==1){actif=false;return;}
+    x0=e.touches[0].clientX; y0=e.touches[0].clientY; actif=true;
+  },{passive:true});
+  z.addEventListener("touchend",e=>{
+    if(!actif) return; actif=false;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-x0, dy=t.clientY-y0;
+    if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.8) return;
+    montreVoisine(dx<0?1:-1);
+  },{passive:true});
+})();
+
+/* Au clavier, pour l'ordinateur. */
+document.addEventListener("keydown",e=>{
+  if(!$("modal-detail").classList.contains("open")) return;
+  const t=e.target&&e.target.tagName;
+  if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT") return;
+  if(e.key==="ArrowLeft"){e.preventDefault();montreVoisine(-1);}
+  else if(e.key==="ArrowRight"){e.preventDefault();montreVoisine(1);}
+  else if(e.key==="Escape") fermerDetail();
+});
 $("modal-cloud").addEventListener("click",e=>{if(e.target===$("modal-cloud"))fermerCloud();});
 $("modal-rech").addEventListener("click",e=>{if(e.target===$("modal-rech"))fermerRecherche();});
 $("r-texte").addEventListener("keydown",e=>{
