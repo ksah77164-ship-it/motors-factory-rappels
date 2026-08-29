@@ -265,10 +265,16 @@ button.b-lot:active{filter:brightness(1.4);}
 
 /* Modale */
 .modal-wrap{display:none;position:fixed;inset:0;background:rgba(6,5,4,0.82);z-index:200;padding:14px;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;}
+  -webkit-overflow-scrolling:touch;
+  /* le défilement s'arrête au bord de la fenêtre au lieu d'entraîner la page */
+  overscroll-behavior:contain;}
 .modal-wrap.open{display:block;}
 .modal{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line-strong);border-radius:22px;
-  padding:20px 18px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:520px;margin:10px auto 30px;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:520px;margin:10px auto 30px;box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  will-change:transform;}
+/* Le balayage horizontal appartient à la fiche, pas au navigateur : sans ça,
+   sur iPhone, le geste faisait bouger la page derrière. */
+#modal-detail .modal{touch-action:pan-y;}
 .modal h3{font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--champ);margin-bottom:4px;}
 .modal .sous{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:16px;}
 .sect{font-size:10px;font-weight:900;color:var(--gold);letter-spacing:1.4px;text-transform:uppercase;
@@ -828,6 +834,35 @@ let syncEnCours=false, syncTimer=null, derniereActivite=Date.now(), derniereErre
 
 /* ── Utilitaires ─────────────────────────────────────────── */
 function $(id){return document.getElementById(id);}
+
+/* Bloquer le fond pendant qu'une fenêtre est ouverte. « overflow:hidden » sur
+   le corps de page ne suffit pas sur iPhone : le doigt continue d'entraîner la
+   page derrière. Il faut la figer à sa position et la remettre en place à la
+   fermeture, sinon on se retrouve revenu en haut de la liste. */
+/* On lit l'état réel de l'écran plutôt que de compter les ouvertures : passer
+   d'une fiche à l'autre rouvre la même fenêtre sans la refermer, un compteur
+   se serait déréglé au premier aller-retour et la page serait restée bloquée. */
+let fondY=0, fondBloque=false;
+function majVerrou(){
+  const ouvert=!!document.querySelector(".modal-wrap.open");
+  if(ouvert===fondBloque) return;
+  const b=document.body;
+  if(ouvert){
+    fondY=window.scrollY||window.pageYOffset||0;
+    b.style.position="fixed";
+    b.style.top=(-fondY)+"px";
+    b.style.left="0"; b.style.right="0"; b.style.width="100%";
+    b.style.overflow="hidden";
+    fondBloque=true;
+  }else{
+    b.style.position=""; b.style.top=""; b.style.left="";
+    b.style.right=""; b.style.width=""; b.style.overflow="";
+    fondBloque=false;
+    window.scrollTo(0,fondY);
+  }
+}
+function verrouillerFond(){majVerrou();}
+function deverrouillerFond(){majVerrou();}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
 function nb(v){const n=parseFloat(String(v==null?"":v).replace(",","."));return isNaN(n)?0:n;}
@@ -1970,7 +2005,7 @@ function ouvrirDetail(id){
   $("modal-detail").scrollTop=0;
   const mo=$("modal-detail").querySelector(".modal");
   if(mo) mo.scrollTop=0;
-  document.body.style.overflow="hidden";
+  verrouillerFond();
 }
 
 /* Passer d'une montre à l'autre sans refermer la fenêtre. L'ordre suivi est
@@ -1989,6 +2024,18 @@ function montreVoisine(pas){
   const j=i+pas;
   if(j<0||j>=l.length) return;
   ouvrirDetail(l[j].id);
+  // la nouvelle fiche entre par le côté d'où on vient : sans ce mouvement,
+  // rien ne dit qu'on a changé de montre et non rechargé la même
+  const c=$("modal-detail").querySelector(".modal");
+  if(c){
+    c.style.transition="none";
+    c.style.transform="translateX("+(pas>0?28:-28)+"px)";
+    c.style.opacity="0.35";
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      c.style.transition="transform .16s ease-out, opacity .16s ease-out";
+      c.style.transform=""; c.style.opacity="";
+    }));
+  }
 }
 function majNavDetail(){
   const l=listeParcours();
@@ -2036,11 +2083,11 @@ function ouvrirExemplaires(id){
      '<div class="cpt-v">'+eur(total)+'</div></div></div>';
   $("g-corps").innerHTML=h;
   $("modal-groupe").classList.add("open");
-  document.body.style.overflow="hidden";
+  verrouillerFond();
 }
 function fermerGroupe(){
   $("modal-groupe").classList.remove("open");
-  document.body.style.overflow="";
+  deverrouillerFond();
 }
 function depuisGroupe(id){
   fermerGroupe();
@@ -2049,7 +2096,7 @@ function depuisGroupe(id){
 function fermerDetail(){
   detailCourant=null;
   $("modal-detail").classList.remove("open");
-  document.body.style.overflow="";
+  deverrouillerFond();
 }
 /* Après une action (reçue, vendue, modification, suppression) la fenêtre
    doit refléter l'état réel, ou disparaître si la montre n'existe plus. */
@@ -2177,7 +2224,7 @@ function ouvrirAjout(t){
   $("f-date-achat").value=auj();
   $("f-pays-liv").value="France";
   $("modal-fiche").classList.add("open");
-  document.body.style.overflow="hidden";
+  verrouillerFond();
 }
 function ouvrirEdition(id){
   fermerDetail();
@@ -2204,11 +2251,11 @@ function ouvrirEdition(id){
     afficherApercuPhoto(PHOTOS[m.photoId]);
   }
   $("modal-fiche").classList.add("open");
-  document.body.style.overflow="hidden";
+  verrouillerFond();
 }
 function fermerFiche(){
   $("modal-fiche").classList.remove("open");
-  document.body.style.overflow="";
+  deverrouillerFond();
 }
 function afficherApercuPhoto(url){
   $("f-photo-img").src=url;
@@ -2345,11 +2392,11 @@ function ouvrirScan(){
   $("s-photo-cam").value="";$("s-photo-gal").value="";
   $("s-ajouter").style.display="none";
   $("modal-scan").classList.add("open");
-  document.body.style.overflow="hidden";
+  verrouillerFond();
 }
 function fermerScan(){
   $("modal-scan").classList.remove("open");
-  document.body.style.overflow="";
+  deverrouillerFond();
 }
 async function scanPhoto(input){
   const f=input.files&&input.files[0];if(!f)return;
@@ -2602,7 +2649,7 @@ function scanVersAjout(){
   }
   $("modal-scan").classList.remove("open");
   $("modal-fiche").classList.add("open");
-  document.body.style.overflow="hidden";
+  verrouillerFond();
 }
 
 /* ── Recherche internet ──────────────────────────────────────
@@ -2641,11 +2688,11 @@ function ouvrirRecherche(texte){
   $("r-plus").open=false;
   majLiens();
   $("modal-rech").classList.add("open");
-  document.body.style.overflow="hidden";
+  verrouillerFond();
 }
 function fermerRecherche(){
   $("modal-rech").classList.remove("open");
-  document.body.style.overflow="";
+  deverrouillerFond();
 }
 function rechercherMontre(id){
   fermerDetail();
@@ -3146,9 +3193,9 @@ function ouvrirCloud(){
   $("c-nom").value=monNom;
   majEtatCloud();
   $("modal-cloud").classList.add("open");
-  document.body.style.overflow="hidden";
+  verrouillerFond();
 }
-function fermerCloud(){$("modal-cloud").classList.remove("open");document.body.style.overflow="";}
+function fermerCloud(){$("modal-cloud").classList.remove("open");deverrouillerFond();}
 function majEtatCloud(){
   const e=$("c-etat");
   if(!apiURL()){
@@ -3231,7 +3278,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v34", VERSION_DATE="29/08/2026";
+const VERSION="v35", VERSION_DATE="29/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
@@ -3316,18 +3363,49 @@ $("modal-groupe").addEventListener("click",e=>{if(e.target===$("modal-groupe"))f
    sinon on changerait de montre en voulant simplement faire défiler la fiche. */
 (function(){
   const z=$("modal-detail"); if(!z) return;
-  let x0=0,y0=0,actif=false;
+  const carte=()=>z.querySelector(".modal");
+  let x0=0,y0=0,actif=false,sens=0;   // sens : 0 indécis, 1 horizontal, -1 vertical
   z.addEventListener("touchstart",e=>{
     if(e.touches.length!==1){actif=false;return;}
-    x0=e.touches[0].clientX; y0=e.touches[0].clientY; actif=true;
+    x0=e.touches[0].clientX; y0=e.touches[0].clientY; actif=true; sens=0;
+    const c=carte(); if(c) c.style.transition="none";
   },{passive:true});
-  z.addEventListener("touchend",e=>{
-    if(!actif) return; actif=false;
+  z.addEventListener("touchmove",e=>{
+    if(!actif||e.touches.length!==1) return;
+    const dx=e.touches[0].clientX-x0, dy=e.touches[0].clientY-y0;
+    if(!sens){
+      if(Math.abs(dx)<8&&Math.abs(dy)<8) return;
+      sens=(Math.abs(dx)>Math.abs(dy)*1.4)?1:-1;
+    }
+    if(sens<0) return;                       // défilement vertical : on ne touche à rien
+    // geste horizontal reconnu : il ne doit plus atteindre la page derrière
+    e.preventDefault();
+    const c=carte(); if(!c) return;
+    const l=listeParcours();
+    const i=l?l.findIndex(m=>m.id===detailCourant):-1;
+    // au bout de la liste, le glissement résiste au lieu de partir dans le vide
+    const bloque=(i<0)||(dx<0&&(!l||i>=l.length-1))||(dx>0&&i<=0);
+    const d=bloque?dx*0.18:dx*0.55;
+    c.style.transform="translateX("+d+"px)";
+    c.style.opacity=String(Math.max(0.55,1-Math.abs(d)/420));
+  },{passive:false});
+  const relacher=e=>{
+    if(!actif) return;
+    const horizontal=(sens===1);
+    actif=false; sens=0;
+    const c=carte();
+    if(c){
+      c.style.transition="transform .18s ease-out, opacity .18s ease-out";
+      c.style.transform=""; c.style.opacity="";
+    }
+    if(!horizontal||!e.changedTouches||!e.changedTouches[0]) return;
     const t=e.changedTouches[0];
     const dx=t.clientX-x0, dy=t.clientY-y0;
-    if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.8) return;
+    if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.4) return;
     montreVoisine(dx<0?1:-1);
-  },{passive:true});
+  };
+  z.addEventListener("touchend",relacher,{passive:true});
+  z.addEventListener("touchcancel",relacher,{passive:true});
 })();
 
 /* Au clavier, pour l'ordinateur. */
