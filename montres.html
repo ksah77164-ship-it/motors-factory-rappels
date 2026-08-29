@@ -234,6 +234,12 @@ a.ail-s{color:var(--gold);text-decoration:none;}
   padding:2px 4px;flex-shrink:0;font-family:inherit;}
 .ail-x:active{color:var(--debit);}
 .b-eco{background:rgba(120,200,140,.15);color:#8fd6a4;}
+/* Le « ×2 » est un bouton : c'est la seule porte vers le second exemplaire
+   quand les vignettes sont regroupées. */
+button.b-lot{border:none;font-family:inherit;cursor:pointer;}
+button.b-lot:active{filter:brightness(1.4);}
+.lien-frere{background:none;border:none;color:var(--gold);font:inherit;font-weight:900;
+  text-decoration:underline;cursor:pointer;padding:0;}
 /* Regrouper fait disparaître des vignettes au milieu d'une grille qui défile.
    Sans un mot pour le dire, le bouton passe pour cassé. */
 .grp-n{font-variant-numeric:tabular-nums;}
@@ -597,6 +603,17 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 
 <!-- ══ MODALE SCAN ══ -->
 <!-- ══ MODALE DÉTAIL D'UNE MONTRE ══ -->
+<div class="modal-wrap" id="modal-groupe">
+  <div class="modal">
+    <h3 id="g-titre">Exemplaires</h3>
+    <div class="sous" id="g-sous"></div>
+    <div id="g-corps"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="fermerGroupe()">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-wrap" id="modal-detail">
   <div class="modal">
     <h3 id="d-titre">Montre</h3>
@@ -1743,8 +1760,9 @@ function carte(m,n){
         '<div class="mmeta">'+
           '<span class="badge '+STATUT_CLS[s]+'">'+STATUT_LIB[s]+'</span>'+
           badgeLivraison(m)+
-          (n>1?'<span class="badge b-lot">&times;'+n+
-               '<span class="lot-mot"> exemplaires</span></span>':'')+
+          (n>1?'<button class="badge b-lot" onclick="event.stopPropagation();'+
+               'ouvrirExemplaires(\''+m.id+'\')" title="Voir les '+n+' exemplaires">&times;'+n+
+               '<span class="lot-mot"> exemplaires</span></button>':'')+
           (ecoPossible(m)>0?'<span class="badge b-eco">&#128161; -'+eur(ecoPossible(m))+
                '<span class="lot-mot"> ailleurs</span></span>':'')+
           (m.paysAchat?'<span class="badge b-pays">'+esc(m.paysAchat)+'</span>':'')+
@@ -1784,6 +1802,15 @@ function detail(m){
   }
   if(m.modifiePar) h+=cas("Dernière saisie",esc(m.modifiePar));
   h+='</div>';
+  // l'autre exemplaire est à une touche, groupé ou non
+  const freres=(estMateriel(m)?materiel():actives())
+    .filter(x=>x.id!==m.id&&cleExemplaire(x)===cleExemplaire(m));
+  if(freres.length){
+    h+='<div class="dnote" style="border-left-color:var(--gold2)">&#128279; '+
+       'Tu en as <b>'+(freres.length+1)+' exemplaires</b>. '+
+       '<button class="lien-frere" onclick="ouvrirExemplaires(\''+m.id+'\')">'+
+       'Voir '+(freres.length>1?"les autres":"l\'autre")+'</button></div>';
+  }
   if(m.details) h+='<div class="dnote">'+esc(m.details)+'</div>';
   // saisie sur place : c'est en regardant la montre qu'on a le prix de l'autre
   // site sous les yeux, pas dans le formulaire complet
@@ -1908,6 +1935,48 @@ function ouvrirDetail(id){
   $("modal-detail").classList.add("open");
   document.body.style.overflow="hidden";
 }
+/* Regrouper ne doit jamais rendre un exemplaire inatteignable. Le badge « ×2 »
+   ouvre la liste des exemplaires, chacun avec son prix et sa date — c'est
+   justement ce qui les distingue — et chacun mène à sa propre fiche. */
+function ouvrirExemplaires(id){
+  const m=montres.find(x=>x.id===id); if(!m) return;
+  const k=cleExemplaire(m);
+  const base=estMateriel(m)?materiel():actives();
+  const l=base.filter(x=>cleExemplaire(x)===k)
+              .sort((a,b)=>String(a.dateAchat||"").localeCompare(String(b.dateAchat||"")));
+  if(l.length<2) return ouvrirDetail(id);
+  $("g-titre").textContent=l.length+" exemplaires";
+  $("g-sous").textContent=(m.ref||m.nom||"")+" — même modèle, achats séparés";
+  const total=l.reduce((s,x)=>s+coutTotal(x),0);
+  let h="";
+  l.forEach((x,i)=>{
+    const ph=x.photoId&&PHOTOS[x.photoId], st=statut(x);
+    h+='<div class="match" onclick="depuisGroupe(\''+x.id+'\')">'+
+       (ph?'<img src="'+ph+'" alt="">':'<div class="match-vide">⌚</div>')+
+       '<div class="match-info">'+
+         '<div class="match-nom">Exemplaire '+(i+1)+' · '+eur(coutTotal(x))+'</div>'+
+         '<div class="match-sub">'+
+           (x.dateAchat?"acheté le "+dateFR(x.dateAchat):"date d\'achat inconnue")+
+           ' · '+STATUT_LIB[st]+
+           (x.vendeur?" · "+esc(x.vendeur):"")+'</div>'+
+       '</div>'+
+       '<div class="match-score">&#8250;</div></div>';
+  });
+  h+='<div class="cpt" style="margin-top:10px"><div class="cpt-l">'+
+     '<div class="cpt-n">Total sur ce modèle</div>'+
+     '<div class="cpt-v">'+eur(total)+'</div></div></div>';
+  $("g-corps").innerHTML=h;
+  $("modal-groupe").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function fermerGroupe(){
+  $("modal-groupe").classList.remove("open");
+  document.body.style.overflow="";
+}
+function depuisGroupe(id){
+  fermerGroupe();
+  ouvrirDetail(id);
+}
 function fermerDetail(){
   detailCourant=null;
   $("modal-detail").classList.remove("open");
@@ -1916,6 +1985,7 @@ function fermerDetail(){
 /* Après une action (reçue, vendue, modification, suppression) la fenêtre
    doit refléter l'état réel, ou disparaître si la montre n'existe plus. */
 function rafraichirDetail(){
+  if($("modal-groupe").classList.contains("open")) fermerGroupe();
   if(!detailCourant) return;
   if(!toutes().some(m=>m.id===detailCourant)){fermerDetail();return;}
   ouvrirDetail(detailCourant);
@@ -3092,7 +3162,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v32", VERSION_DATE="28/08/2026";
+const VERSION="v33", VERSION_DATE="29/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
@@ -3170,6 +3240,7 @@ document.addEventListener("visibilitychange",()=>{
 // Fermer les modales en cliquant sur le fond
 $("modal-fiche").addEventListener("click",e=>{if(e.target===$("modal-fiche"))fermerFiche();});
 $("modal-scan").addEventListener("click",e=>{if(e.target===$("modal-scan"))fermerScan();});
+$("modal-groupe").addEventListener("click",e=>{if(e.target===$("modal-groupe"))fermerGroupe();});
 $("modal-cloud").addEventListener("click",e=>{if(e.target===$("modal-cloud"))fermerCloud();});
 $("modal-rech").addEventListener("click",e=>{if(e.target===$("modal-rech"))fermerRecherche();});
 $("r-texte").addEventListener("keydown",e=>{
