@@ -223,6 +223,9 @@ select.mini:focus{outline:none;border-color:var(--gold);}
 .ail-l .btn{flex-shrink:0;padding:9px 13px;}
 .ail-r{font-size:12px;font-weight:700;color:var(--cream);line-height:1.5;margin-top:8px;}
 .b-eco{background:rgba(120,200,140,.15);color:#8fd6a4;}
+/* Regrouper fait disparaître des vignettes au milieu d'une grille qui défile.
+   Sans un mot pour le dire, le bouton passe pour cassé. */
+.grp-n{font-variant-numeric:tabular-nums;}
 .btn{padding:8px 14px;border-radius:22px;border:1px solid var(--line);font-size:12px;font-weight:800;cursor:pointer;
   font-family:'Nunito',sans-serif;background:var(--card);color:var(--champ);}
 .btn.or{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border-color:transparent;}
@@ -1454,6 +1457,28 @@ function regrouper(l){
   });
   return sortie;
 }
+/* Combien de fiches le regroupement met de côté, ici et maintenant. */
+function masquesParGroupe(){
+  const base=(section==="materiel")?materiel():actives();
+  const q=$("rech").value.toLowerCase().trim();
+  const avant=grouper;
+  grouper=false; const n=filtrees().length;
+  grouper=true;  const g=filtrees().length;
+  grouper=avant;
+  return n-g;
+}
+/* Le compte va sur le bouton lui-même. Une ligne d'état sous les filtres
+   aurait été plus bavarde, mais elle repoussait la grille d'une rangée
+   entière de photos — trois montres en moins à chaque ouverture. */
+function rendreEtatGroupe(){
+  const g=$("btn-grouper");
+  if(!g) return;
+  const cache=(section==="comptes")?0:masquesParGroupe();
+  g.innerHTML="&#128279;"+(cache?' <span class="grp-n">'+cache+"</span>":"");
+  g.title=!cache ? "Aucune montre en double dans cette liste"
+        : grouper ? cache+" exemplaire(s) en double regroupé(s) — appuie pour tout afficher"
+                  : cache+" doublon(s) affiché(s) à part — appuie pour regrouper";
+}
 function memoriserTri(){
   try{localStorage.setItem(CLE_TRI,$("tri").value);}catch(e){}
   rendre();
@@ -1468,6 +1493,10 @@ function basculerGroupe(){
   grouper=!grouper;
   try{localStorage.setItem(CLE_GROUPE,grouper?"1":"0");}catch(e){}
   rendre();
+  const n=masquesParGroupe();
+  toast(!n ? "Aucune montre en double dans cette liste"
+       : grouper ? "🔗 "+n+" doublon"+(n>1?"s":"")+" regroupé"+(n>1?"s":"")
+                 : "🔗 "+n+" doublon"+(n>1?"s":"")+" affiché"+(n>1?"s":"")+" à part");
 }
 function rendreCompteurs(){
   if(section==="materiel") return rendreCompteursMateriel();
@@ -1796,7 +1825,7 @@ function rendre(){
     b.style.display=n?"inline-block":"none";
     b.textContent="🗑 Supprimer ces "+n+" montre"+(n>1?"s":"");
   }
-  rendreCompteurs();rendreChips();rendreListe();rendreComptes();
+  rendreCompteurs();rendreChips();rendreListe();rendreComptes();rendreEtatGroupe();
 }
 function choisirStatut(s){filtreStatut=s;rendre();}
 /* La fiche s'ouvre dans une fenêtre centrée. Dépliée à l'intérieur de la
@@ -2997,7 +3026,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v29", VERSION_DATE="28/08/2026";
+const VERSION="v30", VERSION_DATE="28/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
