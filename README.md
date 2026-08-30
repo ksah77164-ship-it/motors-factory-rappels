@@ -17,9 +17,9 @@ sous `/montres/`, et sa documentation complète est dans
 [`montres/README.md`](https://github.com/ksah77164-ship-it/Alber/blob/main/montres/README.md).
 
 `montres.html` reste ici en **page de renvoi**, pour que les liens et les
-installations existantes ne tombent pas sur une page introuvable. L'adresse du
-portail Alber se renseigne dans la constante `PORTAIL_ALBER`, en haut du script
-de cette page.
+installations existantes ne tombent pas sur une page introuvable : elle redirige
+vers <https://lespenaltysdalber.vercel.app/montres/>. L'adresse se règle dans la
+constante `PORTAIL_ALBER`, en haut du script de cette page.
 
 > **Les données ne suivent pas toutes seules** : elles sont enregistrées dans le
 > navigateur, sous l'ancienne adresse. Pour les emporter, ouvrir l'ancienne appli
