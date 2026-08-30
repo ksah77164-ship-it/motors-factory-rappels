@@ -238,16 +238,6 @@ a.ail-s{color:var(--gold);text-decoration:none;}
    quand les vignettes sont regroupées. */
 button.b-lot{border:none;font-family:inherit;cursor:pointer;}
 button.b-lot:active{filter:brightness(1.4);}
-/* Le titre encadré de deux flèches : on passe d'une montre à l'autre sans
-   refermer la fiche. */
-.d-nav{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
-.d-nav-mid{flex:1;min-width:0;}
-.d-nav-mid h3{margin:0;}
-.d-pos{font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-top:2px;}
-.d-fleche{width:38px;height:38px;flex-shrink:0;border-radius:50%;border:1px solid var(--line);
-  background:var(--bg2);color:var(--gold);font-size:22px;line-height:1;cursor:pointer;
-  font-family:inherit;padding:0;}
-.d-fleche:active{background:var(--card);}
 .lien-frere{background:none;border:none;color:var(--gold);font:inherit;font-weight:900;
   text-decoration:underline;cursor:pointer;padding:0;}
 /* Regrouper fait disparaître des vignettes au milieu d'une grille qui défile.
@@ -258,7 +248,26 @@ button.b-lot:active{filter:brightness(1.4);}
 .btn.or{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a140a;border-color:transparent;}
 .btn.vert{background:rgba(174,203,144,0.14);color:var(--credit);border-color:rgba(174,203,144,0.3);}
 .btn.rouge{background:rgba(229,143,143,0.12);color:var(--debit);border-color:rgba(229,143,143,0.3);}
-.photo-grande{width:100%;max-height:340px;object-fit:contain;border-radius:14px;background:var(--bg2);border:1px solid var(--line);margin-top:12px;}
+.photo-grande{width:100%;max-height:340px;object-fit:contain;border-radius:14px;background:var(--bg2);border:1px solid var(--line);margin-top:12px;display:block;}
+/* Les flèches se posent sur la photo, là où le regard est déjà. */
+.photo-nav{position:relative;margin-top:12px;}
+.photo-nav .photo-grande{margin-top:0;}
+.photo-absente{width:100%;height:180px;border-radius:14px;background:var(--bg2);
+  border:1px dashed var(--line-strong);display:flex;align-items:center;
+  justify-content:center;font-size:48px;opacity:.45;}
+.pn-fleche{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;
+  border-radius:50%;border:1px solid rgba(255,255,255,.22);
+  background:rgba(6,5,4,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  color:#f4ead6;font-size:26px;line-height:1;cursor:pointer;font-family:inherit;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.45);}
+.pn-fleche:active{background:rgba(6,5,4,.85);}
+.pn-g{left:8px;} .pn-d{right:8px;}
+.pn-pos{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  background:rgba(6,5,4,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  border-radius:11px;padding:3px 10px;font-size:10.5px;font-weight:900;color:#f4ead6;
+  letter-spacing:.04em;font-variant-numeric:tabular-nums;}
+.pn-pos:empty{display:none;}
 
 .vide{text-align:center;padding:46px 20px;color:var(--muted);font-size:14px;font-weight:700;line-height:1.7;}
 .vide-ico{font-size:44px;margin-bottom:12px;opacity:0.5;}
@@ -635,14 +644,7 @@ label.lbl{display:block;font-size:10px;font-weight:900;color:var(--muted);letter
 
 <div class="modal-wrap" id="modal-detail">
   <div class="modal">
-    <div class="d-nav">
-      <button class="d-fleche" id="d-prec" onclick="montreVoisine(-1)" title="Pr&eacute;c&eacute;dente">&#8249;</button>
-      <div class="d-nav-mid">
-        <h3 id="d-titre">Montre</h3>
-        <div class="d-pos" id="d-pos"></div>
-      </div>
-      <button class="d-fleche" id="d-suiv" onclick="montreVoisine(1)" title="Suivante">&#8250;</button>
-    </div>
+    <h3 id="d-titre">Montre</h3>
     <div class="sous" id="d-sous"></div>
     <div id="d-corps"></div>
     <div class="modal-actions">
@@ -1844,7 +1846,17 @@ function detail(m){
   const photo=m.photoId&&PHOTOS[m.photoId];
   const c=coutTotal(m), pv=plusValue(m);
   let h="";
-  if(photo) h+='<img class="photo-grande" src="'+photo+'" alt="">';
+  /* Les flèches se posent sur la photo elle-même : c'est là que le regard est,
+     et c'est le geste qu'on fait naturellement pour passer à la suivante. */
+  h+='<div class="photo-nav">'+
+       (photo?'<img class="photo-grande" src="'+photo+'" alt="">'
+             :'<div class="photo-absente">'+(estMateriel(m)?"🧰":"⌚")+'</div>')+
+       '<button class="pn-fleche pn-g" id="d-prec" onclick="montreVoisine(-1)" '+
+         'title="Précédente">&#8249;</button>'+
+       '<button class="pn-fleche pn-d" id="d-suiv" onclick="montreVoisine(1)" '+
+         'title="Suivante">&#8250;</button>'+
+       '<div class="pn-pos" id="d-pos"></div>'+
+     '</div>';
   h+='<div class="dgrid">';
   h+=cas("Achat",dateFR(m.dateAchat));
   h+=cas("Prix d'achat",eur(nb(m.prixAchat)));
@@ -3278,7 +3290,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v35", VERSION_DATE="29/08/2026";
+const VERSION="v36", VERSION_DATE="29/08/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
