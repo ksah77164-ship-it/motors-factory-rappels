@@ -22,6 +22,10 @@
   --muted:#928871; --debit:#E58F8F; --credit:#AECB90; --bleu:#8FB6E5;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+/* Le fond sombre est aussi posé sur html : quand une fenêtre est ouverte, la
+   page derrière est figée et peut ne plus couvrir tout l'écran — sans ça, une
+   bande blanche apparaissait en bas, derrière la fenêtre. */
+html{background:var(--bg);}
 body{font-family:'Nunito',sans-serif;color:var(--cream);
   background:radial-gradient(1200px 600px at 50% -10%,#1a1611 0%,var(--bg) 55%) fixed;
   min-height:100vh;padding:16px 14px calc(90px + env(safe-area-inset-bottom));}
@@ -3290,7 +3294,7 @@ function lireLienPartage(){
 /* Numéro de version, affiché sur l'écran de connexion. À incrémenter à chaque
    mise en ligne : c'est ce qui permet de vérifier d'un coup d'œil qu'un
    appareil n'affiche pas une vieille page gardée en cache. */
-const VERSION="v36", VERSION_DATE="29/08/2026";
+const VERSION="v37", VERSION_DATE="03/09/2026";
 const AUTH_HASH="7d99aa8d1c48f981be78d48481e53cbbdabb2d6fc249c96655fe68e1141d0368";
 function toHexAuth(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");}
 async function seConnecter(){
