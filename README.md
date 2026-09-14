@@ -7,7 +7,6 @@ Outils Motors Factory (pages statiques, utilisables hors ligne).
 | `index.html` | Rappels clients |
 | `releves.html` | Relevés bancaires & factures |
 | `montres.html` | **Les Montres d'Alber** — suivi d'achat, livraison et revente de montres |
-| `reunion-maternelle.html` | **Réunion maternelle** — inscription des familles à la réunion du 23 septembre |
 
 ## Les Montres d'Alber (`montres.html`)
 
@@ -67,17 +66,3 @@ Fonctionnement :
 
 Sans coffre configuré, l'appli reste 100 % locale : fiches dans `localStorage`,
 photos dans `IndexedDB`, rien n'est envoyé nulle part.
-
-## Réunion d'information périscolaire maternelle (`reunion-maternelle.html`)
-
-Formulaire d'inscription des familles pour la réunion du **mercredi 23 septembre à 19h**.
-Chaque famille indique son nom, si elle sera présente et le nombre de personnes.
-Les inscriptions ferment automatiquement le **mardi 22 septembre à 22h** (côté page et côté script).
-
-- Les réponses arrivent dans un Google Sheet (onglet « Inscriptions »), une ligne par famille ;
-  une famille qui répond deux fois remplace sa réponse précédente.
-- Vue organisateur : ouvrir la page avec `#organisateur` à la fin de l'adresse, puis le mot de passe
-  choisi dans le script. Elle affiche la liste et les totaux (familles, présentes, personnes).
-- Mise en place (une fois, ~5 minutes) : suivre les étapes en tête de `apps-script-reunion.gs`,
-  puis coller l'URL `/exec` obtenue dans `SCRIPT_URL` en haut du `<script>` de la page.
-  Tant que `SCRIPT_URL` est vide, la page fonctionne en aperçu : rien n'est envoyé.
