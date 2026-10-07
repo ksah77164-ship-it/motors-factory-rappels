@@ -364,7 +364,7 @@ function doGet(e) {
   let vivantes = 0;
   toutes.forEach(function (o) { if (!o.supprime) vivantes++; });
   return json_({
-    ok: true, message: "Coffre Montres d'Albert opérationnel.",
+    ok: true, message: "Coffre Montres d'Alber opérationnel.",
     montres: vivantes, lignes: toutes.length, serveur: curseur
   });
 }
